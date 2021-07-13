@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd" [
+<!ENTITY ERROR_NOT_FOUND_DEVICE "com.kylinsec.Kiran.SystemDaemon.Biometrics.Error.NotFundDevice">
+<!ENTITY ERROR_DEVICE_BUSY "com.kylinsec.Kiran.SystemDaemon.Biometrics.Error.DeviceBusy">
+<!ENTITY ERROR_INTERNAL "com.kylinsec.Kiran.SystemDaemon.Biometrics.Error.Internal">
+<!ENTITY ERROR_PERMISSION_DENIED "com.kylinsec.Kiran.SystemDaemon.Biometrics.Error.PermissionDenied">
+<!ENTITY ERROR_NO_ENROLLED_PRINTS "com.kylinsec.Kiran.SystemDaemon.Biometrics.Error.NoEnrolledPrints">
+<!ENTITY ERROR_NO_ACTION_IN_PROGRESS "com.kylinsec.Kiran.SystemDaemon.Biometrics.Error.NoActionInProgress">
+]>
+<node>
+  <interface name="com.kylinsec.Kiran.SystemDaemon.Biometrics">
+    <annotation name="org.gtk.GDBus.C.Name" value="Biometrics" />
+    <method name="EnrollFprintStart">
+       <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+       <doc:description>启动用户指纹采集流程, 采集结果通过发出EnrollFprintStatus信号进行通知</doc:description>
+       <doc:errors>
+         <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+         <doc:error name="&ERROR_NOT_FOUND_DEVICE;">未发现设备</doc:error>
+         <doc:error name="&ERROR_DEVICE_BUSY;">设备已经在使用</doc:error>
+         <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+       </doc:errors>
+    </method>
+
+    <signal name="EnrollFprintStatus">
+      <arg type="s" name="message">
+        <doc:summary>描述采集过程状态的文本信息</doc:summary>
+      </arg>
+
+      <arg type="s" name="id">
+        <doc:summary>采集到的指纹模板标识ID </doc:summary>
+      </arg>
+
+      <arg type="int" name="progress">
+        <doc:summary> 一个1到100之间的数字，描述指纹采集的进度</doc:summary>
+      </arg>
+
+      <arg type="b" name="done">
+        <doc:summary>表示指纹采集是否完成</doc:summary>
+      </arg>
+    </signal>
+
+    <method name="EnrollFprintStop">
+      <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+      <doc:description>停止指纹采集</doc:description>
+      <doc:errors>
+        <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+        <doc:error name="&ERROR_NO_ACTION_IN_PROGRESS;">未发现设备</doc:error>
+        <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+      </doc:errors>
+    </method>
+
+    <method name="VerifyFprintStart">
+       <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+         <doc:description>启动指纹比对流程，比对结果通过发送信号VerifyFprintStatus进行通知</doc:description>
+         <doc:errors>
+           <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+           <doc:error name="&ERROR_NOT_FOUND_DEVICE;">未发现设备</doc:error>
+           <doc:error name="&ERROR_DEVICE_BUSY;">设备已经在使用</doc:error>
+           <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+         </doc:errors>
+    </method>
+
+    <signal name="VerifyFprintStatus">
+      <arg type="s" name="result">
+        <doc:summary>描述认证过程的信息文本</doc:summary>
+      </arg>
+
+      <arg type="b" name="done">
+        <doc:summary>指纹认证过程程是否已经结束</doc:summary>
+      </arg>
+
+      <arg type="b" name="found">
+        <doc:summary>是否匹配到指纹模板</doc:summary>
+      </arg>
+
+      <arg type="s" name="id">
+        <doc:summary>匹配的指纹模板ID</doc:summary>
+      </arg>
+    </signal>
+
+     <method name="VerifyFprintStop">
+       <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+         <doc:description>结束指纹认证过程</doc:description>
+         <doc:errors>
+           <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+	   <doc:error name="&ERROR_NO_ACTION_IN_PROGRESS;">不存在指纹认证流程</doc:error>
+           <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+         </doc:errors>
+     </method>
+
+     <method name="DeleteEnrolledFinger">
+       <arg type="s" name="id" direction="in">
+         <doc:summary>要删除的指纹模板ID </doc:summary>
+       </arg>
+       <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+       <doc:description>删除给定ID的指纹模板数据</doc:description>
+       <doc:errors>
+         <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+         <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+       </doc:errors>
+    </method>
+
+    <method name="EnrollFaceStart">
+      <arg type="s" name="zmq_addr" direction="out">
+        <doc:summary>zerozmq 服务器的地址</doc:summary>
+      </arg>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+      <doc:description>启动人脸采集流程</doc:description>
+      <doc:errors>
+        <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+        <doc:error name="&ERROR_NOT_FOUND_DEVICE;">未发现设备</doc:error>
+        <doc:error name="&ERROR_DEVICE_BUSY;">设备已经在使用</doc:error>
+        <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+      </doc:errors>
+    </method>
+
+    <signal name="EnrollFaceStatus">
+      <arg type="s" name="message">
+        <doc:summary>描述人脸采集状态信息的文本</doc:summary>
+      </arg>
+
+      <arg type="s" name="id">
+        <doc:summary>标识采集到的指纹模板ID</doc:summary>
+      </arg>
+
+      <arg type="int" name="progress">
+        <doc:summary>一个0到100的数值，表示人脸采集的进度</doc:summary>
+      </arg>
+
+      <arg type="b" name="done">
+        <doc:summary>人脸采集是否结束</doc:summary>
+      </arg>
+    </signal>
+
+    <method name="EnrollFaceStop">
+      <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+        <doc:description>停止指纹采集过程</doc:description>
+          <doc:errors>
+            <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+	    <doc:error name="&ERROR_NO_ACTION_IN_PROGRESS;">不存在指纹采集过程</doc:error>
+            <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+          </doc:errors>
+    </method>
+
+    <method name="VerifyFaceStart">
+       <arg type="s" name="id" direction="in">
+         <doc:summary>要比对的人脸模板id</doc:summary>
+       </arg>
+       <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+       <doc:description> 启动人脸比对流程，比对结果会通过发出信号VerifyFaceStatus进行通知</doc:description>
+       <doc:errors>
+         <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+         <doc:error name="&ERROR_NOT_FOUND_DEVICE;">未发现设备</doc:error>
+         <doc:error name="&ERROR_DEVICE_BUSY;">设备已经在使用</doc:error>
+         <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+       </doc:errors>
+    </method>
+
+    <signal name="VerifyFaceStatus">
+      <arg type="s" name="result">
+        <doc:summary>描述人脸比对过程状态信息的文本</doc:summary>
+      </arg>
+
+      <arg type="b" name="done">
+         <doc:summary>人脸比对过程是否结束</doc:summary>
+      </arg>
+      <arg type="b" name="match">
+        <doc:summary>人脸是否匹配</doc:summary>
+      </arg>
+    </signal>
+
+     <method name="VerifyFaceStop">
+       <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+       <doc:description>停止人脸比对流程</doc:description>
+       <doc:errors>
+         <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+         <doc:error name="&ERROR_NO_ACTION_IN_PROGRESS;">不存在人脸比对流程</doc:error>
+         <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+       </doc:errors>
+     </method>
+
+     <method name="DeleteEnrolledFace">
+       <arg type="s" name="id" direction="in">
+         <doc:summary>人脸模板的ID</doc:summary>
+       </arg>
+       <annotation name="org.freedesktop.DBus.GLib.Async" value="" />
+       <doc:description>删除给定ID的人脸模板</doc:description>
+       <doc:errors>
+         <doc:error name="&ERROR_PERMISSION_DENIED;">权限不足</doc:error>
+         <doc:error name="&ERROR_INTERNAL;">内部其它错误</doc:error>
+       </doc:errors>
+     </method>
+
+  </interface>
+</node>

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+    <interface name="com.kylinsec.Kiran.SystemDaemon.Accounts.User">
+        <method name="SetUserName">
+            <arg name="name" direction="in" type="s">
+                <summary>The new username.</summary>
+            </arg>
+            <description>Sets the users username. Note that it is usually not allowed to have multiple users with the same username.</description>
+        </method>
+
+        <method name="SetRealName">
+            <arg name="name" direction="in" type="s">
+                <description>The new name, typically in the form "Firstname Lastname".</description>
+            </arg>
+            <description>Sets the users real name.</description>
+        </method>
+
+        <method name="SetEmail">
+            <arg name="email" direction="in" type="s">
+                <summary>The new email address.</summary>
+            </arg>
+            <description>Sets the users email address.</description>
+        </method>
+
+        <method name="SetLanguage">
+            <arg name="language" direction="in" type="s">
+                <description>The new language, as a locale specification like "de_DE.UTF-8".</description>
+            </arg>
+            <description>Sets the users language.</description>
+        </method>
+
+        <method name="SetXSession">
+            <arg name="x_session" direction="in" type="s">
+                <description>The new xsession to start (e.g. "gnome")</description>
+            </arg>
+            <description>Sets the users x session.</description>
+        </method>
+
+        <method name="SetSession">
+            <arg name="session" direction="in" type="s">
+                <description>The new session to start (e.g. "gnome-xorg")</description>
+            </arg>
+            <description>Sets the users wayland or x session.</description>
+        </method>
+
+        <method name="SetSessionType">
+            <arg name="session_type" direction="in" type="s">
+                <description>The type of the new session to start (e.g. "wayland" or "x11")</description>
+            </arg>
+            <description>Sets the session type of the users session.</description>
+        </method>
+
+        <method name="SetHomeDirectory">
+            <arg name="homedir" direction="in" type="s">
+                <description>The new homedir as an absolute path.</description>
+            </arg>
+            <description>Sets the users home directory.</description>
+        </method>
+
+        <method name="SetShell">
+            <arg name="shell" direction="in" type="s">
+                <description>The new user shell.</description>
+            </arg>
+            <description>Sets the users shell.</description>
+        </method>
+
+        <method name="SetIconFile">
+            <arg name="filename" direction="in" type="s">
+                <description>The absolute filename of a png file to use as the users icon.</description>
+            </arg>
+            <description>Sets the users icon.</description>
+        </method>
+
+        <method name="SetLocked">
+            <arg name="locked" direction="in" type="b">
+                <description>Whether to lock or unlock the users account.</description>
+            </arg>
+            <description>Locks or unlocks a users account.</description>
+        </method>
+
+        <method name="SetAccountType">
+            <arg name="account_type" direction="in" type="i">
+                <description>The new account type, encoded as an integer. Refer to AccountsAccountType in accounts_i.h</description>
+            </arg>
+            <description>Changes the users account type.</description>
+        </method>
+
+        <method name="SetPasswordMode">
+            <arg name="mode" direction="in" type="i">
+                <description>The new password mode, encoded as an integer:</description>
+            </arg>
+            <description>Changes the users password mode. Note that changing the password mode has the side-effect of unlocking the account.</description>
+        </method>
+
+        <method name="SetPassword">
+            <arg name="password" direction="in" type="s">
+                <description>The crypted password.</description>
+            </arg>
+            <arg name="hint" direction="in" type="s">
+                <description>The password hint.</description>
+            </arg>
+            <description>Sets a new password for this user. Note that setting a password has the side-effect of unlocking the account.</description>
+        </method>
+
+        <method name="SetPasswordHint">
+            <arg name="hint" direction="in" type="s">
+                <description>The password hint.</description>
+            </arg>
+            <description>Sets the users password hint.</description>
+        </method>
+
+        <method name="SetAutomaticLogin">
+            <arg name="enabled" direction="in" type="b">
+                <description>Whether to enable automatic login for this user.</description>
+            </arg>
+            <description>Enables or disables automatic login for a user.
+            Note that usually only one user can have automatic login
+            enabled, so turning it on for a user will disable it for
+            the previously configured autologin user.</description>
+        </method>
+
+        <method name="GetPasswordExpirationPolicy">
+            <arg name="expiration_time" direction="out" type="x" />
+            <arg name="last_change_time" direction="out" type="x" />
+            <arg name="min_days_between_changes" direction="out" type="x" />
+            <arg name="max_days_between_changes" direction="out" type="x" />
+            <arg name="days_to_warn" direction="out" type="x" />
+            <arg name="days_after_expiration_until_lock" direction="out" type="x" />
+        </method>
+
+        <method name="AddAuthItem">
+            <arg type="i" name="mode" direction="in">
+                <description>The authentication mode which could be fingerprint, face, etc. Refer to AccountsAuthMode in accounts_i.h</description>
+            </arg>
+            <arg type="s" name="name" direction="in">
+                <description>the name of the authentication item. For example fingerprint 1, fingerprint 2, etc.</description>
+            </arg>
+            <arg type="s" name="data_id" direction="in">
+                <description>The identity of the collected data for the authentication item.</description>
+            </arg>
+            <description>Add an auth item for a mode. Return error if the name already exists or the method is unsupported.</description>
+        </method>
+
+        <method name="DelAuthItem">
+            <arg type="i" name="mode" direction="in" />
+            <arg type="s" name="name" direction="in" />
+            <description>Delete an auth item by name. Return error if the name doesn't exist or the method is unsupported.</description>
+        </method>
+
+        <method name="GetAuthItems">
+            <arg type="i" name="mode" direction="in" />
+            <arg type="s" name="auth_items_json" direction="out">
+                <description>The json string is an array that every item contains name and the identity of the collected data.</description>
+            </arg>
+        </method>
+
+        <method name="EnableAuthMode">
+            <arg type="i" name="mode" direction="in" />
+            <arg type="b" name="enabled" direction="in" />
+            <description>Enable or disable the authentication mode.</description>
+        </method>
+
+        <property name="uid" type="t" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false" />
+            <description>The uid of the user.</description>
+        </property>
+
+        <property name="user_name" type="s" access="read">
+            <description>The username of the user.</description>
+        </property>
+
+        <property name="real_name" type="s" access="read">
+            <description>The users real name.</description>
+        </property>
+
+        <property name="account_type" type="i" access="read">
+            <description>The users account type, encoded as an integer. Refer to AccountsAccountType in accounts_i.h</description>
+        </property>
+
+        <property name="home_directory" type="s" access="read">
+            <description>The users home directory.</description>
+        </property>
+
+        <property name="shell" type="s" access="read">
+            <description>The users shell.</description>
+        </property>
+
+        <property name="email" type="s" access="read">
+            <description>The email address.</description>
+        </property>
+
+        <property name="language" type="s" access="read">
+            <description>The users language, as a locale specification like "de_DE.UTF-8".</description>
+        </property>
+
+        <property name="session" type="s" access="read">
+            <description>The users Wayland or X session.</description>
+        </property>
+
+        <property name="session_type" type="s" access="read">
+            <description>The type of session the user should use (e.g. "wayland" or "x11")</description>
+        </property>
+
+        <property name="x_session" type="s" access="read">
+            <description>The users x session.</description>
+        </property>
+
+
+        <property name="icon_file" type="s" access="read">
+            <description>The filename of a png file containing the users icon.</description>
+        </property>
+
+
+        <property name="locked" type="b" access="read">
+            <description>Whether the users account is locked.</description>
+        </property>
+
+        <property name="password_mode" type="i" access="read">
+            <description>The password mode for the user account, encoded as an integer. Refer to AccountsPasswordMode in accounts_i.h</description>
+        </property>
+
+        <property name="password_hint" type="s" access="read">
+            <description>The password hint for the user.</description>
+        </property>
+
+        <property name="automatic_login" type="b" access="read">
+            <description>Whether automatic login is enabled for the user.</description>
+        </property>
+
+        <property name="system_account" type="b" access="read">
+            <description>Whether this is a 'system' account, like 'root' or 'nobody'.
+            System accounts should normally not appear in lists of users, and ListCachedUsers 
+            will not include such accounts.</description>
+        </property>
+
+        <property name="auth_modes" type="i" access="read">
+            <description>Bitwise OR the enabled authentication mode.</description>
+        </property>
+
+        <signal name="AuthItemChanged">
+            <arg name="mode" type="i" />
+            <description>Send this signal when the item of the authentication mode is added or deleted.</description>
+        </signal>
+    </interface>
+</node>
