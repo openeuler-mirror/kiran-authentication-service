@@ -16,6 +16,12 @@ extern "C"
 #define AUTH_SERVICE_OBJECT_PATH "/com/kylinsec/Kiran/SystemDaemon/Authentication"
 #define ASK_AUTH_SID "ReqSessionId"
 
+    /* 消息类型 */
+#define AUTH_SERVICE_PROMPT_ECHO_OFF 1 /* 请求密文应答信息 */
+#define AUTH_SERVICE_PROMPT_ECHO_ON 2  /* 请求明文应答信息 */
+#define AUTH_SERVICE_ERROR_MSG 3       /* 错误消息 */
+#define AUTH_SERVICE_TEXT_INFO 4       /* 提示信息 */
+
     /**
     * 认证方式
     *
