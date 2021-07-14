@@ -26,6 +26,18 @@
             </arg>
         </method>
 
+        <method name="FindUserByAuthData">
+            <arg name="mode" direction="in" type="i">
+                <description>The authentication mode which could be fingerprint, face, etc. Refer to AccountsAuthMode in accounts-i.h</description>
+            </arg>
+            <arg name="data_id" direction="in" type="s">
+                <description>The identity of the collected data for the authentication item.</description>
+            </arg>
+            <arg name="user" direction="out" type="o">
+                <description>Object path of the new user.</description>
+            </arg>
+        </method>
+
         <method name="CreateUser">
             <arg name="name" direction="in" type="s">
                 <description>The username for the new user</description>

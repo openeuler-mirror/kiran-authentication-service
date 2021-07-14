@@ -88,6 +88,7 @@ G_DEFINE_TYPE_WITH_CODE(KiranAuthService, kiran_auth_service, KIRAN_TYPE_AUTHENT
 
 static void do_session_passwd_auth(KiranAuthService *service,
                                    AuthSession *session);
+
 static int
 default_session_auth_setting(KiranAuthService *service)
 {
@@ -231,21 +232,64 @@ verify_fprint_status_cb(KiranBiometrics *object,
     {
         if (arg_found)
         {
-            char *username = NULL;
+            KiranAccountsUser *user = NULL;
+            GError *error = NULL;
+            gchar *path = NULL;
 
             //查找绑定的用户
+            kiran_accounts_call_find_user_by_auth_data_sync(priv->accounts,
+                                                            ACCOUNTS_AUTH_MODE_FINGERPRINT,
+                                                            arg_id,
+                                                            &path,
+                                                            NULL,
+                                                            &error);
 
-            if (username)
+            if (path == NULL)
             {
-                //停止指纹认证
-                kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
-                priv->cur_fprint_session = NULL;
-                //指纹认证成功
-                kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
-                                                          username,
-                                                          SESSION_AUTH_SUCCESS,
-                                                          session->sid);
+                dzlog_error("find fingerprint id with user fail: %s", error->message);
+                g_error_free(error);
             }
+            else
+            {
+                dzlog_debug("find fingerprint id  %s with user path %s\n", arg_id, path);
+
+                error = NULL;
+                user = kiran_accounts_user_proxy_new_sync(priv->connection,
+                                                          G_BUS_NAME_WATCHER_FLAGS_NONE,
+                                                          ACCOUNTS_DBUS_INTERFACE_NAME,
+                                                          path,
+                                                          NULL,
+                                                          &error);
+
+                if (user == NULL)
+                {
+                    dzlog_error("Error with getting the bus: %s", error->message);
+                    g_error_free(error);
+                }
+                else
+                {
+                    const gchar *username;
+
+                    username = kiran_accounts_user_get_user_name(user);
+
+                    if (username)
+                    {
+                        dzlog_debug("get fingerprint user name %s", username);
+                        //停止指纹认证
+                        kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
+                        priv->cur_fprint_session = NULL;
+                        //指纹认证成功
+                        kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
+                                                                  username,
+                                                                  SESSION_AUTH_SUCCESS,
+                                                                  session->sid);
+
+                    }
+                    g_object_unref(user);
+                }
+            }
+
+            g_free(path);
         }
     }
     else if (session->session_auth_type == SESSION_AUTH_TYPE_TOGETHER_WITH_USER)
@@ -333,6 +377,10 @@ auth_session_stop(KiranAuthService *service,
     //停止密码认证
     if (session->pam_handle)
     {
+        g_mutex_lock(&session->prompt_mutex);
+        g_cond_signal(&session->prompt_cond);
+        g_mutex_unlock(&session->prompt_mutex);
+
         session->stop_auth = TRUE;
         g_mutex_lock(&session->stop_mutex);
         g_cond_wait(&session->stop_cond, &session->stop_mutex);
@@ -625,6 +673,7 @@ get_user_account_info(KiranAuthService *service,
     else
     {
         session->fprint_id = parser_auth_items_json_data(auth_items);
+        dzlog_debug("Get fprint_id :%s with %s", session->fprint_id, session->username);
     }
 
     g_object_unref(user);
