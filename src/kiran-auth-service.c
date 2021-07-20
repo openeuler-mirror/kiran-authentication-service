@@ -559,8 +559,9 @@ kiran_auth_service_handle_create_auth(KiranAuthenticationGen *object,
     //添加到会话列表中
     priv->auth_list = g_list_append(priv->auth_list, new_auth_session);
 
-    g_dbus_method_invocation_return_value(invocation,
-                                          g_variant_new("(s)", new_auth_session->sid));
+    kiran_authentication_gen_complete_create_auth(object,
+                                                  invocation,
+                                                  sid);
 
     return TRUE;
 }
@@ -752,6 +753,10 @@ kiran_auth_service_handle_start_auth(KiranAuthenticationGen *object,
         dzlog_error("ush to auth thread pool failed: %s", error->message);
         g_error_free(error);
     }
+
+    kiran_authentication_gen_complete_start_auth(object, invocation);
+
+    return TRUE;
 }
 
 static gboolean
@@ -777,6 +782,8 @@ kiran_auth_service_handle_stop_auth(KiranAuthenticationGen *object,
 
     auth_session_stop(service, session);
 
+    kiran_authentication_gen_complete_stop_auth(object, invocation);
+
     return TRUE;
 }
 
@@ -799,6 +806,10 @@ kiran_auth_service_handle_response_message(KiranAuthenticationGen *object,
         g_cond_signal(&session->prompt_cond);
         g_mutex_unlock(&session->prompt_mutex);
     }
+
+    kiran_authentication_gen_complete_response_message(object, invocation);
+
+    return TRUE;
 }
 
 static void
