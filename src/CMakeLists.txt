@@ -51,4 +51,4 @@ set_target_properties(pam_kiran_authentication PROPERTIES PREFIX "")
 target_link_libraries(pam_kiran_authentication pam_misc ${GLIB2_LIBRARIES} ${GDBUS_LIBRARIES} ${GLIB_JSON_LIBRARIES})
 install(TARGETS pam_kiran_authentication LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/security/)
 
-install(FILES authentication_i.h  DESTINATION /usr/include)
+install(FILES authentication_i.h  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})

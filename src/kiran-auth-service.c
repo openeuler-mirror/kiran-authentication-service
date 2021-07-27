@@ -318,6 +318,9 @@ verify_fprint_status_cb(KiranBiometrics *object,
             if (session->user_auth_mode & ACCOUNTS_AUTH_MODE_PASSWORD)
             {
                 //进行串行认证，指纹通过，启动密码认证
+                kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
+                                                                  SESSION_AUTH_METHOD_PASSWORD,
+                                                                  session->sid);
                 do_session_passwd_auth(service, session);
             }
             else
@@ -946,11 +949,16 @@ do_authentication(gpointer data,
     {
     case SESSION_AUTH_TYPE_TOGETHER:
         //并行认证模式
+	//发送认证模式
+        kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
+                                                          SESSION_AUTH_METHOD_PASSWORD & SESSION_AUTH_METHOD_FINGERPRINT,
+                                                          session->sid);
         //启动指纹认证
         do_session_fingerprint_auth(service, session);
 
         //启动密码认证
         do_session_passwd_auth(service, session);
+
         break;
 
     case SESSION_AUTH_TYPE_TOGETHER_WITH_USER:
@@ -958,11 +966,21 @@ do_authentication(gpointer data,
         if (session->user_auth_mode & ACCOUNTS_AUTH_MODE_FINGERPRINT)
         {
             //启动指纹认证
+            kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
+                                                              SESSION_AUTH_METHOD_PASSWORD & SESSION_AUTH_METHOD_FINGERPRINT,
+                                                              session->sid);
             do_session_fingerprint_auth(service, session);
+        }
+        else
+        {
+            kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
+                                                              SESSION_AUTH_METHOD_PASSWORD,
+                                                              session->sid);
         }
 
         //启动密码认证
         do_session_passwd_auth(service, session);
+
         break;
 
     default:
@@ -970,6 +988,9 @@ do_authentication(gpointer data,
         if (session->user_auth_mode & ACCOUNTS_AUTH_MODE_FINGERPRINT)
         {
             //启动指纹认证
+            kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
+                                                              SESSION_AUTH_METHOD_FINGERPRINT,
+                                                              session->sid);
             do_session_fingerprint_auth(service, session);
         }
     }

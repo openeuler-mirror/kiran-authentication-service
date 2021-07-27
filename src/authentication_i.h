@@ -50,6 +50,19 @@ extern "C"
         SESSION_AUTH_FAIL = 1,
     };
 
+    enum SessionAuthMethod
+    {
+        // 没有任何验证方式
+        SESSION_AUTH_METHOD_NONE = 0,
+        // 密码验证
+        SESSION_AUTH_METHOD_PASSWORD = (1 << 0),
+        // 指纹验证
+        SESSION_AUTH_METHOD_FINGERPRINT = (1 << 1),
+        // 人脸识别验证
+        SESSION_AUTH_METHOD_FACE = (1 << 2),
+        SESSION_AUTH_METHOD_LAST = (1 << 3),
+    };
+
 #ifdef __cplusplus
 }
 #endif

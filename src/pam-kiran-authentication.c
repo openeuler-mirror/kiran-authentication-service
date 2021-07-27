@@ -138,6 +138,11 @@ verify_user(pam_handle_t *pamh)
     data->state = SESSION_AUTH_FAIL;
     //请求开启认证
     data->sid = request_respone(pamh, PAM_PROMPT_ECHO_ON, ASK_AUTH_SID);
+    if (!data->sid || (g_strcmp0(data->sid, "") == 0))
+    {
+        pam_syslog(pamh, LOG_ERR, "Request create auth failed!");
+        goto end;
+    }
 
     g_signal_connect(auth,
                      "auth-status",
@@ -152,6 +157,7 @@ verify_user(pam_handle_t *pamh)
     g_source_destroy(source);
     g_source_unref(source);
 
+end:
     //认证结果
     ret = (data->state == SESSION_AUTH_SUCCESS) ? TRUE : FALSE;
     if (ret)
@@ -163,10 +169,11 @@ verify_user(pam_handle_t *pamh)
     g_object_unref(connection);
     g_object_unref(auth);
 
+    g_main_loop_unref(data->loop);
+
     g_free(data->sid);
     g_free(data->username);
     g_free(data);
-    g_main_loop_unref(data->loop);
 
     return ret;
 }

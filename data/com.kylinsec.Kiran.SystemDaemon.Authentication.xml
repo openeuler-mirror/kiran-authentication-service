@@ -48,7 +48,14 @@
                 <description>消息内容.</description>
             </arg>
             <arg name="type" type="i">
-                <description>消息类型，请求明文信息，请求密码，错误消息，提示信息, 指纹界面， 参见authentication_i.h.</description>
+                <description>消息类型，包括请求明文信息，请求密文信息，错误消息，提示信息,参见authentication_i.h.</description>
+            </arg>
+            <arg name="sid" type="s"/>
+        </signal>
+
+        <signal name="AuthMethodChanged">
+            <arg name="method" type="i">
+                <description>认证方式，包括密码认证，指纹认证，人脸认证方式, 参见authentication_i.h.</description>
             </arg>
             <arg name="sid" type="s"/>
         </signal>

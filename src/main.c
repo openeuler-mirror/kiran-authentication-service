@@ -1,4 +1,5 @@
 #include <glib.h>
+#include <locale.h>
 #include <zlog_ex.h>
 #include "kiran-auth-service.h"
 
@@ -6,6 +7,9 @@ int main(int argc, char *argv[])
 {
     GMainLoop *loop;
     KiranAuthService *service;
+
+    setlocale(LC_CTYPE, "");
+    setlocale(LC_MESSAGES, "");
 
     if (dzlog_init_ex(NULL,
                       "kylinsec-system-app",
