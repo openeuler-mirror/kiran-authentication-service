@@ -370,6 +370,8 @@ auth_session_stop(KiranAuthService *service,
 {
     KiranAuthServicePrivate *priv = service->priv;
 
+    dzlog_debug("Session %s stop begin", session->sid);
+
     if (session == priv->cur_fprint_session)
     {
         //停止指纹认证
@@ -385,10 +387,17 @@ auth_session_stop(KiranAuthService *service,
         g_mutex_unlock(&session->prompt_mutex);
 
         session->stop_auth = TRUE;
-        g_mutex_lock(&session->stop_mutex);
-        g_cond_wait(&session->stop_cond, &session->stop_mutex);
-        g_mutex_unlock(&session->stop_mutex);
+
+        //如果还没有关闭pam
+        if (session->pam_handle != NULL)
+        {
+            g_mutex_lock(&session->stop_mutex);
+            g_cond_wait(&session->stop_cond, &session->stop_mutex);
+            g_mutex_unlock(&session->stop_mutex);
+        }
     }
+
+    dzlog_debug("Session %s stop end", session->sid);
 
     //删除该会话
     priv->auth_list = g_list_remove(priv->auth_list, session);
@@ -619,7 +628,7 @@ parser_auth_items_json_data(const char *data)
     return id;
 }
 
-static void
+static gboolean
 get_user_account_info(KiranAuthService *service,
                       AuthSession *session)
 {
@@ -629,7 +638,7 @@ get_user_account_info(KiranAuthService *service,
     gchar *path = NULL;
     gchar *auth = NULL;
     gchar *auth_items = NULL;
-    gboolean ret;
+    gboolean ret = TRUE;
 
     session->user_auth_mode = ACCOUNTS_AUTH_MODE_NONE;
     path = NULL;
@@ -642,8 +651,10 @@ get_user_account_info(KiranAuthService *service,
                                                      &error);
     if (!ret)
     {
-        dzlog_error("Error with find the user object path: %s", error->message);
+        dzlog_error("Error with find the user object path: %s with %s", error->message, session->username);
         g_error_free(error);
+
+        return FALSE;
     }
 
     error = NULL;
@@ -659,6 +670,8 @@ get_user_account_info(KiranAuthService *service,
     {
         dzlog_error("Error with getting the bus: %s", error->message);
         g_error_free(error);
+
+        return FALSE;
     }
 
     session->user_auth_mode = kiran_accounts_user_get_auth_modes(user);
@@ -673,6 +686,7 @@ get_user_account_info(KiranAuthService *service,
     {
         dzlog_error("Error with getting the auth item: %s", error->message);
         g_error_free(error);
+        ret = FALSE;
     }
     else
     {
@@ -681,6 +695,8 @@ get_user_account_info(KiranAuthService *service,
     }
 
     g_object_unref(user);
+
+    return ret;
 }
 
 static gboolean
@@ -696,6 +712,8 @@ kiran_auth_service_handle_start_auth(KiranAuthenticationGen *object,
     AuthSession *session = NULL;
     GError *error = NULL;
     gboolean ret = FALSE;
+
+    dzlog_debug("Handle start auth with sid: %s, username: %s", arg_sid, arg_username);
 
     session = find_auth_session_by_sid(service, arg_sid);
     if (session == NULL)
@@ -722,6 +740,17 @@ kiran_auth_service_handle_start_auth(KiranAuthenticationGen *object,
     g_free(session->username);
     session->username = g_strdup(arg_username);
 
+    ret = get_user_account_info(service, session);
+    if (!ret)
+    {
+        g_dbus_method_invocation_return_error(invocation,
+                                              G_DBUS_ERROR,
+                                              G_DBUS_ERROR_INVALID_ARGS,
+                                              "Get user %s accout info failed",
+                                              session->username);
+        return TRUE;
+    }
+
     if (arg_type_op == SESSION_AUTH_TYPE_ONE ||
         arg_type_op == SESSION_AUTH_TYPE_TOGETHER ||
         arg_type_op == SESSION_AUTH_TYPE_TOGETHER_WITH_USER)
@@ -734,7 +763,6 @@ kiran_auth_service_handle_start_auth(KiranAuthenticationGen *object,
     }
 
     session->occupy = arg_occupy;
-    get_user_account_info(service, session);
     session->stop_auth = FALSE;
     session->service = service;
 
@@ -771,6 +799,8 @@ kiran_auth_service_handle_stop_auth(KiranAuthenticationGen *object,
     KiranAuthServicePrivate *priv = service->priv;
     AuthSession *session = NULL;
 
+    dzlog_debug("Handle stop auth with sid: %s", arg_sid);
+
     session = find_auth_session_by_sid(service, arg_sid);
     if (session == NULL)
     {
@@ -799,6 +829,8 @@ kiran_auth_service_handle_response_message(KiranAuthenticationGen *object,
     KiranAuthService *service = KIRAN_AUTH_SERVICE(object);
     KiranAuthServicePrivate *priv = service->priv;
     AuthSession *session = NULL;
+
+    dzlog_debug("Handle response message  with sid: %s", arg_sid);
 
     session = find_auth_session_by_sid(service, arg_sid);
     if (session != NULL)
