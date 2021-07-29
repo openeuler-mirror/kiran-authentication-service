@@ -983,7 +983,7 @@ do_authentication(gpointer data,
         //并行认证模式
 	//发送认证模式
         kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
-                                                          SESSION_AUTH_METHOD_PASSWORD & SESSION_AUTH_METHOD_FINGERPRINT,
+                                                          SESSION_AUTH_METHOD_PASSWORD | SESSION_AUTH_METHOD_FINGERPRINT,
                                                           session->sid);
         //启动指纹认证
         do_session_fingerprint_auth(service, session);
@@ -999,7 +999,7 @@ do_authentication(gpointer data,
         {
             //启动指纹认证
             kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
-                                                              SESSION_AUTH_METHOD_PASSWORD & SESSION_AUTH_METHOD_FINGERPRINT,
+                                                              SESSION_AUTH_METHOD_PASSWORD | SESSION_AUTH_METHOD_FINGERPRINT,
                                                               session->sid);
             do_session_fingerprint_auth(service, session);
         }
