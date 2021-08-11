@@ -222,11 +222,14 @@ verify_fprint_status_cb(KiranBiometrics *object,
                 arg_found,
                 arg_id);
 
-    //发送认证消息
-    kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
-                                                arg_result,
-                                                PAM_TEXT_INFO,
-                                                session->sid);
+    if (!arg_found)
+    {
+        //发送指纹认证提示消息
+        kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
+                                                    arg_result,
+                                                    PAM_TEXT_INFO,
+                                                    session->sid);
+    }
 
     if (session->session_auth_type == SESSION_AUTH_TYPE_TOGETHER)
     {
