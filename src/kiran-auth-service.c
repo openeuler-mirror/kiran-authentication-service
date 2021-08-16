@@ -6,9 +6,9 @@
  */
 #include "kiran-auth-service.h"
 #include <json-glib/json-glib.h>
+#include <kiran-cc-daemon/kiran-system-daemon/accounts-i.h>
 #include <security/pam_appl.h>
 #include <zlog_ex.h>
-#include <kiran-cc-daemon/kiran-system-daemon/accounts-i.h>
 #include "authentication_i.h"
 #include "kiran-accounts-gen.h"
 #include "kiran-biometrics-gen.h"
@@ -56,6 +56,9 @@ struct _AuthSession
     GMutex stop_mutex;
 
     KiranAuthService *service;
+
+    //解密私钥
+    char *key;
 };
 
 struct _KiranAuthServicePrivate
@@ -160,6 +163,7 @@ auth_session_free(gpointer data)
     g_free(session->username);
     g_free(session->sender);
     g_free(session->fprint_id);
+    g_free(session->key);
     g_free(session);
 }
 
@@ -541,7 +545,11 @@ kiran_auth_service_handle_create_auth(KiranAuthenticationGen *object,
     AuthSession *new_auth_session = NULL;
     AuthSession *session = NULL;
     gchar *sid = g_uuid_string_random();
+    char *public_key = NULL;
+    char *private_key = NULL;
     const gchar *sender;
+    gchar *encode = NULL;
+    gsize len = 0;
 
     sender = g_dbus_method_invocation_get_sender(invocation);
 
@@ -556,6 +564,19 @@ kiran_auth_service_handle_create_auth(KiranAuthenticationGen *object,
         return TRUE;
     }
 
+    //创建通信的公私秘钥
+    kiran_authentication_rsa_key_gen(&public_key, &private_key);
+    if (public_key == NULL || private_key == NULL)
+    {
+        g_dbus_method_invocation_return_error(invocation,
+                                              G_DBUS_ERROR,
+                                              G_DBUS_ERROR_INVALID_ARGS,
+                                              "Create ras key failed!");
+        g_free(public_key);
+        g_free(private_key);
+        return TRUE;
+    }
+
     session = find_auth_session_by_sid(service, sid);
     while (session != NULL)
     {
@@ -567,6 +588,7 @@ kiran_auth_service_handle_create_auth(KiranAuthenticationGen *object,
 
     new_auth_session = g_new0(AuthSession, 1);
     new_auth_session->sid = sid;
+    new_auth_session->key = private_key;
 
     if (sender)
         new_auth_session->sender = g_strdup(sender);
@@ -574,9 +596,15 @@ kiran_auth_service_handle_create_auth(KiranAuthenticationGen *object,
     //添加到会话列表中
     priv->auth_list = g_list_append(priv->auth_list, new_auth_session);
 
+    encode = g_base64_encode(public_key,
+                             strlen(public_key));
     kiran_authentication_gen_complete_create_auth(object,
                                                   invocation,
-                                                  sid);
+                                                  sid,
+                                                  encode);
+
+    g_free(public_key);
+    g_free(encode);
 
     return TRUE;
 }
@@ -838,11 +866,30 @@ kiran_auth_service_handle_response_message(KiranAuthenticationGen *object,
     session = find_auth_session_by_sid(service, arg_sid);
     if (session != NULL)
     {
-        g_mutex_lock(&session->prompt_mutex);
-        g_free(session->respons_msg);
-        session->respons_msg = g_strdup(arg_message);
-        g_cond_signal(&session->prompt_cond);
-        g_mutex_unlock(&session->prompt_mutex);
+        guchar *decode_message = NULL;
+        gchar *decrypted = NULL;
+        gsize out_len = 0;
+
+        //解码
+        decode_message = g_base64_decode(arg_message, &out_len);
+        if (decode_message)
+        {
+            //数据解密
+            kiran_authentication_rsa_private_decrypt(decode_message,
+                                                     out_len,
+                                                     session->key,
+                                                     &decrypted);
+            if (decrypted)
+            {
+                g_mutex_lock(&session->prompt_mutex);
+                g_free(session->respons_msg);
+                session->respons_msg = g_strdup(decrypted);
+                g_cond_signal(&session->prompt_cond);
+                g_mutex_unlock(&session->prompt_mutex);
+                g_free(decrypted);
+            }
+            g_free(decode_message);
+        }
     }
 
     kiran_authentication_gen_complete_response_message(object, invocation);

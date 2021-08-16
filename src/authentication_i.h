@@ -16,6 +16,8 @@ extern "C"
 #define AUTH_SERVICE_OBJECT_PATH "/com/kylinsec/Kiran/SystemDaemon/Authentication"
 #define ASK_AUTH_SID "ReqSessionId"
 
+#define MAX_RSA_TEXT_LEN 256 /* 最大可以加密的数据长度 */
+
     /* 消息类型 */
 #define AUTH_SERVICE_PROMPT_ECHO_OFF 1 /* 请求密文应答信息 */
 #define AUTH_SERVICE_PROMPT_ECHO_ON 2  /* 请求明文应答信息 */
@@ -62,6 +64,44 @@ extern "C"
         SESSION_AUTH_METHOD_FACE = (1 << 2),
         SESSION_AUTH_METHOD_LAST = (1 << 3),
     };
+
+    /**
+     * @brief rsa公钥对数据进行加密
+     *
+     * @param[in] data 要加密的数据
+     * @param[in] data_len 要加密的数据长度
+     * @key [in] 公钥内容
+     * @encrypted [out] 加密后数据的内存地址
+     * @return 返回加密后的数据长度，当等于-1时表示加密失败
+     */
+    int kiran_authentication_rsa_public_encrypt(char *data,
+                                                int data_len,
+                                                unsigned char *key,
+                                                unsigned char **encrypted);
+
+    /**
+     * @brief rsa公钥对数据进行解密
+     *
+     * @param[in] enc_data 要解密的加密数据
+     * @param[in] data_len 要解密的加密数据长度
+     * @key [in] 私钥内容
+     * @decrypted [out] 解密后数据的内存地址
+     * @return 返回解秘后的数据长度，当等于-1时表示解密失败
+     */
+    int kiran_authentication_rsa_private_decrypt(unsigned char *enc_data,
+                                                 int data_len,
+                                                 unsigned char *key,
+                                                 char **decrypted);
+
+    /**
+     * @brief rsa公私钥生成
+     *
+     * @param[out] public_key 公钥内存地址
+     * @param [out] private_key 私钥内存地址
+     *
+     * @return 返回公私钥生成结果，当等于-1时表示生成失败
+     */
+    int kiran_authentication_rsa_key_gen(char **public_key, char **private_key);
 
 #ifdef __cplusplus
 }

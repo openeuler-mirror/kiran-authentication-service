@@ -1,8 +1,10 @@
 configure_file(com.kylinsec.Kiran.SystemDaemon.Authentication.service.in ${PROJECT_BINARY_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Authentication.service)
 configure_file(kiran-system-daemon-authentication.service.in ${PROJECT_BINARY_DIR}/data/kiran-system-daemon-authentication.service)
+configure_file(kiran-authentication-service.pc.in ${PROJECT_BINARY_DIR}/data/kiran-authentication-service.pc)
 
 install(FILES kiran_authentication.conf DESTINATION /etc/dbus-1/system.d)
 install(FILES custom.conf DESTINATION /etc/kiran-authentication-service/)
 install(FILES kiran-auth-service  DESTINATION /etc/pam.d/)
 install(FILES ${PROJECT_BINARY_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Authentication.service DESTINATION /usr/share/dbus-1/system-services)
 install(FILES ${PROJECT_BINARY_DIR}/data/kiran-system-daemon-authentication.service DESTINATION /usr/lib/systemd/system/)
+install(FILES ${PROJECT_BINARY_DIR}/data/kiran-authentication-service.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)

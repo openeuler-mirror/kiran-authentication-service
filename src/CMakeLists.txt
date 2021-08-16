@@ -1,4 +1,5 @@
 find_package (PkgConfig REQUIRED)
+find_package (OpenSSL REQUIRED)
 
 pkg_check_modules (GLIB2 REQUIRED glib-2.0)
 pkg_check_modules (GIO REQUIRED gio-2.0)
@@ -42,13 +43,18 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${GLIB_JSON_INCLUDE_DIRS} ${KIRAN_CC_DAEMON_INCLUDE_DIRS})
 
 include_directories(${ZLOG_INCLUDE_DIRS} ${GLIB2_INCLUDE_DIRS} ${GIO_INCLUDE_DIRS} ${GIO_UNIX_INCLUDE_DIRS})
-add_executable (kiran_authentication_service main.c kiran-authentication-gen.c kiran-auth-service.c kiran-accounts-gen.c kiran-user-gen.c kiran-biometrics-gen.c)
-target_link_libraries(kiran_authentication_service pam ${ZLOG_LIBRARIES} ${GLIB2_LIBRARIES} ${GIO_LIBRARIES} ${GIO_UNIX_LIBRARIES} ${GLIB_JSON_LIBRARIES})
+add_executable (kiran_authentication_service main.c kiran-authentication-gen.c kiran-auth-service.c kiran-accounts-gen.c kiran-user-gen.c kiran-biometrics-gen.c kiran-authentication.c)
+target_link_libraries(kiran_authentication_service pam ${ZLOG_LIBRARIES} ${GLIB2_LIBRARIES} ${GIO_LIBRARIES} ${GIO_UNIX_LIBRARIES} ${GLIB_JSON_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARIES})
 install(TARGETS kiran_authentication_service RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 add_library(pam_kiran_authentication MODULE pam-kiran-authentication.c kiran-authentication-gen.c)
 set_target_properties(pam_kiran_authentication PROPERTIES PREFIX "")
 target_link_libraries(pam_kiran_authentication pam_misc ${GLIB2_LIBRARIES} ${GDBUS_LIBRARIES} ${GLIB_JSON_LIBRARIES})
 install(TARGETS pam_kiran_authentication LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/security/)
+
+add_library(kiran-authentication-service SHARED kiran-authentication.c)
+target_link_libraries(kiran-authentication-service ${OPENSSL_CRYPTO_LIBRARIES})
+set_target_properties(kiran-authentication-service PROPERTIES VERSION 0.0.1 SOVERSION 0.1)
+install(TARGETS kiran-authentication-service LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/)
 
 install(FILES authentication_i.h  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})

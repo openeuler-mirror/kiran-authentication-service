@@ -7,6 +7,9 @@
             <arg name="sid" direction="out" type="s">
                 <description>本次认证的唯一标识ID.</description>
             </arg>
+            <arg name="pkey" direction="out" type="s">
+                <description>应答消息的加密公钥，主要用于对密码应答消息加密.</description>
+            </arg>
         </method>
 
         <method name="StartAuth">
