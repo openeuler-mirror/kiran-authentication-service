@@ -134,7 +134,6 @@ kiran_authentication_rsa_key_gen(char **public_key, char **private_key)
         if (pub_buf)
         {
             *public_key = strdup(pub_buf->data);
-            BUF_MEM_free(pub_buf);
         }
         BIO_free(bio);
     }
@@ -147,7 +146,6 @@ kiran_authentication_rsa_key_gen(char **public_key, char **private_key)
         if (&pri_buf)
         {
             *private_key = strdup(pub_buf->data);
-            BUF_MEM_free(pri_buf);
         }
         BIO_free(bio);
     }

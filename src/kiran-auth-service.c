@@ -888,7 +888,15 @@ kiran_auth_service_handle_response_message(KiranAuthenticationGen *object,
                 g_mutex_unlock(&session->prompt_mutex);
                 g_free(decrypted);
             }
+            else
+            {
+                dzlog_error("Decrypted response message failed with sid: %s", arg_sid);
+            }
             g_free(decode_message);
+        }
+        else
+        {
+            dzlog_error("Decode response message  failed with sid: %s", arg_sid);
         }
     }
 
