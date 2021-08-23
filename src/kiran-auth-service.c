@@ -63,6 +63,9 @@ struct _AuthSession
 
     //解密私钥
     char *key;
+
+    //是否认证结束
+    gboolean auth_completed;
 };
 
 struct _KiranAuthServicePrivate
@@ -258,7 +261,8 @@ verify_fprint_status_cb(KiranBiometrics *object,
     KiranAuthServicePrivate *priv = service->priv;
     AuthSession *session = priv->cur_fprint_session;
 
-    if (!session)
+    //认证结束
+    if (!session || session->auth_completed)
     {
         return;
     }
@@ -421,6 +425,8 @@ auth_session_stop(KiranAuthService *service,
     KiranAuthServicePrivate *priv = service->priv;
 
     dzlog_debug("Session %s stop begin", session->sid);
+
+    session->auth_completed = TRUE;
 
     if (session == priv->cur_fprint_session)
     {
@@ -839,6 +845,7 @@ kiran_auth_service_handle_start_auth(KiranAuthenticationGen *object,
     session->occupy = arg_occupy;
     session->stop_auth = FALSE;
     session->service = service;
+    session->auth_completed = FALSE;
 
     g_mutex_init(&session->prompt_mutex);
     g_cond_init(&session->prompt_cond);
@@ -1022,11 +1029,14 @@ do_session_passwd_auth(KiranAuthService *service,
         state = SESSION_AUTH_SUCCESS;
     }
 
-    pam_get_item(session->pam_handle, PAM_USER, &user);
-    kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
-                                              user,
-                                              state,
-                                              session->sid);
+    if (!session->auth_completed)
+    {
+        pam_get_item(session->pam_handle, PAM_USER, &user);
+        kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
+                                                  user,
+                                                  state,
+                                                  session->sid);
+    }
 
     pam_end(session->pam_handle, 0);
     session->pam_handle = NULL;
