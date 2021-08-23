@@ -18,6 +18,10 @@
 #define CONF_FILE "/etc/kiran-authentication-service/custom.conf"
 #define SERVICE "kiran-auth-service"
 
+#define KIRAN_BIO_SETTING_FILE "/etc/kiran-biometrics/settings.conf"
+#define SUPPORT_FINGER_KEY   "SupportFinger"
+#define SUPPORT_FACE_KEY   "SupportFace"
+
 typedef struct _AuthSession AuthSession;
 
 /*
@@ -79,6 +83,11 @@ struct _KiranAuthServicePrivate
     AuthSession *cur_fprint_session;
 
     GDBusConnection *connection;
+
+    //指纹支持
+    gboolean support_finger;
+    //人脸支持
+    gboolean support_face;
 };
 
 static void kiran_authentication_gen_init(KiranAuthenticationGenIface *iface);
@@ -148,6 +157,40 @@ default_session_auth_setting(KiranAuthService *service)
     key_file = NULL;
 
     priv->default_session_auth_type = session_auth_type;
+}
+
+static void
+init_bio_support(KiranAuthService *service)
+{
+    KiranAuthServicePrivate *priv = service->priv;
+    GKeyFile *key_file = NULL;
+    GError *error = NULL;
+    gboolean ret;
+
+    key_file = g_key_file_new();
+
+    ret = g_key_file_load_from_file(key_file,
+                                    KIRAN_BIO_SETTING_FILE,
+                                    G_KEY_FILE_NONE,
+                                    &error);
+    if (!ret)
+    {
+        dzlog_error("Key file load fialed: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    priv->support_finger = g_key_file_get_boolean(key_file,
+                                                  "General",
+                                                  "SupportFinger",
+                                                  &error);
+
+    priv->support_face = g_key_file_get_boolean(key_file,
+                                                "General",
+                                                "SupportFace",
+                                                NULL);
+    g_key_file_free(key_file);
+    key_file = NULL;
 }
 
 static void
@@ -1026,6 +1069,7 @@ do_authentication(gpointer data,
                   gpointer user_data)
 {
     KiranAuthService *service = KIRAN_AUTH_SERVICE(user_data);
+    KiranAuthServicePrivate *priv = service->priv;
     AuthSession *session = data;
 
     dzlog_debug("Start authentication with sid: %s, username:%s, authmode:%d, session_auth_type:%d, occupy:%d",
@@ -1044,7 +1088,10 @@ do_authentication(gpointer data,
                                                           SESSION_AUTH_METHOD_PASSWORD | SESSION_AUTH_METHOD_FINGERPRINT,
                                                           session->sid);
         //启动指纹认证
-        do_session_fingerprint_auth(service, session);
+	if (priv->support_finger)
+	{
+            do_session_fingerprint_auth(service, session);
+	}
 
         //启动密码认证
         do_session_passwd_auth(service, session);
@@ -1097,6 +1144,10 @@ kiran_auth_service_init(KiranAuthService *self)
     priv->auth_list = NULL;
     priv->biometrics = NULL;
     priv->cur_fprint_session = NULL;
+    priv->support_finger = FALSE;
+    priv->support_face = FALSE;
+
+    init_bio_support(self);
 
     default_session_auth_setting(self);
     priv->auth_thread_pool = g_thread_pool_new(do_authentication,
