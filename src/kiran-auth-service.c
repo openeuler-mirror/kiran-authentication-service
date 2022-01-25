@@ -22,7 +22,11 @@
 #include <json-glib/json-glib.h>
 #include <kiran-cc-daemon/kiran-system-daemon/accounts-i.h>
 #include <security/pam_appl.h>
+#ifdef ENABLE_ZLOG_EX
 #include <zlog_ex.h>
+#else
+#include <zlog.h>
+#endif
 #include "authentication_i.h"
 #include "kiran-accounts-gen.h"
 #include "kiran-biometrics-gen.h"

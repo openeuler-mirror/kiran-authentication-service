@@ -14,7 +14,11 @@
 
 #include <glib.h>
 #include <locale.h>
+#ifdef ENABLE_ZLOG_EX
 #include <zlog_ex.h>
+#else
+#include <zlog.h>
+#endif
 #include "kiran-auth-service.h"
 
 int main(int argc, char *argv[])
@@ -25,11 +29,15 @@ int main(int argc, char *argv[])
     setlocale(LC_CTYPE, "");
     setlocale(LC_MESSAGES, "");
 
-    if (dzlog_init_ex(NULL,
-                      "kylinsec-system-app",
-                      "kiran-authentication",
-                      "kiran_authentication_manager") < 0)
+#ifdef ENABLE_ZLOG_EX
+    if (dzlog_init_ex (NULL, "kylinsec-system", "kiran-biometrics", "kiran_biometrics_manager") < 0)
+#else
+    if (dzlog_init("/etc/zlog.conf", "kylinsec-system") < 0)
+#endif
+    {
+        g_error ("zlog init failed!");
         return -1;
+    }
 
 #if !GLIB_CHECK_VERSION(2, 36, 0)
     g_type_init();
