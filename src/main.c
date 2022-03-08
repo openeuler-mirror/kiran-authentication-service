@@ -20,6 +20,7 @@
 #include <zlog.h>
 #endif
 #include "kiran-auth-service.h"
+#include "config.h"
 
 int main(int argc, char *argv[])
 {
@@ -28,9 +29,13 @@ int main(int argc, char *argv[])
 
     setlocale(LC_CTYPE, "");
     setlocale(LC_MESSAGES, "");
+    setlocale(LC_ALL, "");
+    bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+    bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+    textdomain (GETTEXT_PACKAGE);
 
 #ifdef ENABLE_ZLOG_EX
-    if (dzlog_init_ex (NULL, "kylinsec-system", "kiran-biometrics", "kiran_biometrics_manager") < 0)
+    if (dzlog_init_ex (NULL, "kylinsec-system", "kiran-authentication-service", "kiran_authentication_service") < 0)
 #else
     if (dzlog_init("/etc/zlog.conf", "kylinsec-system") < 0)
 #endif

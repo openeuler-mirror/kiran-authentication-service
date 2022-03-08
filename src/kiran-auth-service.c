@@ -22,6 +22,7 @@
 #include <json-glib/json-glib.h>
 #include <kiran-cc-daemon/kiran-system-daemon/accounts-i.h>
 #include <security/pam_appl.h>
+#include <glib/gi18n.h>
 #ifdef ENABLE_ZLOG_EX
 #include <zlog_ex.h>
 #else
@@ -320,6 +321,10 @@ verify_fprint_status_cb(KiranBiometrics *object,
             {
                 dzlog_error("find fingerprint id with user fail: %s", error->message);
                 g_error_free(error);
+                kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
+							    _("The fingerprint is not bound to a user, place again!"),
+                                                            PAM_TEXT_INFO,
+                                                            session->sid);
             }
             else
             {
@@ -341,20 +346,40 @@ verify_fprint_status_cb(KiranBiometrics *object,
                 else
                 {
                     const gchar *username;
+                    gint authmode;
 
                     username = kiran_accounts_user_get_user_name(user);
+                    authmode = kiran_accounts_user_get_auth_modes(user);
 
                     if (username)
                     {
                         dzlog_debug("get fingerprint user name %s", username);
-                        //停止指纹认证
-                        kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
-                        priv->cur_fprint_session = NULL;
-                        //指纹认证成功
-                        kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
-                                                                  username,
-                                                                  SESSION_AUTH_SUCCESS,
-                                                                  session->sid);
+
+			//该用户支持指纹登录
+			if (authmode & ACCOUNTS_AUTH_MODE_FINGERPRINT)
+			{
+                            //停止指纹认证
+                            kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
+                            priv->cur_fprint_session = NULL;
+                            //指纹认证成功
+                            kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
+                                                                      username,
+                                                                      SESSION_AUTH_SUCCESS,
+                                                                      session->sid);
+		    	}
+			else
+			{
+			    char *msg;
+
+                            dzlog_debug("User %s does not turn on fingerprint authentication", username);
+
+                            msg = g_strdup_printf(_("User %s does not turn on fingerprint authentication, place again!"), username);
+        		    kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
+									msg,
+                                                                        PAM_TEXT_INFO,
+                                                                        session->sid);
+			    g_free(msg);
+			}
 
                     }
                     g_object_unref(user);

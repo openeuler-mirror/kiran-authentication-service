@@ -1,0 +1,7 @@
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+#define GETTEXT_PACKAGE "@PROJECT_NAME@"
+#define LOCALEDIR       "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/locale"
+
+#endif /* __CONFIG_H__ */

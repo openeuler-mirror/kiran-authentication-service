@@ -19,4 +19,4 @@ set(INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX}/libexec)
 
 add_subdirectory(src)
 add_subdirectory(data)
-#add_subdirectory(pam)
+add_subdirectory(po)

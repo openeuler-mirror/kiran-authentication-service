@@ -48,6 +48,8 @@ add_custom_command(OUTPUT kiran-biometrics-gen.c kiran-biometrics-gen.h
     DEPENDS  ${PROJECT_SOURCE_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Biometrics.xml
 )
 
+configure_file(${SRC_DIR}/config.h.in config.h)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
