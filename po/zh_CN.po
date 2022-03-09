@@ -25,3 +25,9 @@ msgstr "用户%s没有开启指纹认证，请重新录入!"
 msgid "The fingerprint is not bound to a user, place again!"
 msgstr "当前指纹未绑定系统用户, 请重新录入!"
 
+msgid "User and fprint not math, place again!"
+msgstr "用户和当前指纹不匹配，请重新录入!"
+
+msgid "Fingerprint auth successed!"
+msgstr "指纹认证成功!"
+
