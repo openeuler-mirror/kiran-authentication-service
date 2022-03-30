@@ -19,10 +19,10 @@
  *@copyright(c) 2021 KylinSec.All rights reserved.
  */
 #include "kiran-auth-service.h"
+#include <glib/gi18n.h>
 #include <json-glib/json-glib.h>
 #include <kiran-cc-daemon/kiran-system-daemon/accounts-i.h>
 #include <security/pam_appl.h>
-#include <glib/gi18n.h>
 #ifdef ENABLE_ZLOG_EX
 #include <zlog_ex.h>
 #else
@@ -38,8 +38,8 @@
 #define SERVICE "kiran-auth-service"
 
 #define KIRAN_BIO_SETTING_FILE "/etc/kiran-biometrics/settings.conf"
-#define SUPPORT_FINGER_KEY   "SupportFinger"
-#define SUPPORT_FACE_KEY   "SupportFace"
+#define SUPPORT_FINGER_KEY "SupportFinger"
+#define SUPPORT_FACE_KEY "SupportFace"
 
 typedef struct _AuthSession AuthSession;
 
@@ -273,7 +273,7 @@ kiran_auth_service_finalize(GObject *object)
 }
 
 static gint
-id_compare(const gchar* a, const gchar *b)
+id_compare(const gchar *a, const gchar *b)
 {
     return g_strcmp0(a, b);
 }
@@ -309,7 +309,7 @@ verify_fprint_status_cb(KiranBiometrics *object,
                                                     arg_result,
                                                     PAM_TEXT_INFO,
                                                     session->sid);
-	return;
+        return;
     }
 
     if (session->session_auth_type == SESSION_AUTH_TYPE_TOGETHER)
@@ -331,7 +331,7 @@ verify_fprint_status_cb(KiranBiometrics *object,
             dzlog_error("find fingerprint id with user fail: %s", error->message);
             g_error_free(error);
             kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
-	    					    _("The fingerprint is not bound to a user, place again!"),
+                                                        _("The fingerprint is not bound to a user, place again!"),
                                                         PAM_TEXT_INFO,
                                                         session->sid);
         }
@@ -364,9 +364,9 @@ verify_fprint_status_cb(KiranBiometrics *object,
                 {
                     dzlog_debug("get fingerprint user name %s", username);
 
-	    	    //该用户支持指纹登录
-	    	    if (authmode & ACCOUNTS_AUTH_MODE_FINGERPRINT)
-	    	    {
+                    //该用户支持指纹登录
+                    if (authmode & ACCOUNTS_AUTH_MODE_FINGERPRINT)
+                    {
                         //停止指纹认证
                         kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
                         priv->cur_fprint_session = NULL;
@@ -375,20 +375,20 @@ verify_fprint_status_cb(KiranBiometrics *object,
                                                                   username,
                                                                   SESSION_AUTH_SUCCESS,
                                                                   session->sid);
-	            }
-	    	    else
-	    	    {
-	    	        char *msg;
+                    }
+                    else
+                    {
+                        char *msg;
 
                         dzlog_debug("User %s does not turn on fingerprint authentication", username);
 
                         msg = g_strdup_printf(_("User %s does not turn on fingerprint authentication, place again!"), username);
-            	        kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
-	    							    msg,
+                        kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
+                                                                    msg,
                                                                     PAM_TEXT_INFO,
                                                                     session->sid);
-	    	        g_free(msg);
-	     	    }
+                        g_free(msg);
+                    }
                 }
                 g_object_unref(user);
             }
@@ -398,55 +398,55 @@ verify_fprint_status_cb(KiranBiometrics *object,
     }
     else
     {
-	if (g_list_find_custom(session->fprint_ids, arg_id, (GCompareFunc)id_compare) ==  NULL)
-	{
+        if (g_list_find_custom(session->fprint_ids, arg_id, (GCompareFunc)id_compare) == NULL)
+        {
             dzlog_debug("User %s and fprint id %s not math", session->username, arg_id);
             kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
                                                         _("User and fprint not math, place again!"),
                                                         PAM_TEXT_INFO,
                                                         session->sid);
-	    return;
-	}
+            return;
+        }
 
         if (session->session_auth_type == SESSION_AUTH_TYPE_TOGETHER_WITH_USER)
         {
-             //停止指纹认证
-             kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
-             priv->cur_fprint_session = NULL;
-             //指纹认证成功
-             kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
-                                                       session->username,
-                                                       SESSION_AUTH_SUCCESS,
-                                                       session->sid);
+            //停止指纹认证
+            kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
+            priv->cur_fprint_session = NULL;
+            //指纹认证成功
+            kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
+                                                      session->username,
+                                                      SESSION_AUTH_SUCCESS,
+                                                      session->sid);
         }
         else
         {
-           //停止指纹认证
-           kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
-           priv->cur_fprint_session = NULL;
+            //停止指纹认证
+            kiran_biometrics_call_verify_fprint_stop_sync(priv->biometrics, NULL, NULL);
+            priv->cur_fprint_session = NULL;
 
-           if (session->user_auth_mode & ACCOUNTS_AUTH_MODE_PASSWORD)
-           {
-               //进行串行认证，指纹通过
-               kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
-                                                                 SESSION_AUTH_METHOD_PASSWORD,
-                                                                 session->sid);
-               kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
-                                                           _("Fingerprint auth successed!"),
-                                                           PAM_TEXT_INFO,
-                                                           session->sid);
-               g_mutex_lock(&session->auth_mutex);
-               g_cond_signal(&session->auth_cond);
-               g_mutex_unlock(&session->auth_mutex);
-           }
-           else
-           {
-	       //只需要指纹认证
-               kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
-                                                         session->username,
-                                                         SESSION_AUTH_SUCCESS,
-                                                         session->sid);
-           }
+            if (session->user_auth_mode & ACCOUNTS_AUTH_MODE_PASSWORD)
+            {
+                //进行串行认证，指纹通过
+                kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
+                                                                  SESSION_AUTH_METHOD_PASSWORD,
+                                                                  session->sid);
+                kiran_authentication_gen_emit_auth_messages(KIRAN_AUTHENTICATION_GEN(service),
+                                                            _("Fingerprint auth successed!"),
+                                                            PAM_TEXT_INFO,
+                                                            session->sid);
+                g_mutex_lock(&session->auth_mutex);
+                g_cond_signal(&session->auth_cond);
+                g_mutex_unlock(&session->auth_mutex);
+            }
+            else
+            {
+                //只需要指纹认证
+                kiran_authentication_gen_emit_auth_status(KIRAN_AUTHENTICATION_GEN(service),
+                                                          session->username,
+                                                          SESSION_AUTH_SUCCESS,
+                                                          session->sid);
+            }
         }
     }
 }
@@ -1147,15 +1147,15 @@ do_authentication(gpointer data,
     {
     case SESSION_AUTH_TYPE_TOGETHER:
         //并行认证模式
-	//发送认证模式
+        //发送认证模式
         kiran_authentication_gen_emit_auth_method_changed(KIRAN_AUTHENTICATION_GEN(service),
                                                           SESSION_AUTH_METHOD_PASSWORD | SESSION_AUTH_METHOD_FINGERPRINT,
                                                           session->sid);
         //启动指纹认证
-	if (priv->support_finger)
-	{
+        if (priv->support_finger)
+        {
             do_session_fingerprint_auth(service, session);
-	}
+        }
 
         //启动密码认证
         do_session_passwd_auth(service, session);
@@ -1198,13 +1198,13 @@ do_authentication(gpointer data,
             g_mutex_lock(&session->auth_mutex);
             g_cond_wait(&session->auth_cond, &session->auth_mutex);
             g_mutex_unlock(&session->auth_mutex);
-	}
+        }
 
-	if ((session->user_auth_mode & ACCOUNTS_AUTH_MODE_PASSWORD) && !session->auth_completed)
-	{
+        if ((session->user_auth_mode & ACCOUNTS_AUTH_MODE_PASSWORD) && !session->auth_completed)
+        {
             //启动密码认证
             do_session_passwd_auth(service, session);
-	}
+        }
     }
 }
 
@@ -1263,7 +1263,7 @@ kiran_auth_service_class_init(KiranAuthServiceClass *klass)
  *
  *@return 成功返回对象的地址，失败返回NULL
  */
-KiranAuthService*
+KiranAuthService *
 kiran_auth_servie_new()
 {
     return g_object_new(KIRAN_TYPE_AUTH_SERVICE, NULL);

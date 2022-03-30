@@ -146,7 +146,6 @@ verify_user(pam_handle_t *pamh)
         return FALSE;
     }
 
-
     data = g_new0(verify_data, 1);
     data->loop = g_main_loop_new(NULL, FALSE);
     data->state = SESSION_AUTH_FAIL;

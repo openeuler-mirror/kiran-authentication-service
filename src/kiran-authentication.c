@@ -12,25 +12,25 @@
  * Author:     wangxiaoqing <wangxiaoqing@kylinos.com.cn>
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/rsa.h>
-#include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "authentication_i.h"
 
 #define KEY_LEN 2048
 #define RSA_BUFFER_LEN 4096
 
-RSA *create_RSA(unsigned char * key,
-		int public)
+RSA *create_RSA(unsigned char *key,
+                int public)
 {
-    RSA *rsa= NULL;
-    BIO *keybio ;
+    RSA *rsa = NULL;
+    BIO *keybio;
 
     keybio = BIO_new_mem_buf(key, -1);
     if (keybio == NULL)
@@ -38,7 +38,7 @@ RSA *create_RSA(unsigned char * key,
         return NULL;
     }
 
-    if(public)
+    if (public)
     {
         rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa, NULL, NULL);
     }
@@ -55,15 +55,15 @@ int kiran_authentication_rsa_public_encrypt(char *data,
                                             unsigned char *key,
                                             unsigned char **encrypted)
 {
-    RSA * rsa = NULL;
+    RSA *rsa = NULL;
     unsigned char buf[RSA_BUFFER_LEN] = {0};
     unsigned char *ptr = NULL;
     int result = -1;
-    
+
     rsa = create_RSA(key, 1);
     if (rsa == NULL)
     {
-	return -1;
+        return -1;
     }
 
     result = RSA_public_encrypt(data_len, data, buf, rsa, RSA_PKCS1_PADDING);
@@ -90,11 +90,11 @@ int kiran_authentication_rsa_private_decrypt(unsigned char *enc_data,
     unsigned char buf[RSA_BUFFER_LEN] = {0};
     unsigned char *ptr = NULL;
     int result = -1;
-    
+
     rsa = create_RSA(key, 0);
     if (rsa == NULL)
     {
-	return -1;
+        return -1;
     }
 
     result = RSA_private_decrypt(data_len, enc_data, buf, rsa, RSA_PKCS1_PADDING);
@@ -112,11 +112,10 @@ int kiran_authentication_rsa_private_decrypt(unsigned char *enc_data,
     return result;
 }
 
-int
-kiran_authentication_rsa_key_gen(char **public_key, char **private_key)
+int kiran_authentication_rsa_key_gen(char **public_key, char **private_key)
 {
     EVP_PKEY_CTX *evp_ctx = NULL;
-    EVP_PKEY  *ppkey  = NULL;
+    EVP_PKEY *ppkey = NULL;
     BIO *bio = NULL;
     BUF_MEM *pub_buf = NULL;
     BUF_MEM *pri_buf = NULL;
@@ -127,7 +126,7 @@ kiran_authentication_rsa_key_gen(char **public_key, char **private_key)
     evp_ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
     if (evp_ctx == NULL)
     {
-	return -1;
+        return -1;
     }
 
     EVP_PKEY_keygen_init(evp_ctx);
@@ -137,7 +136,7 @@ kiran_authentication_rsa_key_gen(char **public_key, char **private_key)
     if (ppkey == NULL)
     {
         EVP_PKEY_CTX_free(evp_ctx);
-	return -1;
+        return -1;
     }
 
     bio = BIO_new(BIO_s_mem());
