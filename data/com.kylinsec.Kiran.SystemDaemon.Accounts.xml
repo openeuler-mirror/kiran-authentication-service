@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+    <interface name="com.kylinsec.Kiran.SystemDaemon.Accounts">
+        <method name="GetNonSystemUsers">
+            <arg name="users" direction="out" type="ao">
+                <description>Object paths of non system users</description>
+            </arg>
+        </method>
+
+        <method name="FindUserById">
+            <arg name="uid" direction="in" type="t">
+                <description>The uid to look up</description>
+            </arg>
+            <arg name="user" direction="out" type="o">
+                <description>Object path of user</description>
+            </arg>
+        </method>
+
+        <method name="FindUserByName">
+            <arg name="name" direction="in" type="s">
+                <description>The username to look up</description>
+            </arg>
+            <arg name="user" direction="out" type="o">
+                <description>Object path of user</description>
+            </arg>
+        </method>
+
+        <method name="FindUserByAuthData">
+            <arg name="mode" direction="in" type="i">
+                <description>The authentication mode which could be fingerprint, face, etc. Refer to AccountsAuthMode in accounts-i.h</description>
+            </arg>
+            <arg name="data_id" direction="in" type="s">
+                <description>The identity of the collected data for the authentication item.</description>
+            </arg>
+            <arg name="user" direction="out" type="o">
+                <description>Object path of the new user.</description>
+            </arg>
+        </method>
+
+        <method name="CreateUser">
+            <arg name="name" direction="in" type="s">
+                <description>The username for the new user</description>
+            </arg>
+            <arg name="realname" direction="in" type="s">
+                <description>The real name for the new user</description>
+            </arg>
+            <arg name="account_type" direction="in" type="i">
+                <description>The account type, encoded as an integer</description>
+            </arg>
+            <arg name="uid" direction="in" type="x">
+                <description>The user uid. If uid is less than zero, then auto to allocate one.</description>
+            </arg>
+            <arg name="user" direction="out" type="o">
+                <description>Object path of the new user</description>
+            </arg>
+        </method>
+
+        <method name="DeleteUser">
+            <arg name="uid" direction="in" type="t">
+                <description>The uid to delete</description>
+            </arg>
+            <arg name="remove_files" direction="in" type="b">
+                <description>Whether to remove the users files</description>
+            </arg>
+        </method>
+
+        <!--<method name="SetGlobalAuthModes">
+            <arg name="auth_modes" direction="in" type="i">
+                <description>Bitwise OR the enabled authorization mode.</description>
+            </arg>>
+            <description>Set the global enabled authentication modes. It will reset to all users using the auth_modes
+            and also use the auth_modes when user is added.</description>
+        </method>-->
+
+        <signal name="UserAdded">
+            <arg name="user" type="o">
+                <description>Object path of the user that was added.</description>
+            </arg>
+        </signal>
+
+        <signal name="UserDeleted">
+            <arg name="user" type="o">
+                <description>Object path of the user that was deleted.</description>
+            </arg>
+        </signal>
+
+    </interface>
+</node>

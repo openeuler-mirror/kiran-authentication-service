@@ -1,0 +1,25 @@
+系统认证服务，对于系统账户进行认证，包括指纹，人脸，密码认证方式
+
+依赖:
+yum install glib-2.0-devel zlog-devel json-glib-1.0-devel kiran-cc-daemon-devel
+
+编译：
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+
+安装：
+cmake install
+
+pam模块：
+pam_kiran_authentication.so 等待认证结果信号，对认证结果进行处理
+
+配置文件:
+custom.conf
+
+[daemon]
+SessionAuthType = 2
+
+其中SessionAuthType项表示默认会话类型,
+1 标识串行
+2 标识并行,生物认证时根据匹配的用户进行。
+3 标识并行,指定用户认证

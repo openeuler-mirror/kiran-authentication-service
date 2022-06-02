@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+    <interface name="com.kylinsec.Kiran.SystemDaemon.Authentication">
+        <annotation name="org.gtk.GDBus.C.Name" value="AuthenticationGen" />
+	<method name="CreateAuth">
+            <arg name="sid" direction="out" type="s">
+                <description>本次认证的唯一标识ID.</description>
+            </arg>
+            <arg name="pkey" direction="out" type="s">
+                <description>应答消息的加密公钥，主要用于对密码应答消息加密.</description>
+            </arg>
+        </method>
+
+        <method name="StartAuth">
+            <arg name="username" direction="in" type="s">
+                <description>用户名</description>
+            </arg>
+            <arg name="sid" direction="in" type="s"/>
+            <arg name="type_op" direction="in" type="i"> 
+                <description>认证方式，串行，并行，参见authentication_i.h.</description>
+            </arg>
+            <arg name="occupy" direction="in" type="b"> 
+                <description>是否抢占设备</description>
+            </arg>
+        </method>
+
+        <method name="StopAuth">
+            <arg name="sid" direction="in" type="s"/>
+        </method>
+
+        <method name="ResponseMessage">
+            <arg name="message" direction="in" type="s">
+                <description>应答的消息字符串. </description>
+            </arg>
+            <arg name="sid" direction="in" type="s"/>
+        </method>
+
+        <signal name="AuthStatus">
+            <arg name="username" type="s">
+                <description>通过认证的用户名称.</description>
+            </arg>
+            <arg name="state" type="i">
+                <description>认证状态，参见authentication_i.h.</description>
+            </arg>
+            <arg name="sid" type="s"/>
+        </signal>
+
+        <signal name="AuthMessages">
+            <arg name="message" type="s">
+                <description>消息内容.</description>
+            </arg>
+            <arg name="type" type="i">
+                <description>消息类型，包括请求明文信息，请求密文信息，错误消息，提示信息,参见authentication_i.h.</description>
+            </arg>
+            <arg name="sid" type="s"/>
+        </signal>
+
+        <signal name="AuthMethodChanged">
+            <arg name="method" type="i">
+                <description>认证方式，包括密码认证，指纹认证，人脸认证方式, 参见authentication_i.h.</description>
+            </arg>
+            <arg name="sid" type="s"/>
+        </signal>
+    </interface>
+</node>
