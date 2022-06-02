@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=com.kylinsec.Kiran.SystemDaemon.Authentication
+Exec=@INSTALL_BINDIR@/kiran_authentication_manager
+User=root
+SystemdService=kiran-system-daemon-authentication.service
