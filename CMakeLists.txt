@@ -1,22 +1,30 @@
-project(kiran-authentication-service)
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.0)
 
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    set(DEBUG 1)
-else()
-    set(DEBUG 0)
-endif()
+project(kiran-authentication-service VERSION 2.5)
 
 include(GNUInstallDirs)
+set(KAS_INSTALL_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME})
+set(KAS_INSTALL_INCLUDE ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${PROJECT_NAME})
+set(KAS_INSTALL_TRANSLATIONDIR ${KAS_INSTALL_DATADIR}/translations)
+set(KAS_INSTALL_SYSCONFDIR ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME})
 
-set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/data)
-set(MODULE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/kiran-fprint-modules/)
-set(SERVICE_NAME "com.kylinsec.Kiran.SystemDaemon.Biometrics")
-set(SERVICE_PATH "/com/kylinsec/Kiran/SystemDaemon/Biometrics")
-set(SERVICE_INTERFACE "com.kylinsec.Kiran.SystemDaemon.Biometrics")
-set(INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX}/libexec)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED on)
 
-add_subdirectory(src)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+find_package(PkgConfig REQUIRED)
+find_package(Qt5 COMPONENTS Core DBus LinguistTools)
+
+pkg_search_module(KLOG_QT5 REQUIRED klog-qt5)
+pkg_search_module(SYSTEMD REQUIRED systemd)
+pkg_search_module(KIRAN_CC_DAEMON REQUIRED kiran-cc-daemon)
+pkg_search_module(PAM REQUIRED pam)
+
+configure_file(config.h.in ${PROJECT_BINARY_DIR}/config.h)
+
 add_subdirectory(data)
-#add_subdirectory(pam)
+add_subdirectory(src)

@@ -81,7 +81,7 @@
 
         <method name="SetAccountType">
             <arg name="account_type" direction="in" type="i">
-                <description>The new account type, encoded as an integer. Refer to AccountsAccountType in accounts_i.h</description>
+                <description>The new account type, encoded as an integer. Refer to AccountsAccountType in accounts-i.h</description>
             </arg>
             <description>Changes the users account type.</description>
         </method>
@@ -103,6 +103,17 @@
             <description>Sets a new password for this user. Note that setting a password has the side-effect of unlocking the account.</description>
         </method>
 
+        <method name="SetPasswordByPasswd">
+            <arg name="encrypted_current_password" direction="in" type="s">
+                <description>The current password is required when set the user itself. otherwise, the current password can be set to null.
+                The password should be encrypted by rsa algorithm.</description>
+            </arg>
+            <arg name="encrypted_new_password" direction="in" type="s">
+                <description>The new password. The password should be encrypted by rsa algorithm.</description>
+            </arg>
+            <description>Sets a new password by passwd command for this user. Note that setting a password has the side-effect of unlocking the account.</description>
+        </method>
+
         <method name="SetPasswordHint">
             <arg name="hint" direction="in" type="s">
                 <description>The password hint.</description>
@@ -120,18 +131,18 @@
             the previously configured autologin user.</description>
         </method>
 
-        <method name="GetPasswordExpirationPolicy">
-            <arg name="expiration_time" direction="out" type="x" />
-            <arg name="last_change_time" direction="out" type="x" />
-            <arg name="min_days_between_changes" direction="out" type="x" />
-            <arg name="max_days_between_changes" direction="out" type="x" />
-            <arg name="days_to_warn" direction="out" type="x" />
-            <arg name="days_after_expiration_until_lock" direction="out" type="x" />
+        <method name="SetPasswordExpirationPolicy">
+            <arg name="options" direction="in" type="s">
+                <description>The password expiration policy options that is a jason string which format refer to
+                property password_expiration_policy.</description>
+            </arg>
+            <description>Set user password expiry information which contain expiration_time, last_change_time, min_days_between_changes,
+            max_days_between_changes, days_to_warn, inactive_days_after_expiration</description>
         </method>
 
         <method name="AddAuthItem">
             <arg type="i" name="mode" direction="in">
-                <description>The authentication mode which could be fingerprint, face, etc. Refer to AccountsAuthMode in accounts_i.h</description>
+                <description>The authentication mode which could be fingerprint, face, etc. Refer to AccountsAuthMode in accounts-i.h</description>
             </arg>
             <arg type="s" name="name" direction="in">
                 <description>the name of the authentication item. For example fingerprint 1, fingerprint 2, etc.</description>
@@ -166,6 +177,11 @@
             <description>The uid of the user.</description>
         </property>
 
+        <property name="gid" type="t" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false" />
+            <description>The gid of the user.</description>
+        </property>
+
         <property name="user_name" type="s" access="read">
             <description>The username of the user.</description>
         </property>
@@ -175,7 +191,7 @@
         </property>
 
         <property name="account_type" type="i" access="read">
-            <description>The users account type, encoded as an integer. Refer to AccountsAccountType in accounts_i.h</description>
+            <description>The users account type, encoded as an integer. Refer to AccountsAccountType in accounts-i.h</description>
         </property>
 
         <property name="home_directory" type="s" access="read">
@@ -206,18 +222,16 @@
             <description>The users x session.</description>
         </property>
 
-
         <property name="icon_file" type="s" access="read">
             <description>The filename of a png file containing the users icon.</description>
         </property>
-
 
         <property name="locked" type="b" access="read">
             <description>Whether the users account is locked.</description>
         </property>
 
         <property name="password_mode" type="i" access="read">
-            <description>The password mode for the user account, encoded as an integer. Refer to AccountsPasswordMode in accounts_i.h</description>
+            <description>The password mode for the user account, encoded as an integer. Refer to AccountsPasswordMode in accounts-i.h</description>
         </property>
 
         <property name="password_hint" type="s" access="read">
@@ -236,6 +250,10 @@
 
         <property name="auth_modes" type="i" access="read">
             <description>Bitwise OR the enabled authentication mode.</description>
+        </property>
+
+        <property name="password_expiration_policy" type="s" access="read">
+            <description>The password expiration policy that is a jason string.</description>
         </property>
 
         <signal name="AuthItemChanged">

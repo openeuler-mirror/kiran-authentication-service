@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+    <interface name="com.kylinsec.Kiran.Authentication.User">
+
+        <method name="AddIdentification">
+            <arg type="i" name="auth_type" direction="in">
+                <description>Refer to enum AuthType in kas-authentication-i.h</description>
+            </arg>
+            <arg type="s" name="name" direction="in">
+                <description>The identification name. For example fingerprint 1, fingerprint 2, etc.</description>
+            </arg>
+            <arg type="s" name="data_id" direction="in">
+                <description>The data ID associate with collected identification data.</description>
+            </arg>
+            <arg type="s" name="iid" direction="out">
+                <description>An identification ID.</description>
+            </arg>
+            <description>Add an identification. Return error if the name already exists or the method is unsupported.</description>
+        </method>
+
+        <method name="DeleteIdentification">
+            <arg type="s" name="iid" direction="in" />
+            <description>Delete an identification by identification ID.</description>
+        </method>
+
+        <method name="GetIdentifications">
+            <arg type="i" name="auth_type" direction="in" />
+            <arg type="s" name="identifications" direction="out">
+                <description>The json string is an array that every item contains identification name, data_id and iid.</description>
+            </arg>
+        </method>
+
+        <method name="EnrollFPStart">
+            <description>Use the selected device to enroll finger.</description>
+        </method>
+
+        <method name="EnrollFPStop">
+            <description>Stop an on-going fingerprint enrollment.</description>
+        </method>
+
+        <property name="user_name" type="s" access="read">
+            <description>The username of the user.</description>
+        </property>
+
+        <signal name="EnrollStatus">
+            <arg name="bid" type="s">
+                <description>Biometrics ID or data_id associate with finger data. Only valid if result is FP_ENROLL_RESULT_COMPLETE.</description>
+            </arg>
+            <arg name="result" type="i">
+                <description>Represent the status of the enrollment. Refer to enum FPEnrollResult in biometrics-i.h.</description>
+            </arg>
+            <arg name="progress" type="i">
+                <description>A number between 1 and 100 to describe the progress of enrolling fingerprint.</description>
+            </arg>
+            <arg name="interrupt" type="b">
+                <description>The enrollment is interrupted and the process restarts.</description>
+            </arg>
+        </signal>
+
+        <signal name="IdentificationChanged">
+            <arg name="iid" type="s" />
+            <description>Send this signal when the authentication is changed.</description>
+        </signal>
+
+        <signal name="IdentificationAdded">
+            <arg name="iid" type="s" />
+            <description>Send this signal when the authentication is added.</description>
+        </signal>
+
+        <signal name="IdentificationDeleted">
+            <arg name="iid" type="s" />
+            <description>Send this signal when the authentication is deleted.</description>
+        </signal>
+
+    </interface>
+</node>

@@ -1,0 +1,6 @@
+
+#pragma once
+
+#include <config.h>
+
+#define PROGRAM_NAME "@TARGET_NAME@"

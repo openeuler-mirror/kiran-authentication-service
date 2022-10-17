@@ -1,0 +1,10 @@
+[Unit]
+Description = Kiran Authentication Daemon Service
+
+[Service]
+Type=dbus
+BusName=com.kylinsec.Kiran.Authentication
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/kiran-authentication-daemon
+
+[Install]
+WantedBy=multi-user.target

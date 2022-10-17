@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+    <interface name="com.kylinsec.Kiran.Authentication.Session">
+
+        <method name="StartAuth">
+            <description>Start authencication.</description>
+        </method>
+
+        <method name="StopAuth">
+            <description>Stop authencication.</description>
+        </method>
+
+        <method name="SetAuthType">
+            <arg name="auth_type" direction="in" type="i">
+                <description>The authentication type.</description>
+            </arg>
+            <description>Set the authentication type to be performed. Only valid when auth_mode is equal to AUTH_MODE_OR.</description>
+        </method>
+
+        <method name="ResponsePrompt">
+            <arg name="text" direction="in" type="s">
+                <description>Response the prompt message. </description>
+            </arg>
+        </method>
+
+        <property name="ID" type="u" access="read">
+            <description>Session ID, used to identify current session.</description>
+        </property>
+
+        <property name="Username" type="s" access="read">
+            <description>Authenticated username</description>
+        </property>
+
+        <property name="AuthType" type="i" access="read">
+            <description>The authentication type being or to be performed. Refer to enum AuthType in file kas-authentication-i.h.</description>
+        </property>
+
+        <property name="RSAPublicKey" type="s" access="read">
+            <description>The RSA public key which is mainly used to encrypt the password reply message.</description>
+        </property>
+
+        <signal name="AuthPrompt">
+            <arg name="text" type="s">
+                <description>The prompt message.</description>
+            </arg>
+            <arg name="type" type="i">
+                <description>The message type. Refer to enum AuthPropmtType in file kas-authentication-i.h.</description>
+            </arg>
+        </signal>
+
+        <signal name="AuthMessage">
+            <arg name="text" type="s">
+                <description>The show message.</description>
+            </arg>
+            <arg name="type" type="i">
+                <description>The message type. Refer to enum AuthMessageType in file kas-authentication-i.h.</description>
+            </arg>
+        </signal>
+
+        <signal name="AuthSuccessed">
+            <arg name="username" type="s">
+                <description>Username successfully authenticated.</description>
+            </arg>
+        </signal>
+
+        <signal name="AuthFailed" />
+
+    </interface>
+</node>
