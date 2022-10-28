@@ -4,9 +4,20 @@ find_package (OpenSSL REQUIRED)
 pkg_check_modules (GLIB2 REQUIRED glib-2.0)
 pkg_check_modules (GIO REQUIRED gio-2.0)
 pkg_check_modules (GIO_UNIX REQUIRED gio-unix-2.0)
-pkg_check_modules (ZLOG REQUIRED zlog)
 pkg_check_modules (GLIB_JSON REQUIRED json-glib-1.0)
 pkg_check_modules (KIRAN_CC_DAEMON REQUIRED kiran-cc-daemon)
+
+if (ENABLE_ZLOG_EX)
+      pkg_search_module(ZLOG REQUIRED zlog)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_ZLOG_EX")
+else()
+      find_library(ZLOG_LIBRARY zlog)
+      set (ZLOG_INCLUDE_DIRS "")
+      set (ZLOG_LIBRARIES "${ZLOG_LIBRARY}")
+endif()
+
+message("found zlog dirs: ${ZLOG_INCLUDE_DIRS}")
+message("found zlog libs: ${ZLOG_LIBRARIES}")
 
 find_library(PAM_LIBRARY pam)
 find_program(GDBUS_CODEGEN "gdbus-codegen")
@@ -36,6 +47,8 @@ add_custom_command(OUTPUT kiran-biometrics-gen.c kiran-biometrics-gen.h
     COMMAND ${GDBUS_CODEGEN} --c-namespace Kiran --interface-prefix com.kylinsec.Kiran.SystemDaemon --generate-c-code kiran-biometrics-gen  ${PROJECT_SOURCE_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Biometrics.xml
     DEPENDS  ${PROJECT_SOURCE_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Biometrics.xml
 )
+
+configure_file(${SRC_DIR}/config.h.in config.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
