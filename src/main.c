@@ -40,8 +40,7 @@ int main(int argc, char *argv[])
     if (dzlog_init("/etc/zlog.conf", "kylinsec-system") < 0)
 #endif
     {
-        g_error("zlog init failed!");
-        return -1;
+        g_warning("zlog init failed!");
     }
 
 #if !GLIB_CHECK_VERSION(2, 36, 0)
