@@ -21,7 +21,7 @@
 #include <QDBusConnection>
 #include <QSettings>
 #include "src/daemon/config-daemon.h"
-#include "src/daemon/device/device-request-dispatcher.h"
+#include "src/daemon/device/device-adaptor-factory.h"
 #include "src/daemon/error.h"
 #include "src/daemon/proxy/dbus-daemon-proxy.h"
 #include "src/daemon/proxy/polkit-proxy.h"
@@ -36,6 +36,8 @@ namespace Kiran
 
 #define INIFILE_GENERAL_GROUP_NAME "General"
 #define INIFILE_GENERAL_GROUP_KEY_IIDS "IIDs"
+// 连续认证失败次数计数
+#define INIFILE_GENERAL_GROUP_KEY_FAILURES "Failures"
 
 #define INIFILE_IID_GROUP_PREFIX_NAME "IID"
 #define INIFILE_IID_GROUP_KEY_IID "IID"
@@ -54,51 +56,12 @@ Passwd::Passwd(struct passwd *pwent)
     this->pw_shell = QString(pwent->pw_shell);
 }
 
-User::FPDeviceRequestSource::FPDeviceRequestSource(User *user) : m_user(user),
-                                                                 m_requestID(-1)
-{
-}
-
-int32_t User::FPDeviceRequestSource::getPriority()
-{
-    return DeviceRequestPriority::DEVICE_REQUEST_PRIORITY_HIGH;
-}
-
-int64_t User::FPDeviceRequestSource::getPID()
-{
-    return DBusDaemonProxy::getDefault()->getConnectionUnixProcessID(this->m_dbusMessage);
-}
-
-void User::FPDeviceRequestSource::event(const DeviceEvent &deviceEvent)
-{
-    switch (deviceEvent.eventType)
-    {
-    case DeviceEventType::DEVICE_EVENT_TYPE_START:
-        this->m_requestID = deviceEvent.request->reqID;
-        break;
-    case DeviceEventType::DEVICE_EVENT_TYPE_INTERRUPT:
-        Q_EMIT this->m_user->EnrollStatus(QString(), FPEnrollResult::FP_ENROLL_RESULT_FAIL, 0, true);
-        break;
-    case DeviceEventType::DEVICE_EVENT_TYPE_FP_ENROLL_STATUS:
-    {
-        auto bid = deviceEvent.args.value(DEVICE_EVENT_ARGS_BID).toString();
-        auto result = deviceEvent.args.value(DEVICE_EVENT_ARGS_RESULT).toInt();
-        auto progress = deviceEvent.args.value(DEVICE_EVENT_ARGS_PROGRESS).toInt();
-        Q_EMIT this->m_user->EnrollStatus(bid, result, progress, false);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 User::User(const Passwd &pwent, QObject *parent) : QObject(parent),
                                                    m_pwent(pwent)
 {
     this->m_dbusAdaptor = new UserAdaptor(this);
     this->m_settings = new QSettings(QString(KDA_UESR_DATA_DIR "/").append(m_pwent.pw_name), QSettings::IniFormat, this);
     this->m_objectPath = QDBusObjectPath(QString("%1/%2").arg(KAD_USER_DBUS_OBJECT_PATH).arg(m_pwent.pw_uid));
-    this->m_fpEnrollRequestSource = QSharedPointer<FPDeviceRequestSource>::create(this);
 
     auto systemConnection = QDBusConnection::systemBus();
     if (!systemConnection.registerObject(this->m_objectPath.path(), this))
@@ -117,16 +80,7 @@ User::~User()
         this->m_settings = nullptr;
     }
 
-    if (this->m_fpEnrollRequestSource && this->m_fpEnrollRequestSource->getRequestID() > 0)
-    {
-        auto request = QSharedPointer<DeviceRequest>::create(DeviceRequest{
-            .reqType = DeviceRequestType::DEVICE_REQUEST_TYPE_FP_ENROLL_STOP,
-            .time = QTime::currentTime(),
-            .reqID = -1,
-            .source = this->m_fpEnrollRequestSource.dynamicCast<DeviceRequestSource>()});
-        request->args.insert(DEVICE_REQUEST_ARGS_REQUEST_ID, qulonglong(this->m_fpEnrollRequestSource->getRequestID()));
-        DeviceRequestDispatcher::getDefault()->deliveryRequest(request);
-    }
+    this->EnrollStop();
 }
 
 QStringList User::getIIDs()
@@ -165,38 +119,21 @@ void User::removeCache()
     this->m_settings->remove(QString());
 }
 
+int32_t User::getFailures()
+{
+    return this->m_settings->value(INIFILE_GENERAL_GROUP_KEY_FAILURES, 0).toInt();
+}
+
+void User::setFailures(int32_t failures)
+{
+    this->m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_FAILURES, failures);
+}
+
 CHECK_AUTH_WITH_3ARGS_AND_RETVAL(User, QString, AddIdentification, onAddIdentification, AUTH_USER_SELF, int, const QString &, const QString &)
 CHECK_AUTH_WITH_1ARGS(User, DeleteIdentification, onDeleteIdentification, AUTH_USER_SELF, const QString &)
-
-void User::EnrollFPStart()
-{
-    if (this->m_fpEnrollRequestSource->getRequestID() > 0)
-    {
-        DBUS_ERROR_REPLY_AND_RET(QDBusError::AccessDenied, KADErrorCode::ERROR_USER_ENROLLING);
-    }
-
-    this->m_fpEnrollRequestSource->setDBusMessage(this->message());
-    auto request = QSharedPointer<DeviceRequest>::create(DeviceRequest{
-        .reqType = DeviceRequestType::DEVICE_REQUEST_TYPE_FP_ENROLL_START,
-        .time = QTime::currentTime(),
-        .reqID = -1,
-        .source = this->m_fpEnrollRequestSource.dynamicCast<DeviceRequestSource>()});
-    DeviceRequestDispatcher::getDefault()->deliveryRequest(request);
-}
-
-void User::EnrollFPStop()
-{
-    if (this->m_fpEnrollRequestSource)
-    {
-        auto request = QSharedPointer<DeviceRequest>::create(DeviceRequest{
-            .reqType = DeviceRequestType::DEVICE_REQUEST_TYPE_FP_ENROLL_STOP,
-            .time = QTime::currentTime(),
-            .reqID = -1,
-            .source = this->m_fpEnrollRequestSource.dynamicCast<DeviceRequestSource>()});
-        request->args.insert(DEVICE_REQUEST_ARGS_REQUEST_ID, qulonglong(this->m_fpEnrollRequestSource->getRequestID()));
-        DeviceRequestDispatcher::getDefault()->deliveryRequest(request);
-    }
-}
+CHECK_AUTH_WITH_1ARGS(User, EnrollStart, onEnrollStart, AUTH_USER_SELF, int)
+CHECK_AUTH(User, EnrollStop, onEnrollStop, AUTH_USER_SELF)
+CHECK_AUTH(User, ResetFailures, onResetFailures, AUTH_USER_SELF)
 
 QString User::GetIdentifications(int authType)
 {
@@ -224,12 +161,85 @@ QString User::GetIdentifications(int authType)
     return QString(jsonDoc.toJson());
 }
 
-// bool User::hasIdentification(int authType, const QString &iid)
-// {
-//     auto keyPrefix = Utils::authTypeEnum2Str(authType);
-//     RETURN_VAL_IF_FALSE(!keyPrefix.isEmpty(), false);
-//     return this->m_settings->value(keyPrefix + INIFILE_GENERAL_GROUP_KEY_SUFFIX_IIDS).toStringList().contains(iid);
-// }
+int32_t User::getPriority()
+{
+    return DeviceRequestPriority::DEVICE_REQUEST_PRIORITY_HIGH;
+}
+
+int64_t User::getPID()
+{
+    return DBusDaemonProxy::getDefault()->getConnectionUnixProcessID(this->m_enrollInfo.m_dbusMessage);
+}
+
+void User::start(QSharedPointer<DeviceRequest> request)
+{
+    this->m_enrollInfo.m_requestID = request->reqID;
+}
+
+void User::interrupt()
+{
+    Q_EMIT this->EnrollStatus(QString(), FPEnrollResult::FP_ENROLL_RESULT_FAIL, 0, true);
+}
+
+void User::end()
+{
+    this->m_enrollInfo.m_requestID = -1;
+    this->m_enrollInfo.deviceAdaptor = nullptr;
+}
+
+void User::onEnrollStatus(const QString &bid, int result, int progress)
+{
+    Q_EMIT this->EnrollStatus(bid, result, progress, false);
+}
+
+QString User::calcAction(const QString &originAction)
+{
+    RETURN_VAL_IF_TRUE(originAction == AUTH_USER_ADMIN, AUTH_USER_ADMIN);
+
+    if (DBusDaemonProxy::getDefault()->getConnectionUnixUser(this->message()) == this->m_pwent.pw_uid)
+    {
+        return originAction;
+    }
+    return AUTH_USER_ADMIN;
+}
+
+void User::onEnrollStart(const QDBusMessage &message, int deviceType)
+{
+    if (this->m_enrollInfo.m_requestID > 0)
+    {
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::AccessDenied, KADErrorCode::ERROR_USER_ENROLLING);
+    }
+
+    auto deviceAdaptor = DeviceAdaptorFactory::getInstance()->getDeviceAdaptor(deviceType);
+    if (!deviceAdaptor)
+    {
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::AddressInUse, KADErrorCode::ERROR_FAILED);
+    }
+
+    this->m_enrollInfo.m_dbusMessage = this->message();
+    this->m_enrollInfo.deviceAdaptor = deviceAdaptor;
+    this->m_enrollInfo.deviceAdaptor->enroll(this);
+    auto replyMessage = message.createReply();
+    QDBusConnection::systemBus().send(replyMessage);
+}
+
+void User::onEnrollStop(const QDBusMessage &message)
+{
+    if (this->m_enrollInfo.m_requestID > 0 &&
+        this->m_enrollInfo.deviceAdaptor)
+    {
+        this->m_enrollInfo.deviceAdaptor->stop(this->m_enrollInfo.m_requestID);
+    }
+    auto replyMessage = message.createReply();
+    QDBusConnection::systemBus().send(replyMessage);
+}
+
+void User::onResetFailures(const QDBusMessage &message)
+{
+    this->m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_FAILURES, 0);
+    auto replyMessage = message.createReply();
+    QDBusConnection::systemBus().send(replyMessage);
+}
 
 void User::onAddIdentification(const QDBusMessage &message, int authType, const QString &name, const QString &dataID)
 {
@@ -276,17 +286,6 @@ void User::onDeleteIdentification(const QDBusMessage &message, const QString &ii
     auto replyMessage = message.createReply();
     QDBusConnection::systemBus().send(replyMessage);
     Q_EMIT this->IdentificationDeleted(iid);
-}
-
-QString User::calcAction(const QString &originAction)
-{
-    RETURN_VAL_IF_TRUE(originAction == AUTH_USER_ADMIN, AUTH_USER_ADMIN);
-
-    if (DBusDaemonProxy::getDefault()->getConnectionUnixUser(this->message()) == this->m_pwent.pw_uid)
-    {
-        return originAction;
-    }
-    return AUTH_USER_ADMIN;
 }
 
 }  // namespace Kiran

@@ -14,18 +14,27 @@
 
 #pragma once
 
-#include "src/daemon/device/device-decorator.h"
-#include "src/daemon/device/device-request-dispatcher.h"
+#include <QStringList>
 
 namespace Kiran
 {
-class FaceDeviceDecorator : public DeviceDecorator,
-                            public DeviceRequestListener
+// 执行认证操作，认证失败则累计失败次数
+#define KAP_ARG_ACTION_DO_AUTH "doauth"
+// 表示认证已经通过，这里会清理失败次数
+#define KAP_ARG_ACTION_AUTH_SUCC "authsucc"
+
+struct PAMArgsInfo
+{
+    QString action;
+};
+
+class PAMArgsParser
 {
 public:
-    virtual QString getListenerName() { return QStringLiteral("FaceDeviceDecorator"); };
-    // 处理请求
-    virtual void process(QSharedPointer<DeviceRequest> request);
+    PAMArgsParser();
+    virtual ~PAMArgsParser(){};
+
+    PAMArgsInfo parser(const QStringList &arguments);
 };
 
 }  // namespace Kiran

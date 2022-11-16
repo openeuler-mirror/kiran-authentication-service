@@ -21,18 +21,27 @@
 #include <QTranslator>
 #include "src/pam/authentication-controller.h"
 #include "src/pam/config-pam.h"
+#include "src/pam/pam-args-parser.h"
 
-extern "C" int pam_sm_authenticate(pam_handle_t *pamh, int flags, int,
-                                   const char **)
+extern "C" int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
+                                   const char **argv)
 {
-    char programPath[] = KAS_INSTALL_LIBDIR "/security/" PROGRAM_NAME;
-    int argc = 1;
-    char *argv[2] = {programPath, NULL};
     bool isLocalApp = false;
     QCoreApplication *app = QCoreApplication::instance();
     if (!app)
     {
-        app = new QCoreApplication(argc, (char **)argv);
+        /* 使用sudo运行时会调用setuid，QT程序会检查effective UserID和real UserID是否相同，默认情况下不相同程序直接退出。
+           因此需要修改setuidAllowed属性来取消检查，不过这里可能会带来一些风险。文档描述如下：
+           Qt is not an appropriate solution for setuid programs due to its large attack surface. 
+           However some applications may be required to run in this manner for historical reasons. 
+           This flag will prevent Qt from aborting the application when this is detected, 
+           and must be set before a QCoreApplication instance is created.*/
+        QCoreApplication::setSetuidAllowed(true);
+
+        char programPath[] = KAS_INSTALL_LIBDIR "/security/" PROGRAM_NAME;
+        int appArgc = 1;
+        char *appArgv[2] = {programPath, NULL};
+        app = new QCoreApplication(appArgc, (char **)appArgv);
         isLocalApp = true;
     }
 
@@ -46,7 +55,13 @@ extern "C" int pam_sm_authenticate(pam_handle_t *pamh, int flags, int,
         app->installTranslator(&translator);
     }
 
-    auto controller = QSharedPointer<Kiran::AuthenticationController>::create(pamh);
+    QStringList arguments;
+    for (int i = 0; i < argc; ++i)
+    {
+        arguments.push_back(argv[i]);
+    }
+
+    auto controller = QSharedPointer<Kiran::AuthenticationController>::create(pamh, arguments);
     auto retval = controller->run();
 
     if (isLocalApp)
@@ -63,9 +78,48 @@ extern "C" int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const cha
 }
 
 /* Account Management API's */
-extern "C" int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv)
+extern "C" int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int, const char **)
 {
-    return PAM_SUCCESS;
+    bool isLocalApp = false;
+    QCoreApplication *app = QCoreApplication::instance();
+    if (!app)
+    {
+        /* 使用sudo运行时会调用setuid，QT程序会检查effective UserID和real UserID是否相同，默认情况下不相同程序直接退出。
+           因此需要修改setuidAllowed属性来取消检查，不过这里可能会带来一些风险。文档描述如下：
+           Qt is not an appropriate solution for setuid programs due to its large attack surface. 
+           However some applications may be required to run in this manner for historical reasons. 
+           This flag will prevent Qt from aborting the application when this is detected, 
+           and must be set before a QCoreApplication instance is created.*/
+        QCoreApplication::setSetuidAllowed(true);
+
+        char programPath[] = KAS_INSTALL_LIBDIR "/security/" PROGRAM_NAME;
+        int appArgc = 1;
+        char *appArgv[2] = {programPath, NULL};
+        app = new QCoreApplication(appArgc, (char **)appArgv);
+        isLocalApp = true;
+    }
+
+    QTranslator translator;
+    if (!translator.load(QLocale(), PROGRAM_NAME, ".", KAS_INSTALL_TRANSLATIONDIR, ".qm"))
+    {
+        pam_syslog(pamh, LOG_ERR, "Load translator failed for %s.", PROGRAM_NAME);
+    }
+    else
+    {
+        app->installTranslator(&translator);
+    }
+
+    QStringList arguments{KAP_ARG_ACTION_AUTH_SUCC};
+
+    auto controller = QSharedPointer<Kiran::AuthenticationController>::create(pamh, arguments);
+    auto retval = controller->run();
+
+    if (isLocalApp)
+    {
+        delete app;
+    }
+
+    return retval;
 }
 
 /* Session Management API's */

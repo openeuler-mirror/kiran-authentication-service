@@ -49,13 +49,13 @@ qt_add_dbus_interface(
   ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.xml biometrics_proxy)
 
 set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.FPDevice.xml
-  PROPERTIES CLASSNAME FPDeviceProxy NO_NAMESPACE true)
+  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.Device.xml
+  PROPERTIES CLASSNAME DeviceProxy NO_NAMESPACE true)
 
 qt_add_dbus_interface(
-  BIOMETRICS_FPDEVICE_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.FPDevice.xml
-  fp_device_proxy)
+  BIOMETRICS_DEVICE_INTERFACE_SRCS
+  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.Device.xml
+  device_proxy)
 
 set(TARGET_NAME kiran-authentication-daemon)
 
@@ -74,7 +74,7 @@ add_executable(
   ${ACCOUNTS_INTERFACE_SRCS}
   ${ACCOUNTS_USER_INTERFACE_SRCS}
   ${BIOMETRICS_INTERFACE_SRCS}
-  ${BIOMETRICS_FPDEVICE_INTERFACE_SRCS}
+  ${BIOMETRICS_DEVICE_INTERFACE_SRCS}
   ${QM_FILES})
 
 target_include_directories(

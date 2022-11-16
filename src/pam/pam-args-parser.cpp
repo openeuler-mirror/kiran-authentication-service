@@ -12,18 +12,21 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#pragma once
-
-#include <QObject>
+#include "src/pam/pam-args-parser.h"
 
 namespace Kiran
 {
-class DeviceDecorator : public QObject
+PAMArgsParser::PAMArgsParser()
 {
-    Q_OBJECT
-public:
-    DeviceDecorator(){};
-    virtual ~DeviceDecorator(){};
-};
+}
 
+PAMArgsInfo PAMArgsParser::parser(const QStringList &arguments)
+{
+    PAMArgsInfo argsInfo;
+    if (arguments.size() > 0)
+    {
+        argsInfo.action = arguments.at(0);
+    }
+    return argsInfo;
+}
 }  // namespace Kiran

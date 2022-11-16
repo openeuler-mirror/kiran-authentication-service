@@ -78,6 +78,24 @@ private:
         if (cond) return;    \
     }
 
+#define RETURN_RESULT_IF_MATCH(expr, value) \
+    {                                       \
+        auto result = (expr);               \
+        if (result == value)                \
+        {                                   \
+            return ret;                     \
+        }                                   \
+    }
+
+#define RETURN_RESULT_IF_DISMATCH(expr, value) \
+    {                                          \
+        auto result = (expr);                  \
+        if (result != value)                   \
+        {                                      \
+            return result;                     \
+        }                                      \
+    }
+
 #define CONTINUE_IF_FALSE(cond) \
     {                           \
         if (!(cond)) continue;  \

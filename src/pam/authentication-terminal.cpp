@@ -22,7 +22,8 @@
 
 namespace Kiran
 {
-AuthenticationTerminal::AuthenticationTerminal(PAMHandle *pamHandle) : Authentication(pamHandle)
+AuthenticationTerminal::AuthenticationTerminal(PAMHandle* pamHandle,
+                                               const QStringList& arguments) : Authentication(pamHandle, arguments)
 {
 }
 

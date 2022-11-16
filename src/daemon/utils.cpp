@@ -89,6 +89,34 @@ int32_t Utils::authTypeStr2Enum(const QString& authType)
     return KADAuthType::KAD_AUTH_TYPE_NONE;
 }
 
+int32_t Utils::authType2DeviceType(int32_t authType)
+{
+    switch (authType)
+    {
+    case KADAuthType::KAD_AUTH_TYPE_FINGERPRINT:
+        return BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_FINGERPRINT;
+    case KADAuthType::KAD_AUTH_TYPE_FACE:
+        return BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_FACE;
+    default:
+        KLOG_WARNING() << "Unsupported authType: " << authType;
+    }
+    return BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_NONE;
+}
+
+int32_t Utils::deviceType2AuthType(int32_t deviceType)
+{
+    switch (deviceType)
+    {
+    case BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_FINGERPRINT:
+        return KADAuthType::KAD_AUTH_TYPE_FINGERPRINT;
+    case BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_FACE:
+        return KADAuthType::KAD_AUTH_TYPE_FACE;
+    default:
+        KLOG_WARNING() << "Unsupported deviceType: " << deviceType;
+    }
+    return KADAuthType::KAD_AUTH_TYPE_NONE;
+}
+
 QStringList Utils::authOrderEnum2Str(const QList<int32_t>& authOrder)
 {
     QStringList retval;

@@ -24,6 +24,17 @@ class QDBusPendingCallWatcher;
 
 namespace Kiran
 {
+#define CHECK_AUTH(className, funName, callback, action)                                                             \
+    void className::funName()                                                                                        \
+    {                                                                                                                \
+        auto newAction = this->calcAction(action);                                                                   \
+        this->setDelayedReply(true);                                                                                 \
+        PolkitProxy::getDefault()->checkAuthorization(newAction,                                                     \
+                                                      true,                                                          \
+                                                      this->message(),                                               \
+                                                      std::bind(&className::callback, this, std::placeholders::_1)); \
+    }
+
 #define CHECK_AUTH_WITH_1ARGS(className, funName, callback, action, arg1Type)                                                \
     void className::funName(arg1Type value1)                                                                                 \
     {                                                                                                                        \

@@ -19,6 +19,15 @@ qt_add_dbus_interface(
   ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.Session.xml
   auth_session_proxy)
 
+set_source_files_properties(
+  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.User.xml
+  PROPERTIES CLASSNAME AuthUserProxy NO_NAMESPACE true)
+
+qt_add_dbus_interface(
+  AUTH_USER_INTERFACE_SRCS
+  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.User.xml
+  auth_user_proxy)
+
 set(TARGET_NAME pam_kiran_authentication)
 
 configure_file(config-pam.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-pam.h)
@@ -29,7 +38,7 @@ qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 add_library(
   ${TARGET_NAME} SHARED
   ${PAM_H_FILES} ${PAM_CPP_FILES} ${AUTH_MANAGER_INTERFACE_SRCS}
-  ${AUTH_SESSION_INTERFACE_SRCS} ${QM_FILES})
+  ${AUTH_SESSION_INTERFACE_SRCS} ${AUTH_USER_INTERFACE_SRCS} ${QM_FILES})
 
 target_include_directories(
   ${TARGET_NAME}

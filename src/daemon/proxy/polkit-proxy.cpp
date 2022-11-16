@@ -117,10 +117,13 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, PolkitCheckAuthRe
     return argument;
 }
 
+using PolkitDetails = QMap<QString, QString>;
+
 PolkitProxy::PolkitProxy()
 {
     qDBusRegisterMetaType<PolkitSubject>();
     qDBusRegisterMetaType<PolkitCheckAuthResult>();
+    qDBusRegisterMetaType<PolkitDetails>();
 }
 
 QSharedPointer<PolkitProxy> PolkitProxy::m_instance = nullptr;
@@ -149,13 +152,11 @@ void PolkitProxy::checkAuthorization(const QString &action,
                                                       POLKIT_DBUS_INTERFACE_NAME,
                                                       "CheckAuthorization");
 
-    QDBusArgument argSubject;
     PolkitSubject subject;
     QDBusVariant name_detail(QVariant::fromValue(message.service()));
     subject.kind = "system-bus-name";
     subject.details.insert("name", name_detail);
-    argSubject << subject;
-    sendMessage << argSubject.asVariant()
+    sendMessage << QVariant::fromValue(subject)
                 << action
                 << QVariant::fromValue(QMap<QString, QString>())
                 << QVariant::fromValue(uint(userInteraction ? 1 : 0))
@@ -220,3 +221,4 @@ void PolkitProxy::onFinishCheckAuth(QDBusPendingCallWatcher *watcher, QSharedPoi
 
 Q_DECLARE_METATYPE(Kiran::PolkitSubject);
 Q_DECLARE_METATYPE(Kiran::PolkitCheckAuthResult);
+Q_DECLARE_METATYPE(Kiran::PolkitDetails);

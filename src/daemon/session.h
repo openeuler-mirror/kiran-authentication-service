@@ -23,40 +23,14 @@ class SessionAdaptor;
 
 namespace Kiran
 {
+class DeviceAdaptor;
 class User;
 
 class Session : public QObject,
+                protected DeviceRequestSource,
                 protected QDBusContext
 {
     Q_OBJECT
-
-private:
-    class SessionDeviceRequestSource : public DeviceRequestSource
-    {
-    public:
-        SessionDeviceRequestSource(Session *session);
-        virtual ~SessionDeviceRequestSource(){};
-
-        virtual int32_t getPriority();
-        virtual int64_t getPID();
-        virtual QString getSpecifiedUser();
-        virtual void event(const DeviceEvent &deviceEvent);
-
-        void setDBusMessage(const QDBusMessage &dbusMessage) { this->m_dbusMessage = dbusMessage; }
-        int64_t getRequestID() { return this->m_requestID; }
-        QString getAuthenticatedUserName() { return this->m_authenticatedUserName; }
-
-    private:
-        void fpIdentifyStatusEvent(const QVariantMap &vars);
-        bool matchUser(int32_t authType, const QString &dataID);
-
-    private:
-        Session *m_session;
-        QDBusMessage m_dbusMessage;
-        int64_t m_requestID;
-        // 当前已经认证成功的用户，如果未指定认证用户，第一次认证时可以更改用户
-        QString m_authenticatedUserName;
-    };
 
 public:
     // 如果只允许对特定用户进行认证，则创建对象时需要指定用户名
@@ -83,12 +57,36 @@ Q_SIGNALS:  // SIGNALS
     void AuthSuccessed(const QString &username);
 
 private:
-    //
+    struct SessionVerifyInfo
+    {
+        SessionVerifyInfo() : m_requestID(-1),
+                              authType(0) {}
+        int64_t m_requestID;
+        QDBusMessage m_dbusMessage;
+        QSharedPointer<DeviceAdaptor> deviceAdaptor;
+        int32_t authType;
+        // 当前已经认证成功的用户，如果未指定认证用户，第一次认证时可以更改用户
+        QString m_authenticatedUserName;
+    };
+
+private:
+    virtual int32_t getPriority();
+    virtual int64_t getPID();
+    virtual QString getSpecifiedUser();
+    virtual void start(QSharedPointer<DeviceRequest> request);
+    virtual void interrupt();
+    virtual void end();
+    virtual void onEnrollStatus(const QString &bid, int result, int progress){};
+    virtual void onVerifyStatus(int result);
+    virtual void onIdentifyStatus(const QString &bid, int result);
+
+private:
     int32_t calcNextAuthType();
     void startPhaseAuth();
-    void startPhaseFPAuth();
     void finishPhaseAuth(bool isSuccess);
     void finishAuth(bool isSuccess);
+
+    bool matchUser(int32_t authType, const QString &dataID);
 
 private:
     SessionAdaptor *m_dbusAdaptor;
@@ -97,9 +95,6 @@ private:
     QString m_serviceName;
     QString m_userName;
     QDBusObjectPath m_objectPath;
-    QSharedPointer<SessionDeviceRequestSource> m_sessionDeviceRequestSource;
-    // 当前正在进行的请求
-    QSharedPointer<DeviceRequest> m_deviceRequest;
     /* 记录所有剩余的待认证类型，如果是OR模式，当用户没有选择认证类型时，直接取列表中第一个作为默认认证类型;
     如果时AND模式，则按照列表的顺序进行认证，认证成功后则从队列中删除。*/
     QList<int32_t> m_authOrderWaiting;
@@ -107,5 +102,7 @@ private:
     int32_t m_authMode;
     // 当前使用的认证类型
     int32_t m_authType;
+    //
+    SessionVerifyInfo m_verifyInfo;
 };
 }  // namespace Kiran

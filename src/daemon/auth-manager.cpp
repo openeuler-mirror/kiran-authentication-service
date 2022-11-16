@@ -26,8 +26,6 @@
 #include "src/daemon/auth_manager_adaptor.h"
 #include "src/daemon/biometrics_proxy.h"
 #include "src/daemon/config-daemon.h"
-#include "src/daemon/device/face-device-decorator.h"
-#include "src/daemon/device/fp-device-decorator.h"
 #include "src/daemon/error.h"
 #include "src/daemon/proxy/dbus-daemon-proxy.h"
 #include "src/daemon/session.h"
@@ -42,14 +40,16 @@ namespace Kiran
 #define KAD_MAIN_CONFIG_PATH KAS_INSTALL_SYSCONFDIR "/kad.ini"
 
 #define INIFILE_GENERAL_GROUP_NAME "General"
-#define INIFILE_GENERAL_KEY_DEFAULT_DEVICE "DefaultDeviceID"
 #define INIFILE_GENERAL_KEY_AUTH_MODE "AuthMode"
 #define INIFILE_GENERAL_KEY_AUTH_ORDER "AuthOrder"
-#define INIFILE_GENERAL_KEY_SUPPORTED_PAM_SERVICES "SupportedPAMServices"
-#define INIFILE_GENERAL_KEY_ENABLED_PAM_SERVICES "EnabledPAMServices"
+#define INIFILE_GENERAL_KEY_SPS "SupportedPAMServices"
+#define INIFILE_GENERAL_KEY_EPS "EnabledPAMServices"
+#define INIFILE_GENERAL_KEY_MAX_FAILURES "MaxFailures"
 
-AuthManager::AuthManager(UserManager *userManager) : m_userManager(userManager),
-                                                     m_authMode(KADAuthMode::KAD_AUTH_MODE_OR)
+#define INIFILE_COMMON_KEY_DEFAULT_DEVICE "DefaultDeviceID"
+#define INIFILE_FP_GROUP_NAME "FingerPrint"
+
+AuthManager::AuthManager(UserManager *userManager) : m_userManager(userManager)
 {
     this->m_settings = new QSettings(KAD_MAIN_CONFIG_PATH, QSettings::IniFormat, this);
     this->m_dbusAdaptor = new AuthManagerAdaptor(this);
@@ -63,11 +63,15 @@ void AuthManager::globalInit(UserManager *userManager)
     m_instance->init();
 }
 
-void AuthManager::setFPDeviceID(const QString &fpDeviceID)
+int AuthManager::getAuthMode()
 {
-    // TODO: 判断设备的合法性
-    this->m_fpDeviceID = fpDeviceID;
-    Q_EMIT this->fpDeviceIDChanged(this->m_fpDeviceID);
+    auto authMode = this->m_settings->value(INIFILE_GENERAL_KEY_AUTH_MODE, KAD_AUTH_MODE_STR_OR).toString();
+    return Utils::authModeStr2Enum(authMode);
+}
+
+int AuthManager::getMaxFailures()
+{
+    return this->m_settings->value(INIFILE_GENERAL_KEY_MAX_FAILURES).toInt();
 }
 
 QDBusObjectPath AuthManager::CreateSession(const QString &username, int timeout)
@@ -121,10 +125,20 @@ QDBusObjectPath AuthManager::FindUserByName(const QString &userName)
     return QDBusObjectPath(user->getObjectPath());
 }
 
+QString AuthManager::GetDefaultDeviceID(int deviceType)
+{
+    auto groupName = this->deviceTypeEnum2Group(deviceType);
+    RETURN_VAL_IF_TRUE(groupName.isEmpty(), QString());
+    this->m_settings->beginGroup(groupName);
+    auto deviceID = this->m_settings->value(INIFILE_COMMON_KEY_DEFAULT_DEVICE).toString();
+    this->m_settings->endGroup();
+    return deviceID;
+}
+
 QString AuthManager::GetPAMServies()
 {
-    auto supportedPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_SUPPORTED_PAM_SERVICES).toStringList();
-    auto enabledPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_ENABLED_PAM_SERVICES).toStringList();
+    auto supportedPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_SPS).toStringList();
+    auto enabledPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_EPS).toStringList();
 
     QJsonDocument jsonDoc;
     QJsonArray jsonArry;
@@ -143,8 +157,8 @@ QString AuthManager::GetPAMServies()
 
 void AuthManager::SwitchPAMServie(bool enabled, const QString &service)
 {
-    auto supportedPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_SUPPORTED_PAM_SERVICES).toStringList();
-    auto enabledPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_ENABLED_PAM_SERVICES).toStringList();
+    auto supportedPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_SPS).toStringList();
+    auto enabledPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_EPS).toStringList();
     bool isUpdate = false;
 
     if (enabled &&
@@ -163,14 +177,27 @@ void AuthManager::SwitchPAMServie(bool enabled, const QString &service)
 
     if (isUpdate)
     {
-        this->m_settings->setValue(INIFILE_GENERAL_KEY_ENABLED_PAM_SERVICES, enabledPAMServices);
+        this->m_settings->setValue(INIFILE_GENERAL_KEY_EPS, enabledPAMServices);
     }
 }
 
 bool AuthManager::PAMServieIsEnabled(const QString &service)
 {
-    auto enabledPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_ENABLED_PAM_SERVICES).toStringList();
+    auto enabledPAMServices = this->m_settings->value(INIFILE_GENERAL_KEY_EPS).toStringList();
     return enabledPAMServices.contains(service);
+}
+
+void AuthManager::SetDefaultDeviceID(int deviceType, const QString &deviceID)
+{
+    auto oldDeviceID = this->GetDefaultDeviceID(deviceType);
+    RETURN_IF_TRUE(deviceID == oldDeviceID);
+
+    auto groupName = this->deviceTypeEnum2Group(deviceType);
+    RETURN_IF_TRUE(groupName.isEmpty());
+    this->m_settings->beginGroup(groupName);
+    this->m_settings->setValue(INIFILE_COMMON_KEY_DEFAULT_DEVICE, deviceID);
+    this->m_settings->endGroup();
+    Q_EMIT this->DefaultDeviceChanged(deviceType, deviceID);
 }
 
 void AuthManager::onNameLost(const QString &serviceName)
@@ -196,9 +223,6 @@ void AuthManager::onNameLost(const QString &serviceName)
 
 void AuthManager::init()
 {
-    this->m_fpDeviceID = this->m_settings->value(INIFILE_GENERAL_KEY_DEFAULT_DEVICE, QString()).toString();
-    auto authMode = this->m_settings->value(INIFILE_GENERAL_KEY_AUTH_MODE, KAD_AUTH_MODE_STR_OR).toString();
-    this->m_authMode = Utils::authModeStr2Enum(authMode);
     auto authOrder = this->m_settings->value(INIFILE_GENERAL_KEY_AUTH_ORDER, QStringList{AUTH_TYPE_STR_FINGERPRINT}).toStringList();
     this->m_authOrder = Utils::authOrderStr2Enum(authOrder);
 
@@ -213,15 +237,33 @@ void AuthManager::init()
         KLOG_WARNING() << "Can't register object:" << systemConnection.lastError();
     }
 
-    DeviceRequestDispatcher::getDefault()->registerListener(MAJOR_REQUEST_TYPE(DeviceRequestType::DEVICE_REQUEST_TYPE_FP_START),
-                                                            QSharedPointer<FPDeviceDecorator>::create());
-
-    DeviceRequestDispatcher::getDefault()->registerListener(MAJOR_REQUEST_TYPE(DeviceRequestType::DEVICE_REQUEST_TYPE_FACE_START),
-                                                            QSharedPointer<FaceDeviceDecorator>::create());
-
     this->m_serviceWatcher->setConnection(systemConnection);
     this->m_serviceWatcher->setWatchMode(QDBusServiceWatcher::WatchForUnregistration);
     connect(this->m_serviceWatcher, SIGNAL(serviceUnregistered(const QString &)), this, SLOT(onNameLost(const QString &)));
+}
+
+QString AuthManager::deviceTypeEnum2Group(int32_t deviceType)
+{
+    switch (deviceType)
+    {
+    case BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_FINGERPRINT:
+        return INIFILE_FP_GROUP_NAME;
+    default:
+        return QString();
+    }
+    return QString();
+}
+
+int32_t AuthManager::deviceTypeGroup2Enum(const QString &deviceType)
+{
+    switch (shash(deviceType.toStdString().c_str()))
+    {
+    case CONNECT(INIFILE_FP_GROUP_NAME, _hash):
+        return BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_FINGERPRINT;
+    default:
+        return BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_NONE;
+    }
+    return BiometricsDeviceType::BIOMETRICS_DEVICE_TYPE_NONE;
 }
 
 int32_t AuthManager::generateSessionID()

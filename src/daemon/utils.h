@@ -32,6 +32,9 @@ public:
     static QString authTypeEnum2Str(int32_t authType);
     static int32_t authTypeStr2Enum(const QString &authType);
 
+    static int32_t authType2DeviceType(int32_t authType);
+    static int32_t deviceType2AuthType(int32_t deviceType);
+
     static QStringList authOrderEnum2Str(const QList<int32_t> &authOrder);
     static QList<int32_t> authOrderStr2Enum(const QStringList &authOrder);
 

@@ -21,7 +21,7 @@ namespace Kiran
 class AuthenticationTerminal : public Authentication
 {
 public:
-    AuthenticationTerminal(PAMHandle *pamHandle);
+    AuthenticationTerminal(PAMHandle* pamHandle, const QStringList& arguments);
     virtual ~AuthenticationTerminal(){};
 
 private:

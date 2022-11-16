@@ -31,16 +31,27 @@
             </arg>
         </method>
 
-        <method name="EnrollFPStart">
-            <description>Use the selected device to enroll finger.</description>
+        <method name="EnrollStart">
+            <arg name="device_type" direction="in" type="i">
+                <description>The device type. Refer to BiometricsDeviceType in biometrics-i.h</description>
+            </arg>
+            <description>Use the selected default device to enroll.</description>
         </method>
 
-        <method name="EnrollFPStop">
+        <method name="EnrollStop">
             <description>Stop an on-going fingerprint enrollment.</description>
         </method>
 
-        <property name="user_name" type="s" access="read">
+        <method name="ResetFailures">
+            <description>Reset the failed record.</description>
+        </method>
+
+        <property name="UserName" type="s" access="read">
             <description>The username of the user.</description>
+        </property>
+
+        <property name="Failures" type="i" access="read">
+            <description>The auth failed count.</description>
         </property>
 
         <signal name="EnrollStatus">

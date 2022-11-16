@@ -19,6 +19,7 @@
 
 class AuthManagerProxy;
 class AuthSessionProxy;
+class AuthUserProxy;
 
 namespace Kiran
 {
@@ -26,7 +27,7 @@ class Authentication : public QObject
 {
     Q_OBJECT
 public:
-    Authentication(PAMHandle *pamh);
+    Authentication(PAMHandle *pamh, const QStringList &arguments);
     virtual ~Authentication();
 
 Q_SIGNALS:
@@ -36,7 +37,11 @@ public Q_SLOTS:
     void start();
 
 private:
-    void init();
+    int init();
+    int checkFailures();
+    int startAction();
+    int startActionDoAuth();
+    int startActionAuthSucc();
     // 开始认证前需要跟应用对接好数据
     int startAuthPre();
     int startAuth();
@@ -61,11 +66,13 @@ private Q_SLOTS:
 
 protected:
     PAMHandle *m_pamHandle;
+    QStringList m_arguments;
     QString m_serviceName;
     QString m_userName;
     int32_t m_result;
 
     AuthManagerProxy *m_authManagerProxy;
     AuthSessionProxy *m_authSessionProxy;
+    AuthUserProxy *m_authUserProxy;
 };
 }  // namespace Kiran

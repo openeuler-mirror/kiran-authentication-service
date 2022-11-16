@@ -17,6 +17,7 @@
 #include <pam_ext.h>
 #include <pam_modules.h>
 #include <syslog.h>
+#include <QCommandLineParser>
 #include <QFuture>
 #include <QMutexLocker>
 #include "src/pam/authentication-graphical.h"
@@ -25,19 +26,20 @@
 
 namespace Kiran
 {
-AuthenticationController::AuthenticationController(void* pamh) : isRunning(false),
-                                                                 m_result(PAM_SUCCESS)
+AuthenticationController::AuthenticationController(void* pamh,
+                                                   const QStringList& arguments) : isRunning(false),
+                                                                                   m_result(PAM_SUCCESS)
 {
     this->m_pamHandle = new PAMHandle(pamh, this, this);
 
     auto pamService = this->m_pamHandle->getItemDirect(PAM_SERVICE);
     if (this->isGraphical(pamService))
     {
-        this->m_authentication = new AuthenticationGraphical(this->m_pamHandle);
+        this->m_authentication = new AuthenticationGraphical(this->m_pamHandle, arguments);
     }
     else
     {
-        this->m_authentication = new AuthenticationTerminal(this->m_pamHandle);
+        this->m_authentication = new AuthenticationTerminal(this->m_pamHandle, arguments);
     }
 
     this->m_authentication->moveToThread(&this->m_workerThread);

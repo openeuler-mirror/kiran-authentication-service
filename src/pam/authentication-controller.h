@@ -30,7 +30,7 @@ class AuthenticationController : public QObject,
 {
     Q_OBJECT
 public:
-    AuthenticationController(void* pamh);
+    AuthenticationController(void* pamh, const QStringList& arguments);
     virtual ~AuthenticationController(){};
 
     int32_t run();

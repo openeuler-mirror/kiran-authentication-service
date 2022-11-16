@@ -63,12 +63,40 @@
             </arg>
         </method>
 
-        <property name="FPDeviceID" type="s" access="readwrite">
-            <description>The defaultly selected fingerprint device id.</description>
-        </property>
+        <method name="SetDefaultDeviceID">
+            <arg name="device_type" direction="in" type="i">
+                <description>The device type. Refer to BiometricsDeviceType in biometrics-i.h</description>
+            </arg>
+            <arg name="device_id" direction="in" type="s">
+                <description>The device ID.</description>
+            </arg>
+        </method>
+
+        <method name="GetDefaultDeviceID">
+            <arg name="device_type" direction="in" type="i">
+                <description>The device type. Refer to BiometricsDeviceType in biometrics-i.h</description>
+            </arg>
+            <arg name="device_id" direction="out" type="s">
+                <description>The device ID.</description>
+            </arg>
+        </method>
 
         <property name="AuthMode" type="i" access="read">
             <description>The authentication mode contains AND and OR. Refer to enum AuthMode in file kas-authentication-i.h.</description>
         </property>
+
+        <property name="MaxFailures" type="i" access="read">
+            <description>The allowed max auth failure count. when failures of user is greater or equal to MaxFailures, the auth is locked.</description>
+        </property>
+
+        <signal name="DefaultDeviceChanged">
+            <arg name="device_type" type="i">
+                <description>The device type. Refer to BiometricsDeviceType in biometrics-i.h</description>
+            </arg>
+            <arg name="device_id" type="s">
+                <description>The new device ID.</description>
+            </arg>
+            <description>Send this signal when the default device is changed.</description>
+        </signal>
     </interface>
 </node>

@@ -25,6 +25,8 @@ struct passwd;
 
 namespace Kiran
 {
+class DeviceAdaptor;
+
 struct Passwd
 {
     Passwd() = delete;
@@ -40,30 +42,13 @@ struct Passwd
 };
 
 class User : public QObject,
+             protected DeviceRequestSource,
              protected QDBusContext
 {
     Q_OBJECT
 
-private:
-    class FPDeviceRequestSource : public DeviceRequestSource
-    {
-    public:
-        FPDeviceRequestSource(User *user);
-        virtual ~FPDeviceRequestSource(){};
-
-        virtual int32_t getPriority();
-        virtual int64_t getPID();
-        virtual QString getSpecifiedUser() { return QString(); };
-        virtual void event(const DeviceEvent &deviceEvent);
-
-        void setDBusMessage(const QDBusMessage &dbusMessage) { this->m_dbusMessage = dbusMessage; }
-        int64_t getRequestID() { return this->m_requestID; }
-
-    private:
-        User *m_user;
-        QDBusMessage m_dbusMessage;
-        int64_t m_requestID;
-    };
+    Q_PROPERTY(QString UserName READ getUserName)
+    Q_PROPERTY(QString Failures READ getFailures)
 
 public:
     User() = delete;
@@ -71,19 +56,23 @@ public:
     virtual ~User();
 
     QDBusObjectPath getObjectPath() { return this->m_objectPath; }
-    QString getUserName() { return this->m_pwent.pw_name; }
     QStringList getIIDs();
     QStringList getDataIDs(int authType);
     bool hasIdentification(int authType);
     void removeCache();
 
+    QString getUserName() { return this->m_pwent.pw_name; }
+    // 该用户连续登陆失败次数
+    int32_t getFailures();
+    void setFailures(int32_t failures);
+
 public Q_SLOTS:  // DBUS METHODS
     QString AddIdentification(int authType, const QString &name, const QString &dataID);
     void DeleteIdentification(const QString &iid);
-    void EnrollFPStart();
-    void EnrollFPStop();
+    void EnrollStart(int deviceType);
+    void EnrollStop();
     QString GetIdentifications(int authType);
-    // bool hasIdentification(int authType, const QString &iid);
+    void ResetFailures();
 
 Q_SIGNALS:  // SIGNALS
     void EnrollStatus(const QString &bid, int result, int progress, bool interrupt);
@@ -92,9 +81,32 @@ Q_SIGNALS:  // SIGNALS
     void IdentificationDeleted(const QString &iid);
 
 private:
+    struct UserEnrollInfo
+    {
+        UserEnrollInfo() : m_requestID(-1) {}
+        int64_t m_requestID;
+        QDBusMessage m_dbusMessage;
+        QSharedPointer<DeviceAdaptor> deviceAdaptor;
+    };
+
+private:
+    virtual int32_t getPriority();
+    virtual int64_t getPID();
+    virtual QString getSpecifiedUser() { return QString(); };
+    virtual void start(QSharedPointer<DeviceRequest> request);
+    virtual void interrupt();
+    virtual void end();
+    virtual void onEnrollStatus(const QString &bid, int result, int progress);
+    virtual void onVerifyStatus(int result){};
+    virtual void onIdentifyStatus(const QString &bid, int result){};
+
+private:
     // 如果请求用户和当前用户相同则使用originAction，否则需要管理员权限
     QString calcAction(const QString &originAction);
 
+    void onEnrollStart(const QDBusMessage &message, int deviceType);
+    void onEnrollStop(const QDBusMessage &message);
+    void onResetFailures(const QDBusMessage &message);
     void onAddIdentification(const QDBusMessage &message, int authType, const QString &name, const QString &dataID);
     void onDeleteIdentification(const QDBusMessage &message, const QString &iid);
 
@@ -103,7 +115,7 @@ private:
     Passwd m_pwent;
     QSettings *m_settings;
     QDBusObjectPath m_objectPath;
-    QSharedPointer<FPDeviceRequestSource> m_fpEnrollRequestSource;
+    UserEnrollInfo m_enrollInfo;
 };
 
 }  // namespace Kiran

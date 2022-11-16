@@ -20,6 +20,7 @@
 #include <QTranslator>
 #include "src/daemon/auth-manager.h"
 #include "src/daemon/config-daemon.h"
+#include "src/daemon/device/device-adaptor-factory.h"
 #include "src/daemon/user-manager.h"
 
 int main(int argc, char *argv[])
@@ -54,9 +55,11 @@ int main(int argc, char *argv[])
 
     Kiran::UserManager::globalInit();
     Kiran::AuthManager::globalInit(Kiran::UserManager::getInstance());
+    Kiran::DeviceAdaptorFactory::globalInit(Kiran::AuthManager::getInstance());
 
     auto retval = app.exec();
 
+    Kiran::DeviceAdaptorFactory::globalDeinit();
     Kiran::AuthManager::globalDeinit();
     Kiran::UserManager::globalDeinit();
 

@@ -33,8 +33,9 @@ class AuthManager : public QObject, protected QDBusContext
 {
     Q_OBJECT
 
-    Q_PROPERTY(QString FPDeviceID READ getFPDeviceID WRITE setFPDeviceID NOTIFY fpDeviceIDChanged)
     Q_PROPERTY(int AuthMode READ getAuthMode NOTIFY authModeChanged)
+    Q_PROPERTY(int MaxFailures READ getMaxFailures)
+
 public:
     AuthManager(UserManager *userManager);
     virtual ~AuthManager(){};
@@ -45,9 +46,8 @@ public:
 
     static void globalDeinit() { delete m_instance; };
 
-    QString getFPDeviceID() { return this->m_fpDeviceID; }
-    void setFPDeviceID(const QString &fpDeviceID);
-    int getAuthMode() { return this->m_authMode; }
+    int getAuthMode();
+    int getMaxFailures();
     QList<int32_t> getAuthOrder() { return this->m_authOrder; }
 
 public Q_SLOTS:  // DBUS METHODS
@@ -55,18 +55,22 @@ public Q_SLOTS:  // DBUS METHODS
     void DestroySession(uint sessionID);
     QDBusObjectPath FindUserByID(qulonglong uid);
     QDBusObjectPath FindUserByName(const QString &userName);
+    QString GetDefaultDeviceID(int deviceType);
     QString GetPAMServies();
     void SwitchPAMServie(bool enabled, const QString &service);
     bool PAMServieIsEnabled(const QString &service);
+    void SetDefaultDeviceID(int deviceType, const QString &deviceID);
     void onNameLost(const QString &serviceName);
 
 Q_SIGNALS:
-    void fpDeviceIDChanged(const QString &fpDeviceID);
     void authModeChanged(int authMode);
+    void DefaultDeviceChanged(int deviceType, const QString &deviceID);
 
 private:
     void init();
 
+    QString deviceTypeEnum2Group(int32_t deviceType);
+    int32_t deviceTypeGroup2Enum(const QString &deviceType);
     // 生成一个唯一的会话ID
     int32_t generateSessionID();
 
@@ -77,9 +81,6 @@ private:
     AuthManagerAdaptor *m_dbusAdaptor;
     // <会话ID，会话>
     QMap<int32_t, Session *> m_sessions;
-    // 默认使用的指纹设备
-    QString m_fpDeviceID;
-    int32_t m_authMode;
     QList<int32_t> m_authOrder;
     QRandomGenerator m_randomGenerator;
     QDBusServiceWatcher *m_serviceWatcher;

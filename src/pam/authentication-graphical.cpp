@@ -22,7 +22,9 @@
 
 namespace Kiran
 {
-AuthenticationGraphical::AuthenticationGraphical(PAMHandle *pamHandle) : Authentication(pamHandle)
+AuthenticationGraphical::AuthenticationGraphical(PAMHandle* pamHandle,
+                                                 const QStringList& arguments) : Authentication(pamHandle,
+                                                                                                arguments)
 {
 }
 

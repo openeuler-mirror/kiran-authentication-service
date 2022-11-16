@@ -24,14 +24,19 @@
 #include <QTranslator>
 #include "src/pam/auth_manager_proxy.h"
 #include "src/pam/auth_session_proxy.h"
+#include "src/pam/auth_user_proxy.h"
 #include "src/pam/config-pam.h"
+#include "src/pam/pam-args-parser.h"
 #include "src/pam/pam-handle.h"
 
 namespace Kiran
 {
-Authentication::Authentication(PAMHandle *pamHandle) : m_pamHandle(pamHandle),
-                                                       m_authManagerProxy(nullptr),
-                                                       m_authSessionProxy(nullptr)
+Authentication::Authentication(PAMHandle *pamHandle,
+                               const QStringList &arguments) : m_pamHandle(pamHandle),
+                                                               m_arguments(arguments),
+                                                               m_authManagerProxy(nullptr),
+                                                               m_authSessionProxy(nullptr),
+                                                               m_authUserProxy(nullptr)
 {
 }
 
@@ -45,26 +50,26 @@ Authentication::~Authentication()
 
 void Authentication::start()
 {
-    this->init();
-
     this->m_pamHandle->syslog(LOG_DEBUG, "Authentication thread start.");
 
-    auto result = this->startAuthPre();
-    if (result != PAM_SUCCESS)
-    {
-        this->finishAuth(result);
-        return;
+#define CHECK_RESULT(expr)            \
+    {                                 \
+        auto result = expr;           \
+        if (result != PAM_SUCCESS)    \
+        {                             \
+            this->finishAuth(result); \
+            return;                   \
+        }                             \
     }
 
-    result = this->startAuth();
-    if (result != PAM_SUCCESS)
-    {
-        this->finishAuth(result);
-        return;
-    }
+    CHECK_RESULT(this->init());
+    CHECK_RESULT(this->checkFailures());
+    CHECK_RESULT(this->startAction());
+
+#undef CHECK_RESULT
 }
 
-void Authentication::init()
+int Authentication::init()
 {
     this->m_authManagerProxy = new AuthManagerProxy(KAD_MANAGER_DBUS_NAME,
                                                     KAD_MANAGER_DBUS_OBJECT_PATH,
@@ -72,6 +77,80 @@ void Authentication::init()
                                                     this);
     this->m_serviceName = this->m_pamHandle->getItemDirect(PAM_SERVICE);
     this->m_userName = this->m_pamHandle->getItemDirect(PAM_USER);
+
+    auto reply = this->m_authManagerProxy->FindUserByName(this->m_userName);
+    auto userObjectPath = reply.value();
+    if (!userObjectPath.path().isEmpty())
+    {
+        this->m_authUserProxy = new AuthUserProxy(KAD_MANAGER_DBUS_NAME,
+                                                  userObjectPath.path(),
+                                                  QDBusConnection::systemBus(),
+                                                  this);
+    }
+    else
+    {
+        KLOG_WARNING() << "Not found user Proxy for user " << this->m_userName;
+        return PAM_SYSTEM_ERR;
+    }
+    return PAM_SUCCESS;
+}
+
+int Authentication::checkFailures()
+{
+    if (this->m_authUserProxy->failures() >= this->m_authManagerProxy->maxFailures())
+    {
+        this->m_pamHandle->sendErrorMessage(QObject::tr("Too many authentication failures, so the authentication mode is locked."));
+        return PAM_SYSTEM_ERR;
+    }
+    return PAM_SUCCESS;
+}
+
+int Authentication::startAction()
+{
+    int result = PAM_SUCCESS;
+    QScopedPointer<PAMArgsParser> pamArgsParser(new PAMArgsParser());
+    auto argsInfo = pamArgsParser->parser(this->m_arguments);
+
+    switch (shash(argsInfo.action.toStdString().c_str()))
+    {
+    case CONNECT(KAP_ARG_ACTION_DO_AUTH, _hash):
+        result = this->startActionDoAuth();
+        break;
+    case CONNECT(KAP_ARG_ACTION_AUTH_SUCC, _hash):
+        result = this->startActionAuthSucc();
+        break;
+    default:
+        KLOG_WARNING() << "PAM action '" << argsInfo.action << "' is unsupported, so the pam module is ignored.";
+        result = PAM_IGNORE;
+        break;
+    }
+
+    return result;
+}
+
+int Authentication::startActionDoAuth()
+{
+    auto result = this->startAuthPre();
+    RETURN_VAL_IF_TRUE(result != PAM_SUCCESS, result);
+    result = this->startAuth();
+    RETURN_VAL_IF_TRUE(result != PAM_SUCCESS, result);
+    return PAM_SUCCESS;
+}
+
+int Authentication::startActionAuthSucc()
+{
+    auto reply = this->m_authManagerProxy->FindUserByName(this->m_userName);
+    auto userObjectPath = reply.value();
+    if (!userObjectPath.path().isEmpty())
+    {
+        auto userProxy = new AuthUserProxy(KAD_MANAGER_DBUS_NAME,
+                                           userObjectPath.path(),
+                                           QDBusConnection::systemBus(),
+                                           this);
+        userProxy->ResetFailures();
+    }
+
+    return PAM_SUCCESS;
 }
 
 int Authentication::startAuthPre()

@@ -19,7 +19,7 @@
 #include <qt5-log-i.h>
 #include <QDBusConnection>
 #include "src/daemon/auth-manager.h"
-#include "src/daemon/device/device-request-dispatcher.h"
+#include "src/daemon/device/device-adaptor-factory.h"
 #include "src/daemon/error.h"
 #include "src/daemon/proxy/dbus-daemon-proxy.h"
 #include "src/daemon/session_adaptor.h"
@@ -28,88 +28,6 @@
 
 namespace Kiran
 {
-Session::SessionDeviceRequestSource::SessionDeviceRequestSource(Session *session) : m_session(session),
-                                                                                    m_requestID(-1)
-{
-}
-
-int32_t Session::SessionDeviceRequestSource::getPriority()
-{
-    return DeviceRequestPriority::DEVICE_REQUEST_PRIORITY_LOW;
-}
-
-int64_t Session::SessionDeviceRequestSource::getPID()
-{
-    return DBusDaemonProxy::getDefault()->getConnectionUnixProcessID(this->m_dbusMessage);
-}
-
-QString Session::SessionDeviceRequestSource::getSpecifiedUser()
-{
-    return this->m_session->m_userName;
-}
-
-void Session::SessionDeviceRequestSource::event(const DeviceEvent &deviceEvent)
-{
-    KLOG_DEBUG() << "Receive device event, eventType: " << deviceEvent.eventType;
-
-    switch (deviceEvent.eventType)
-    {
-    case DeviceEventType::DEVICE_EVENT_TYPE_FP_IDENTIFY_STATUS:
-        this->fpIdentifyStatusEvent(deviceEvent.args);
-        break;
-    default:
-        break;
-    }
-}
-
-void Session::SessionDeviceRequestSource::fpIdentifyStatusEvent(const QVariantMap &vars)
-{
-    auto bid = vars[DEVICE_EVENT_ARGS_BID].toString();
-    auto verifyResult = vars[DEVICE_EVENT_ARGS_RESULT].toInt();
-
-    if (!this->matchUser(KADAuthType::KAD_AUTH_TYPE_FINGERPRINT, bid) &&
-        verifyResult == FPVerifyResult::FP_VERIFY_RESULT_MATCH)
-    {
-        KLOG_DEBUG("Fingerprint match successfully, but it isn't a legal user.");
-        verifyResult = FPVerifyResult::FP_VERIFY_RESULT_NOT_MATCH;
-    }
-
-    auto verifyResultStr = Utils::fpVerifyResultEnum2Str(verifyResult);
-    if (verifyResult == FPVerifyResult::FP_VERIFY_RESULT_MATCH)
-    {
-        Q_EMIT this->m_session->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_INFO);
-    }
-    else
-    {
-        Q_EMIT this->m_session->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-    }
-
-    if (verifyResult == FPVerifyResult::FP_VERIFY_RESULT_MATCH ||
-        verifyResult == FPVerifyResult::FP_VERIFY_RESULT_NOT_MATCH)
-    {
-        this->m_session->finishPhaseAuth(verifyResult == FPVerifyResult::FP_VERIFY_RESULT_MATCH);
-    }
-}
-
-bool Session::SessionDeviceRequestSource::matchUser(int32_t authType, const QString &dataID)
-{
-    RETURN_VAL_IF_TRUE(dataID.isEmpty(), false);
-
-    auto iid = Utils::GenerateIID(authType, dataID);
-    auto user = UserManager::getInstance()->getUserByIID(iid);
-
-    RETURN_VAL_IF_TRUE(!user, false);
-    auto userName = user->getUserName();
-    auto specifiedUser = this->getSpecifiedUser();
-    // 如果有指定认证用户，任何阶段都不能切换用户
-    RETURN_VAL_IF_TRUE(!specifiedUser.isEmpty() && specifiedUser != userName, false);
-    // 如果未指定认证用户，只有第一阶段认证时可以切换用户，后面阶段必须跟第一阶段认证的用户相同
-    RETURN_VAL_IF_TRUE(!this->m_authenticatedUserName.isEmpty() && this->m_authenticatedUserName != userName, false);
-    // TODO: 会话复用时需要清理变量
-    this->m_authenticatedUserName = userName;
-    return true;
-}
-
 Session::Session(uint32_t sessionID,
                  const QString &serviceName,
                  const QString &userName,
@@ -151,42 +69,82 @@ void Session::SetAuthType(int authType)
 
 void Session::StartAuth()
 {
-    if (this->m_sessionDeviceRequestSource)
+    if (this->m_verifyInfo.m_requestID > 0)
     {
         DBUS_ERROR_REPLY_AND_RET(QDBusError::AccessDenied, KADErrorCode::ERROR_USER_IDENTIFIYING);
     }
-
-    this->m_sessionDeviceRequestSource = QSharedPointer<SessionDeviceRequestSource>::create(this);
-    this->m_sessionDeviceRequestSource->setDBusMessage(this->message());
+    this->m_verifyInfo.m_dbusMessage = this->message();
     this->startPhaseAuth();
 }
 
 void Session::StopAuth()
 {
-    if (this->m_deviceRequest)
+    if (this->m_verifyInfo.m_requestID > 0 &&
+        this->m_verifyInfo.deviceAdaptor)
     {
-        DeviceRequestType requestType = DeviceRequestType::DEVICE_REQUEST_TYPE_NONE;
-        switch (this->m_deviceRequest->reqType)
-        {
-        case DeviceRequestType::DEVICE_REQUEST_TYPE_FP_IDENTIFY_START:
-            requestType = DeviceRequestType::DEVICE_REQUEST_TYPE_FP_IDENTIFY_STOP;
-            break;
-        case DeviceRequestType::DEVICE_REQUEST_TYPE_FP_VERIFY_START:
-            requestType = DeviceRequestType::DEVICE_REQUEST_TYPE_FP_VERIFY_STOP;
-            break;
-        default:
-            break;
-        }
+        this->m_verifyInfo.deviceAdaptor->stop(this->m_verifyInfo.m_requestID);
+    }
+}
 
-        if (requestType != DeviceRequestType::DEVICE_REQUEST_TYPE_NONE)
-        {
-            this->m_deviceRequest = QSharedPointer<DeviceRequest>::create(DeviceRequest{
-                .reqType = requestType,
-                .time = QTime::currentTime(),
-                .reqID = -1,
-                .source = this->m_sessionDeviceRequestSource.dynamicCast<DeviceRequestSource>()});
-            DeviceRequestDispatcher::getDefault()->deliveryRequest(this->m_deviceRequest);
-        }
+int32_t Session::getPriority()
+{
+    return DeviceRequestPriority::DEVICE_REQUEST_PRIORITY_LOW;
+}
+
+int64_t Session::getPID()
+{
+    return DBusDaemonProxy::getDefault()->getConnectionUnixProcessID(this->m_verifyInfo.m_dbusMessage);
+}
+
+QString Session::getSpecifiedUser()
+{
+    return this->m_userName;
+}
+
+void Session::start(QSharedPointer<DeviceRequest> request)
+{
+    this->m_verifyInfo.m_requestID = request->reqID;
+}
+
+void Session::interrupt()
+{
+}
+
+void Session::end()
+{
+    this->m_verifyInfo.m_requestID = -1;
+    this->m_verifyInfo.deviceAdaptor = nullptr;
+}
+
+void Session::onVerifyStatus(int result)
+{
+    // 暂时不需要该操作
+    KLOG_DEBUG() << "Unsupported operation.";
+}
+
+void Session::onIdentifyStatus(const QString &bid, int result)
+{
+    if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
+        result == FPVerifyResult::FP_VERIFY_RESULT_MATCH)
+    {
+        KLOG_DEBUG() << "Fingerprint match successfully, but it isn't a legal user.";
+        result = FPVerifyResult::FP_VERIFY_RESULT_NOT_MATCH;
+    }
+
+    auto verifyResultStr = Utils::fpVerifyResultEnum2Str(result);
+    if (result == FPVerifyResult::FP_VERIFY_RESULT_MATCH)
+    {
+        Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_INFO);
+    }
+    else
+    {
+        Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+    }
+
+    if (result == FPVerifyResult::FP_VERIFY_RESULT_MATCH ||
+        result == FPVerifyResult::FP_VERIFY_RESULT_NOT_MATCH)
+    {
+        this->finishPhaseAuth(result == FPVerifyResult::FP_VERIFY_RESULT_MATCH);
     }
 }
 
@@ -208,41 +166,31 @@ int32_t Session::calcNextAuthType()
 
 void Session::startPhaseAuth()
 {
-    switch (this->m_authType)
-    {
-    case KADAuthType::KAD_AUTH_TYPE_FINGERPRINT:
-        this->startPhaseFPAuth();
-        break;
-    default:
+    auto deviceType = Utils::authType2DeviceType(this->m_authType);
+    auto device = DeviceAdaptorFactory::getInstance()->getDeviceAdaptor(deviceType);
+
+    if (!device)
     {
         auto authTypeStr = Utils::authTypeEnum2Str(this->m_authType);
         Q_EMIT this->AuthMessage(tr(QString("Auth type %1 invalid").arg(authTypeStr).toStdString().c_str()),
                                  KADMessageType::KAD_MESSAGE_TYPE_ERROR);
 
         this->finishPhaseAuth(false);
-        break;
     }
-    }
-}
-
-void Session::startPhaseFPAuth()
-{
-    QStringList bids;
-    auto user = UserManager::getInstance()->findUser(this->m_userName);
-    if (user)
+    else
     {
-        bids = user->getDataIDs(this->m_authType);
+        QStringList bids;
+        this->m_verifyInfo.deviceAdaptor = device;
+        this->m_verifyInfo.authType = this->m_authType;
+        auto user = UserManager::getInstance()->findUser(this->m_userName);
+        if (user)
+        {
+            bids = user->getDataIDs(this->m_authType);
+        }
+        // TODO: 测试的时候再修改提示语
+        // Q_EMIT this->AuthMessage(QObject::tr("Please press the fingerprint."), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+        this->m_verifyInfo.deviceAdaptor->identify(this);
     }
-
-    Q_EMIT this->AuthMessage(QObject::tr("Please press the fingerprint."), KADMessageType::KAD_MESSAGE_TYPE_INFO);
-
-    this->m_deviceRequest = QSharedPointer<DeviceRequest>::create(DeviceRequest{
-        .reqType = DeviceRequestType::DEVICE_REQUEST_TYPE_FP_IDENTIFY_START,
-        .time = QTime::currentTime(),
-        .reqID = -1,
-        .source = this->m_sessionDeviceRequestSource.dynamicCast<DeviceRequestSource>()});
-    this->m_deviceRequest->args.insert(DEVICE_REQUEST_ARGS_BIDS, bids);
-    DeviceRequestDispatcher::getDefault()->deliveryRequest(this->m_deviceRequest);
 }
 
 void Session::finishPhaseAuth(bool isSuccess)
@@ -281,17 +229,43 @@ void Session::finishPhaseAuth(bool isSuccess)
 
 void Session::finishAuth(bool isSuccess)
 {
-    auto userName = this->m_sessionDeviceRequestSource->getAuthenticatedUserName();
-    if (isSuccess && !userName.isEmpty())
+    if (isSuccess && !this->m_verifyInfo.m_authenticatedUserName.isEmpty())
     {
-        Q_EMIT this->AuthSuccessed(userName);
+        auto user = UserManager::getInstance()->findUser(this->m_verifyInfo.m_authenticatedUserName);
+        if (user)
+        {
+            user->setFailures(0);
+        }
+        Q_EMIT this->AuthSuccessed(this->m_verifyInfo.m_authenticatedUserName);
     }
     else
     {
+        auto user = UserManager::getInstance()->findUser(this->m_userName);
+        if (user)
+        {
+            user->setFailures(user->getFailures() + 1);
+        }
         Q_EMIT this->AuthFailed();
     }
+}
 
-    this->m_sessionDeviceRequestSource = nullptr;
+bool Session::matchUser(int32_t authType, const QString &dataID)
+{
+    RETURN_VAL_IF_TRUE(dataID.isEmpty(), false);
+
+    auto iid = Utils::GenerateIID(authType, dataID);
+    auto user = UserManager::getInstance()->getUserByIID(iid);
+
+    RETURN_VAL_IF_TRUE(!user, false);
+    auto userName = user->getUserName();
+    auto specifiedUser = this->getSpecifiedUser();
+    // 如果有指定认证用户，任何阶段都不能切换用户
+    RETURN_VAL_IF_TRUE(!specifiedUser.isEmpty() && specifiedUser != userName, false);
+    // 如果未指定认证用户，只有第一阶段认证时可以切换用户，后面阶段必须跟第一阶段认证的用户相同
+    RETURN_VAL_IF_TRUE(!this->m_verifyInfo.m_authenticatedUserName.isEmpty() && this->m_verifyInfo.m_authenticatedUserName != userName, false);
+    // TODO: 会话复用时需要清理变量
+    this->m_verifyInfo.m_authenticatedUserName = userName;
+    return true;
 }
 
 }  // namespace Kiran
