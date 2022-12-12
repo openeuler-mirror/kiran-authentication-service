@@ -73,6 +73,10 @@
             and also use the auth_modes when user is added.</description>
         </method>-->
 
+        <property name="rsa_public_key" type="s" access="read">
+            <description>The RSA public key.</description>
+        </property>
+
         <signal name="UserAdded">
             <arg name="user" type="o">
                 <description>Object path of the user that was added.</description>

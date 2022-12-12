@@ -1,0 +1,10 @@
+
+#pragma once
+
+#include <config.h>
+
+#define KAD_INSTALL_DATADIR "@KAS_INSTALL_DATADIR@/daemon"
+#define KAD_INSTALL_TRANSLATIONDIR "@KAS_INSTALL_TRANSLATIONDIR@/daemon"
+#define KDA_UESR_DATA_DIR KAD_INSTALL_DATADIR "/users"
+
+#define LOGIN1_MANAGE_DBUS_NAME "org.freedesktop.login1"
