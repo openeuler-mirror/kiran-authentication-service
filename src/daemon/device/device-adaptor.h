@@ -38,8 +38,8 @@ public:
     QString getDeviceID() { return this->m_dbusDeviceProxy->deviceID(); }
 
     void enroll(DeviceRequestSource *source);
-    void verify(DeviceRequestSource *source);
-    void identify(DeviceRequestSource *source);
+    void verify(const QString &bid, DeviceRequestSource *source);
+    void identify(const QStringList &bids, DeviceRequestSource *source);
     void stop(int64_t requestID);
 
     void updateDBusDeviceProxy(QSharedPointer<DeviceProxy> dbusDeviceProxy);

@@ -147,10 +147,9 @@ int Authentication::startActionAuthSucc()
                                            userObjectPath.path(),
                                            QDBusConnection::systemBus(),
                                            this);
-        userProxy->ResetFailures();
+        userProxy->ResetFailures().waitForFinished();
     }
-
-    return PAM_SUCCESS;
+    return PAM_IGNORE;
 }
 
 int Authentication::startAuthPre()
