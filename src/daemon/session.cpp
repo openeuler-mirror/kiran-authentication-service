@@ -189,7 +189,7 @@ void Session::startPhaseAuth()
         }
         // TODO: 测试的时候再修改提示语
         // Q_EMIT this->AuthMessage(QObject::tr("Please press the fingerprint."), KADMessageType::KAD_MESSAGE_TYPE_INFO);
-        this->m_verifyInfo.deviceAdaptor->identify(this);
+        this->m_verifyInfo.deviceAdaptor->identify(bids, this);
     }
 }
 

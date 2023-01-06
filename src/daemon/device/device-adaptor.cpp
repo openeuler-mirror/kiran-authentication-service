@@ -37,44 +37,41 @@ DeviceAdaptor::DeviceAdaptor(QSharedPointer<DeviceProxy> dbusDeviceProxy) : m_db
 
 void DeviceAdaptor::enroll(DeviceRequestSource *source)
 {
-    // auto requestTarget = QSharedPointer<DeviceRequest>::create(this);
-    // // requestTarget->setRequest(request);
-    // requestTarget->setRequestStart(std::bind(&DeviceAdaptor::enrollStart, this));
-    // requestTarget->setRequestStop(std::bind(&DeviceAdaptor::enrollStop, this));
-    // this->m_requestController->pushRequest(request, requestTarget);
-
-    auto deviceRequst = QSharedPointer<DeviceRequest>::create();
+    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
+        .reqID = this->generateRequestID(),
+        .time = QTime::currentTime(),
+        .source = source,
+        .start = std::bind(&DeviceAdaptor::enrollStart, this),
+        .stop = std::bind(&DeviceAdaptor::enrollStop, this)});
     this->pushRequest(deviceRequst);
 }
 
-void DeviceAdaptor::verify(DeviceRequestSource *source)
+void DeviceAdaptor::verify(const QString &bid, DeviceRequestSource *source)
 {
-    //    auto requestTarget = QSharedPointer<FPDeviceRequestTarget>::create(this);
-    // requestTarget->setRequest(request);
-    //  auto bid = request->args.value(DEVICE_REQUEST_ARGS_BID).toString();
-    //     requestTarget->setRequestStart(std::bind(&DeviceAdaptor::verifyStart, this, bid));
-    //     requestTarget->setRequestStop(std::bind(&DeviceAdaptor::enrollStop, this));
-    //     this->m_requestController->pushRequest(request, requestTarget);
+    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
+        .reqID = this->generateRequestID(),
+        .time = QTime::currentTime(),
+        .source = source,
+        .start = std::bind(&DeviceAdaptor::verifyStart, this, bid),
+        .stop = std::bind(&DeviceAdaptor::verifyStop, this)});
+    this->pushRequest(deviceRequst);
 }
 
-void DeviceAdaptor::identify(DeviceRequestSource *source)
+void DeviceAdaptor::identify(const QStringList &bids, DeviceRequestSource *source)
 {
-    //    auto requestTarget = QSharedPointer<FPDeviceRequestTarget>::create(this);
-    // requestTarget->setRequest(request);
-    // auto bids = request->args.value(DEVICE_REQUEST_ARGS_BIDS).toStringList();
-    // requestTarget->setRequestStart(std::bind(&DeviceAdaptor::identifyStart, this, bids));
-    // requestTarget->setRequestStop(std::bind(&DeviceAdaptor::enrollStop, this));
-    // this->m_requestController->pushRequest(request, requestTarget);
+    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
+        .reqID = this->generateRequestID(),
+        .time = QTime::currentTime(),
+        .source = source,
+        .start = std::bind(&DeviceAdaptor::identifyStart, this, bids),
+        .stop = std::bind(&DeviceAdaptor::identifyStop, this)});
+    this->pushRequest(deviceRequst);
 }
 
 void DeviceAdaptor::stop(int64_t requestID)
 {
     // 停止操作需要立即执行，因为source会变为不可用。
-
-    //     auto requestTarget = QSharedPointer<FPDeviceRequestTarget>::create(this);
-    // requestTarget->setRequest(request);
-    //     auto requestID = request->args.value(DEVICE_REQUEST_ARGS_REQUEST_ID).toLongLong();
-    //     this->m_requestController->removeRequest(requestID);
+    this->removeRequest(requestID);
 }
 
 void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<DeviceProxy> dbusDeviceProxy)
