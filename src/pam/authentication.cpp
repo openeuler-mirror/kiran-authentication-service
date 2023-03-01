@@ -174,7 +174,6 @@ int Authentication::startActionAuthSucc()
                                            this);
         userProxy->ResetFailures().waitForFinished();
     }
-
     return PAM_IGNORE;
 }
 
