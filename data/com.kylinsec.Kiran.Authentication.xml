@@ -10,6 +10,9 @@
             <arg name="timeout" direction="in" type="i">
                 <description>The session is destroyed when timeout is arrived.</description>
             </arg>
+            <arg name="auth_app" direction="in" type="i">
+                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
+            </arg>
             <arg name="session" direction="out" type="o">
                 <description>The object path for this session.</description>
             </arg>
@@ -39,33 +42,18 @@
             </arg>
         </method>
 
-        <method name="SwitchPAMServie">
-            <arg name="enabled" direction="in" type="b">
-                <description>Enable or disable the PAM service.</description>
+        <method name="GetDevicesForType">
+            <arg name="auth_type" direction="in" type="i">
+                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
             </arg>
-            <arg name="service" direction="in" type="s">
-                <description>The PAM service name. For example lightdm, login, etc..</description>
-            </arg>
-        </method>
-
-        <method name="GetPAMServies">
-            <arg name="services" direction="out" type="s">
-                <description>A json string describes all supported PAM services info.</description>
-            </arg>
-        </method>
-
-        <method name="PAMServieIsEnabled">
-            <arg name="service" direction="in" type="s">
-                <description>The PAM service name. For example lightdm, login, etc..</description>
-            </arg>
-            <arg name="enabled" direction="out" type="b">
-                <description>Enable or disable the PAM service.</description>
+            <arg name="devices" direction="out" type="s">
+                <description>Json string of device information, including object path, device name, device ID, etc </description>
             </arg>
         </method>
 
         <method name="SetDefaultDeviceID">
-            <arg name="device_type" direction="in" type="i">
-                <description>The device type. Refer to BiometricsDeviceType in biometrics-i.h</description>
+            <arg name="auth_type" direction="in" type="i">
+                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
             </arg>
             <arg name="device_id" direction="in" type="s">
                 <description>The device ID.</description>
@@ -73,11 +61,72 @@
         </method>
 
         <method name="GetDefaultDeviceID">
-            <arg name="device_type" direction="in" type="i">
-                <description>The device type. Refer to BiometricsDeviceType in biometrics-i.h</description>
+            <arg name="auth_type" direction="in" type="i">
+                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
             </arg>
             <arg name="device_id" direction="out" type="s">
                 <description>The device ID.</description>
+            </arg>
+        </method>
+
+        <method name="GetAuthTypeEnabled">
+            <arg name="auth_type" direction="in" type="i">
+                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
+            </arg>
+            <arg name="enabled" direction="out" type="b">
+                <description>Whether the authentication type is enabled</description>
+            </arg>
+        </method>
+
+        <method name="SetAuthTypeEnabled">
+            <arg name="auth_type" direction="in" type="i">
+                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
+            </arg>
+            <arg name="enabled" direction="in" type="b">
+                <description>Whether the authentication type is enabled</description>
+            </arg>
+        </method>
+
+        <method name="GetAuthTypeEnabledForApp">
+            <arg name="auth_type" direction="in" type="i">
+                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
+            </arg>
+            <arg name="auth_app" direction="in" type="i">
+                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
+            </arg>
+            <arg name="enabled" direction="out" type="b">
+                <description>Whether to enable the authentication type in this application</description>
+            </arg>
+        </method>
+
+        <method name="SetAuthTypeEnabledForApp">
+            <arg name="auth_type" direction="in" type="i">
+                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
+            </arg>
+            <arg name="auth_app" direction="in" type="i">
+                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
+            </arg>
+            <arg name="enabled" direction="in" type="b">
+                <description>Whether to enable the authentication type in this application</description>
+            </arg>
+        </method>
+
+        <method name="GetAuthTypeByApp">
+            <arg name="auth_app" direction="in" type="i">
+                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
+            </arg>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QList&lt;int&gt;"/>
+            <arg name="auth_types" direction="out" type="ai">
+                <description>The auth type List. Refer to KADAuthType in kas-authentication-i.h</description>
+            </arg>
+        </method>
+
+        <method name="QueryAuthApp">
+            <arg name="pam_service_name" direction="in" type="s">
+                <description>The PAM service name. For example lightdm, login, etc..</description>
+            </arg>
+            <arg name="auth_app" direction="out" type="i">
+                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
             </arg>
         </method>
 
@@ -90,8 +139,8 @@
         </property>
 
         <signal name="DefaultDeviceChanged">
-            <arg name="device_type" type="i">
-                <description>The device type. Refer to BiometricsDeviceType in biometrics-i.h</description>
+            <arg name="authtype" type="i">
+                <description>The authentication type being or to be performed. Refer to enum AuthType in file kas-authentication-i.h.</description>
             </arg>
             <arg name="device_id" type="s">
                 <description>The new device ID.</description>

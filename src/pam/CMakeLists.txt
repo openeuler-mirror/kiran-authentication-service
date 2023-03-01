@@ -33,7 +33,7 @@ set(TARGET_NAME pam_kiran_authentication)
 configure_file(config-pam.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-pam.h)
 
 set(TS_FILES "${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts")
-qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+qt_create_translation(QM_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${TS_FILES})
 
 add_library(
   ${TARGET_NAME} SHARED

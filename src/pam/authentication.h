@@ -49,10 +49,13 @@ private:
 
     // 告知上层应用当前的认证模式
     virtual void notifyAuthMode() = 0;
+    virtual bool requestLoginUserSwitchable() = 0;
+    // 告知上层应用可选的认证类型
+    virtual void notifySupportAuthType() = 0;
     // 请求自定义的认证类型
     virtual int32_t requestAuthType() = 0;
     // 告知上层应用当前的认证模式
-    virtual void notifyAuthType() = 0;
+    virtual void notifyAuthType(int authType) = 0;
 
 private:
     bool initSession();
@@ -62,7 +65,7 @@ private Q_SLOTS:
     void onAuthMessage(const QString &text, int type);
     void onAuthFailed();
     void onAuthSuccessed(const QString &userName);
-    void onPropertiesChanged(const QString &interfaceName, const QVariantMap &changedProperties, const QStringList &invalidatedProperties);
+    void onAuthTypeChanged(int authType);
 
 protected:
     PAMHandle *m_pamHandle;
@@ -70,7 +73,8 @@ protected:
     QString m_serviceName;
     QString m_userName;
     int32_t m_result;
-
+    int m_authApplication;
+    
     AuthManagerProxy *m_authManagerProxy;
     AuthSessionProxy *m_authSessionProxy;
     AuthUserProxy *m_authUserProxy;

@@ -1,22 +1,23 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
  * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
 #include "src/daemon/device/device-adaptor.h"
 #include <auxiliary.h>
-#include <biometrics-i.h>
+#include <kiran-authentication-devices/kiran-auth-device-i.h>
 #include <QJsonDocument>
 #include <climits>
+#include "logging-category.h"
 #include "src/daemon/auth-manager.h"
 #include "src/daemon/config-daemon.h"
 #include "src/daemon/device/device-protocol.h"
@@ -26,8 +27,10 @@
 
 namespace Kiran
 {
-DeviceAdaptor::DeviceAdaptor(QSharedPointer<DeviceProxy> dbusDeviceProxy) : m_dbusDeviceProxy(nullptr),
-                                                                            m_requestIDCount(-1)
+// TOOD:处理设备断开事件
+DeviceAdaptor::DeviceAdaptor(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy)
+    : m_dbusDeviceProxy(nullptr),
+      m_requestIDCount(-1)
 {
     auto defaultSeat = Login1SeatProxy::getDefault();
     connect(defaultSeat.get(), SIGNAL(activeSessionChanged(const Login1SessionItem &)), this, SLOT(onActiveSessionChanged(const Login1SessionItem &)));
@@ -35,49 +38,60 @@ DeviceAdaptor::DeviceAdaptor(QSharedPointer<DeviceProxy> dbusDeviceProxy) : m_db
     this->updateDBusDeviceProxy(dbusDeviceProxy);
 }
 
-void DeviceAdaptor::enroll(DeviceRequestSource *source)
+void DeviceAdaptor::enroll(DeviceRequestSource *source, const QString &extraInfo)
 {
-    // auto requestTarget = QSharedPointer<DeviceRequest>::create(this);
-    // // requestTarget->setRequest(request);
-    // requestTarget->setRequestStart(std::bind(&DeviceAdaptor::enrollStart, this));
-    // requestTarget->setRequestStop(std::bind(&DeviceAdaptor::enrollStop, this));
-    // this->m_requestController->pushRequest(request, requestTarget);
-
-    auto deviceRequst = QSharedPointer<DeviceRequest>::create();
+    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
+        .reqID = this->generateRequestID(),
+        .time = QTime::currentTime(),
+        .source = source,
+        .start = std::bind(&DeviceAdaptor::enrollStart, this, extraInfo),
+        .stop = std::bind(&DeviceAdaptor::enrollStop, this)});
     this->pushRequest(deviceRequst);
 }
 
-void DeviceAdaptor::verify(DeviceRequestSource *source)
+void DeviceAdaptor::verify(DeviceRequestSource *source, const QString &extraInfo)
 {
-    //    auto requestTarget = QSharedPointer<FPDeviceRequestTarget>::create(this);
-    // requestTarget->setRequest(request);
-    //  auto bid = request->args.value(DEVICE_REQUEST_ARGS_BID).toString();
-    //     requestTarget->setRequestStart(std::bind(&DeviceAdaptor::verifyStart, this, bid));
-    //     requestTarget->setRequestStop(std::bind(&DeviceAdaptor::enrollStop, this));
-    //     this->m_requestController->pushRequest(request, requestTarget);
+    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
+        .reqID = this->generateRequestID(),
+        .time = QTime::currentTime(),
+        .source = source,
+        .start = std::bind(&DeviceAdaptor::verifyStart, this, extraInfo),
+        .stop = std::bind(&DeviceAdaptor::verifyStop, this)});
+    this->pushRequest(deviceRequst);
 }
 
-void DeviceAdaptor::identify(DeviceRequestSource *source)
+void DeviceAdaptor::identify(DeviceRequestSource *source, const QString &extraInfo)
 {
-    //    auto requestTarget = QSharedPointer<FPDeviceRequestTarget>::create(this);
-    // requestTarget->setRequest(request);
-    // auto bids = request->args.value(DEVICE_REQUEST_ARGS_BIDS).toStringList();
-    // requestTarget->setRequestStart(std::bind(&DeviceAdaptor::identifyStart, this, bids));
-    // requestTarget->setRequestStop(std::bind(&DeviceAdaptor::enrollStop, this));
-    // this->m_requestController->pushRequest(request, requestTarget);
+    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
+        .reqID = this->generateRequestID(),
+        .time = QTime::currentTime(),
+        .source = source,
+        .start = std::bind(&DeviceAdaptor::identifyStart, this, extraInfo),
+        .stop = std::bind(&DeviceAdaptor::identifyStop, this)});
+    this->pushRequest(deviceRequst);
+}
+
+void DeviceAdaptor::removeAllRequest()
+{
+    // 中断当前认证
+    this->interruptRequest();
+
+    // 清空/结束所有认证，不再参与调度
+    for (auto iter = this->m_requests.begin(); iter != this->m_requests.end();)
+    {
+        iter->get()->source->cancel();
+        iter->get()->source->end();
+        iter = this->m_requests.erase(iter);
+    }
 }
 
 void DeviceAdaptor::stop(int64_t requestID)
 {
     // 停止操作需要立即执行，因为source会变为不可用。
-
-    //     auto requestTarget = QSharedPointer<FPDeviceRequestTarget>::create(this);
-    // requestTarget->setRequest(request);
-    //     auto requestID = request->args.value(DEVICE_REQUEST_ARGS_REQUEST_ID).toLongLong();
-    //     this->m_requestController->removeRequest(requestID);
+    this->removeRequest(requestID);
 }
 
-void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<DeviceProxy> dbusDeviceProxy)
+void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy)
 {
     RETURN_IF_FALSE(dbusDeviceProxy);
 
@@ -90,12 +104,14 @@ void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<DeviceProxy> dbusDevice
             this->m_dbusDeviceProxy = nullptr;
         }
 
+        this->m_dbusDeviceProxy = dbusDeviceProxy;
+        this->m_deviceID = dbusDeviceProxy->deviceID();
+
         this->interruptRequest();
 
-        connect(this->m_dbusDeviceProxy.get(), &DeviceProxy::EnrollStatus, this, &DeviceAdaptor::onEnrollStatus);
-        connect(this->m_dbusDeviceProxy.get(), &DeviceProxy::IdentifyStatus, this, &DeviceAdaptor::onIdentifyStatus);
-        connect(this->m_dbusDeviceProxy.get(), &DeviceProxy::VerifyStatus, this, &DeviceAdaptor::onVerifyStatus);
-
+        connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::EnrollStatus, this, &DeviceAdaptor::onEnrollStatus);
+        connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::IdentifyStatus, this, &DeviceAdaptor::onIdentifyStatus);
+        connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::VerifyStatus, this, &DeviceAdaptor::onVerifyStatus);
         this->schedule();
     }
 }
@@ -103,7 +119,7 @@ void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<DeviceProxy> dbusDevice
 void DeviceAdaptor::pushRequest(QSharedPointer<DeviceRequest> request)
 {
     this->m_requests.insert(request->reqID, request);
-
+    request->source->start(request);
     // 如果当前插入的请求优先级比正在执行请求的优先级高，则进行抢占
     auto pushPriority = request->source->getPriority();
     if (!this->m_currentRequest ||
@@ -130,10 +146,13 @@ void DeviceAdaptor::removeRequest(int64_t requestID)
     auto request = this->m_requests.value(requestID, nullptr);
     RETURN_IF_FALSE(request);
 
-    if (requestID == this->m_currentRequest->reqID)
+    if (this->m_currentRequest && (requestID == this->m_currentRequest->reqID))
     {
         this->interruptRequest();
     }
+
+    request->source->cancel();
+
     request->source->end();
     this->m_requests.remove(requestID);
 
@@ -147,6 +166,7 @@ void DeviceAdaptor::interruptRequest()
 {
     if (this->m_currentRequest)
     {
+        this->m_currentRequest->stop();
         this->m_currentRequest->source->interrupt();
         this->m_currentRequest = nullptr;
     }
@@ -170,9 +190,19 @@ void DeviceAdaptor::schedule()
     QSharedPointer<DeviceRequest> newRequest;
     for (auto &request : this->m_requests)
     {
+#if 0
+        // NOTE:
+        //  由于部分认证进程关联不上systemd login会话，这将导致其永远不会被调度
+        //  后修改逻辑，切换会话时，清空/中断所有认证请求
+        
         // 非激活会话不会被调度
-        CONTINUE_IF_TRUE(!this->isActiveSession(request->source->getPID()));
-
+        bool isActive = this->isActiveSession(request->source->getPID());
+        if (!isActive)
+        {
+            KLOG_DEBUG("request(%d) isn't active,ignore", request->reqID);
+            continue;
+        }
+#endif
         // 选择优先级较高的请求进行调度，如果优先级相同，则按照请求事件顺序进行调度
         if (!newRequest ||
             (request->source->getPriority() > newRequest->source->getPriority()) ||
@@ -182,6 +212,7 @@ void DeviceAdaptor::schedule()
             newRequest = request;
         }
     }
+
     if (newRequest)
     {
         this->wakeRequest(newRequest);
@@ -202,19 +233,20 @@ int64_t DeviceAdaptor::generateRequestID()
     {
         this->removeRequest(this->m_requestIDCount);
     }
+
     return this->m_requestIDCount;
 }
 
-void DeviceAdaptor::enrollStart()
+void DeviceAdaptor::enrollStart(const QString &extraInfo)
 {
     if (this->m_dbusDeviceProxy)
     {
-        this->m_dbusDeviceProxy->EnrollStart();
+        this->m_dbusDeviceProxy->EnrollStart(extraInfo);
     }
     else
     {
         KLOG_DEBUG("Not found fingerprint device, enroll failed.");
-        this->onEnrollStatus(QString(), FPEnrollResult::FP_ENROLL_RESULT_FAIL, 0);
+        this->onEnrollStatus(QString(), EnrollResult::ENROLL_RESULT_FAIL, 0, "");
     }
 }
 
@@ -226,16 +258,16 @@ void DeviceAdaptor::enrollStop()
     }
 }
 
-void DeviceAdaptor::verifyStart(const QString &bid)
+void DeviceAdaptor::verifyStart(const QString &extraInfo)
 {
     if (this->m_dbusDeviceProxy)
     {
-        this->m_dbusDeviceProxy->VerifyStart(bid);
+        this->m_dbusDeviceProxy->VerifyStart(extraInfo);
     }
     else
     {
         KLOG_DEBUG("Not found fingerprint device, verify failed.");
-        this->onVerifyStatus(FPVerifyResult::FP_VERIFY_RESULT_NOT_MATCH);
+        this->onVerifyStatus(VerifyResult::VERIFY_RESULT_NOT_MATCH, "");
     }
 }
 
@@ -247,16 +279,17 @@ void DeviceAdaptor::verifyStop()
     }
 }
 
-void DeviceAdaptor::identifyStart(const QStringList &bids)
+void DeviceAdaptor::identifyStart(const QString &extraInfo)
 {
     if (this->m_dbusDeviceProxy)
     {
-        this->m_dbusDeviceProxy->IdentifyStart(bids);
+        KLOG_DEBUG() << "device proxy identify start";
+        this->m_dbusDeviceProxy->IdentifyStart(extraInfo);
     }
     else
     {
         KLOG_DEBUG("Not found fingerprint device, identify failed.");
-        this->onIdentifyStatus(QString(), FPVerifyResult::FP_VERIFY_RESULT_NOT_MATCH);
+        this->onIdentifyStatus(QString(), IdentifyResult::IDENTIFY_RESULT_NOT_MATCH, "");
     }
 }
 
@@ -265,6 +298,7 @@ void DeviceAdaptor::identifyStop()
     if (this->m_dbusDeviceProxy)
     {
         this->m_dbusDeviceProxy->IdentifyStop();
+        KLOG_DEBUG() << "device proxy identify stop";
     }
 }
 
@@ -272,76 +306,85 @@ bool DeviceAdaptor::isActiveSession(uint32_t pid)
 {
     auto sessionObjectPath = Login1ManagerProxy::getDefault()->getSessionByPID(pid);
     auto session = QSharedPointer<Login1SessionProxy>::create(sessionObjectPath);
+    KLOG_DEBUG() << pid << sessionObjectPath.path() << session->activate();
     return session->activate();
 }
 
-void DeviceAdaptor::onEnrollStatus(const QString &bid, int result, int progress)
+void DeviceAdaptor::onEnrollStatus(const QString &featureID, int result, int progress, const QString &message)
 {
+    KLOG_DEBUG(kasAuthDevice) << "enroll status:" << featureID << result << progress << message;
+
     if (this->m_currentRequest)
     {
-        this->m_currentRequest->source->onEnrollStatus(bid, result, progress);
+        this->m_currentRequest->source->onEnrollStatus(featureID, result, progress, message);
     }
     else
     {
         KLOG_WARNING("Not found current request.");
     }
 
-    if (result == FPEnrollResult::FP_ENROLL_RESULT_COMPLETE ||
-        result == FPEnrollResult::FP_ENROLL_RESULT_FAIL)
+    if (result == EnrollResult::ENROLL_RESULT_COMPLETE ||
+        result == EnrollResult::ENROLL_RESULT_FAIL)
     {
         this->finishRequest();
     }
 }
 
-void DeviceAdaptor::onVerifyStatus(int result)
+void DeviceAdaptor::onVerifyStatus(int result, const QString &message)
 {
+    KLOG_DEBUG(kasAuthDevice) << "verify status:" << result << message;
+
     if (this->m_currentRequest)
     {
-        this->m_currentRequest->source->onVerifyStatus(result);
+        this->m_currentRequest->source->onVerifyStatus(result, message);
     }
     else
     {
         KLOG_WARNING("Not found current request.");
     }
 
-    if (result == FPVerifyResult::FP_VERIFY_RESULT_NOT_MATCH ||
-        result == FPVerifyResult::FP_VERIFY_RESULT_MATCH)
+    if (result == VerifyResult::VERIFY_RESULT_NOT_MATCH ||
+        result == VerifyResult::VERIFY_RESULT_MATCH)
     {
         this->finishRequest();
     }
 }
 
-void DeviceAdaptor::onIdentifyStatus(const QString &bid, int result)
+void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const QString &message)
 {
+    KLOG_DEBUG(kasAuthDevice) << "identify status:" << featureID << result << message;
+
     if (this->m_currentRequest)
     {
-        this->m_currentRequest->source->onIdentifyStatus(bid, result);
+        this->m_currentRequest->source->onIdentifyStatus(featureID, result, message);
     }
     else
     {
         KLOG_WARNING("Not found current request.");
     }
 
-    if (result == FPVerifyResult::FP_VERIFY_RESULT_NOT_MATCH ||
-        result == FPVerifyResult::FP_VERIFY_RESULT_MATCH)
+    if (result == VerifyResult::VERIFY_RESULT_NOT_MATCH ||
+        result == VerifyResult::VERIFY_RESULT_MATCH)
     {
         this->finishRequest();
     }
 }
 
+// NOTE:
+//  之前处理逻辑为活跃会话改变时，中断/不调度非活跃会话
+//  但是由于通过 DBus调用者->pid->logind session->session active
+//  这条关系链，通过pid拿到logind会话，部分情况进程可能关联不上会话(例如lightdm fork出用于提供给Greeter做认证的子进程)
+//
+//  现更改逻辑为会话活跃状态改变时，结束/清空认证请求
+//  认证队列里只存当前会话里的认证请求
 void DeviceAdaptor::onActiveSessionChanged(const Login1SessionItem &sessionItem)
 {
-    // 如果当前请求的会话从活跃变为不活跃，则停止当前请求进行重新调度
-    if (this->m_currentRequest && !this->isActiveSession(this->m_currentRequest->source->getPID()))
-    {
-        this->interruptRequest();
-    }
+    KLOG_DEBUG() << "active session changed:" << sessionItem.sessionID << sessionItem.sessionObjectPath;
 
-    // 这个if语句正常应该是一定成立的，这里只是避免信号误报而增加一个判断
-    if (!this->m_currentRequest)
-    {
-        this->schedule();
-    }
+    // 清空之前会话里的所有认证请求
+    removeAllRequest();
+
+    // 重新调度设备认证请求
+    this->schedule();
 }
-
 }  // namespace Kiran

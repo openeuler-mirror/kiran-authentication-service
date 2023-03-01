@@ -1,14 +1,14 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
  * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
@@ -40,6 +40,7 @@ Authentication::Authentication(PAMHandle *pamHandle,
 {
 }
 
+// TODO polkit 认证 超时,未结束认证
 Authentication::~Authentication()
 {
     if (this->m_authSessionProxy && this->m_authManagerProxy)
@@ -63,35 +64,46 @@ void Authentication::start()
     }
 
     CHECK_RESULT(this->init());
-    CHECK_RESULT(this->checkFailures());
     CHECK_RESULT(this->startAction());
-
 #undef CHECK_RESULT
 }
 
 int Authentication::init()
 {
+    this->m_serviceName = this->m_pamHandle->getItemDirect(PAM_SERVICE);
+    this->m_userName = this->m_pamHandle->getItemDirect(PAM_USER);
+
+    if (!QDBusConnection::systemBus().interface()->isServiceRegistered(KAD_MANAGER_DBUS_NAME))
+    {
+        this->m_pamHandle->syslog(LOG_ERR, QString("authentication service %1 is not registered!").arg(KAD_MANAGER_DBUS_NAME));
+        return PAM_IGNORE;
+    }
+
     this->m_authManagerProxy = new AuthManagerProxy(KAD_MANAGER_DBUS_NAME,
                                                     KAD_MANAGER_DBUS_OBJECT_PATH,
                                                     QDBusConnection::systemBus(),
                                                     this);
-    this->m_serviceName = this->m_pamHandle->getItemDirect(PAM_SERVICE);
-    this->m_userName = this->m_pamHandle->getItemDirect(PAM_USER);
+    auto authAppReply = this->m_authManagerProxy->QueryAuthApp(this->m_serviceName);
+    this->m_authApplication = authAppReply.value();
+    if (authAppReply.isError())
+    {
+        this->m_pamHandle->syslog(LOG_ERR, QString("query authentication app type failed,%1").arg(authAppReply.error().message()));
+        return PAM_IGNORE;
+    }
 
     auto reply = this->m_authManagerProxy->FindUserByName(this->m_userName);
-    auto userObjectPath = reply.value();
-    if (!userObjectPath.path().isEmpty())
+    auto userPath = reply.value();
+    if (userPath.path().isEmpty() || reply.isError())
     {
-        this->m_authUserProxy = new AuthUserProxy(KAD_MANAGER_DBUS_NAME,
-                                                  userObjectPath.path(),
-                                                  QDBusConnection::systemBus(),
-                                                  this);
+        this->m_pamHandle->syslog(LOG_ERR, QString("auth manager find user %1 failed,%2").arg(this->m_userName).arg(reply.error().message()));
+        return PAM_IGNORE;
     }
-    else
-    {
-        KLOG_WARNING() << "Not found user Proxy for user " << this->m_userName;
-        return PAM_SYSTEM_ERR;
-    }
+
+    this->m_authUserProxy = new AuthUserProxy(KAD_MANAGER_DBUS_NAME,
+                                              userPath.path(),
+                                              QDBusConnection::systemBus(),
+                                              this);
+
     return PAM_SUCCESS;
 }
 
@@ -99,8 +111,13 @@ int Authentication::checkFailures()
 {
     if (this->m_authUserProxy->failures() >= this->m_authManagerProxy->maxFailures())
     {
+        this->m_pamHandle->syslog(LOG_DEBUG, QString("user:%1,failures:%2,max filures:%3")
+                                                 .arg(m_userName)
+                                                 .arg(this->m_authUserProxy->failures())
+                                                 .arg(this->m_authManagerProxy->maxFailures()));
         this->m_pamHandle->sendErrorMessage(QObject::tr("Too many authentication failures, so the authentication mode is locked."));
-        return PAM_SYSTEM_ERR;
+        const int authMode = this->m_authManagerProxy->authMode();
+        return authMode == KAD_AUTH_MODE_AND ? PAM_SYSTEM_ERR : PAM_IGNORE;
     }
     return PAM_SUCCESS;
 }
@@ -114,8 +131,14 @@ int Authentication::startAction()
     switch (shash(argsInfo.action.toStdString().c_str()))
     {
     case CONNECT(KAP_ARG_ACTION_DO_AUTH, _hash):
-        result = this->startActionDoAuth();
+    {
+        result = checkFailures();
+        if (result == PAM_SUCCESS)
+        {
+            result = this->startActionDoAuth();
+        }
         break;
+    }
     case CONNECT(KAP_ARG_ACTION_AUTH_SUCC, _hash):
         result = this->startActionAuthSucc();
         break;
@@ -141,62 +164,61 @@ int Authentication::startActionAuthSucc()
 {
     auto reply = this->m_authManagerProxy->FindUserByName(this->m_userName);
     auto userObjectPath = reply.value();
+    this->m_pamHandle->syslog(LOG_DEBUG, QString("handler auth success,%1,path:%2").arg(m_userName).arg(userObjectPath.path()));
+
     if (!userObjectPath.path().isEmpty())
     {
         auto userProxy = new AuthUserProxy(KAD_MANAGER_DBUS_NAME,
                                            userObjectPath.path(),
                                            QDBusConnection::systemBus(),
                                            this);
-        userProxy->ResetFailures();
+        userProxy->ResetFailures().waitForFinished();
     }
 
-    return PAM_SUCCESS;
+    return PAM_IGNORE;
 }
 
 int Authentication::startAuthPre()
 {
-    // 只对支持的PAM_SERVICE进行认证，其他默认成功
-    if (!this->m_authManagerProxy->PAMServieIsEnabled(this->m_serviceName).value())
+    auto authTypeReply = m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
+    QList<int> authTypeList = authTypeReply.value();
+    if (m_authApplication == KAD_AUTH_APPLICATION_NONE || authTypeList.isEmpty())
     {
-        this->m_pamHandle->syslog(LOG_DEBUG, QString("The pam service '%1' is disabled or unsupported.").arg(this->m_serviceName));
+        this->m_pamHandle->syslog(LOG_DEBUG, QString("The pam service '%1' is unsupported or authentication type is not configured.").arg(this->m_serviceName));
         return PAM_IGNORE;
     }
 
-    RETURN_VAL_IF_TRUE(!this->initSession(), PAM_SYSTEM_ERR);
-
     this->notifyAuthMode();
+
+    RETURN_VAL_IF_TRUE(!this->initSession(), PAM_SYSTEM_ERR);
 
     if (this->m_authManagerProxy->authMode() == KADAuthMode::KAD_AUTH_MODE_OR)
     {
-        auto authType = this->requestAuthType();
-
-        switch (authType)
+        if (this->requestLoginUserSwitchable())
         {
-        case KADAuthType::KAD_AUTH_TYPE_NONE:
-            break;
-        case KADAuthType::KAD_AUTH_TYPE_FINGERPRINT:
-            this->m_authSessionProxy->SetAuthType(authType);
-            break;
-        default:
+            this->m_authSessionProxy->SetLoginUserSwitchable(true);
+        }
+
+        this->notifySupportAuthType();
+
+        auto authType = this->requestAuthType();
+        // 密码认证不经过认证服务，直接通知界面更新认证方式,然后退出进行密码认证
+        if (authType == KAD_AUTH_TYPE_PASSWORD)
+        {
+            this->notifyAuthType(authType);
             return PAM_IGNORE;
         }
+
+        auto setAuthTypeReply = this->m_authSessionProxy->SetAuthType(authType);
+        setAuthTypeReply.waitForFinished();
+        if (setAuthTypeReply.isError())
+        {
+            this->m_pamHandle->syslog(LOG_WARNING, QString("auth session set auth type %1 failed").arg(authType));
+            return PAM_SYSTEM_ERR;
+        }
     }
-
-    this->notifyAuthType();
-
-    auto connected = QDBusConnection::systemBus().connect(QStringLiteral(KAD_MANAGER_DBUS_NAME),
-                                                          this->m_authSessionProxy->path(),
-                                                          QStringLiteral("org.freedesktop.DBus.Properties"),
-                                                          QStringLiteral("PropertiesChanged"),
-                                                          this,
-                                                          SLOT(onPropertiesChanged(QString, QVariantMap, QStringList)));
-
-    if (!connected)
-    {
-        this->m_pamHandle->syslog(LOG_WARNING,
-                                  QString("Failed to connect signal PropertiesChanged for %1.").arg(this->m_authSessionProxy->path()));
-    }
-
+    this->notifyAuthType(this->m_authSessionProxy->authType());
+    auto connected = connect(m_authSessionProxy, &AuthSessionProxy::AuthTypeChanged, this, &Authentication::onAuthTypeChanged);
     return PAM_SUCCESS;
 }
 
@@ -212,19 +234,21 @@ int Authentication::startAuth()
                                   QString("Call startAuth failed: %1.").arg(reply.error().message()));
         return PAM_SYSTEM_ERR;
     }
+
     return PAM_SUCCESS;
 }
 
 void Authentication::finishAuth(int result)
 {
-    this->m_pamHandle->syslog(LOG_DEBUG, "Authentication thread ready quit.");
+    this->m_pamHandle->syslog(LOG_DEBUG,
+                              QString("Authentication thread ready quit,result:%1").arg(result));
     this->m_pamHandle->finish(result);
 }
 
 bool Authentication::initSession()
 {
-    // 认证时不限定用户，如果认证的是其他用户则登录到其他用户的会话中
-    auto reply = this->m_authManagerProxy->CreateSession(QString(), -1);
+    auto userName = this->m_pamHandle->getItem(PAM_USER);
+    auto reply = this->m_authManagerProxy->CreateSession(userName, -1, m_authApplication);
     auto sessionObjectPath = reply.value();
 
     if (reply.isError())
@@ -282,6 +306,7 @@ void Authentication::onAuthMessage(const QString &text, int type)
 {
     QString response;
     int32_t retval = PAM_SUCCESS;
+
     switch (type)
     {
     case KADMessageType::KAD_MESSAGE_TYPE_ERROR:
@@ -317,15 +342,9 @@ void Authentication::onAuthSuccessed(const QString &userName)
     this->finishAuth(PAM_SUCCESS);
 }
 
-void Authentication::onPropertiesChanged(const QString &interfaceName,
-                                         const QVariantMap &changedProperties,
-                                         const QStringList &invalidatedProperties)
+void Authentication::onAuthTypeChanged(int authType)
 {
-    const QVariant authType = changedProperties.value(QStringLiteral("AuthType"));
-    if (authType.isValid())
-    {
-        this->notifyAuthType();
-    }
+    this->notifyAuthType(authType);
 }
 
 }  // namespace Kiran

@@ -1,14 +1,14 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
  * kiran-cc-daemon is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
@@ -58,13 +58,14 @@ extern "C"
 #define AUTH_TYPE_STR_FINGERPRINT "fingerprint"
 #define AUTH_TYPE_STR_FACE "face"
 #define AUTH_TYPE_STR_UKEY "uKey"
+#define AUTH_TYPE_STR_FINGERVEIN "fingervein"
 
     // 认证类型
     enum KADAuthType
     {
         // 无/默认方式
         KAD_AUTH_TYPE_NONE = 0,
-        // 密码认证
+        // 密码认证,认证服务不参与密码认证
         KAD_AUTH_TYPE_PASSWORD = (1 << 0),
         // 指纹认证
         KAD_AUTH_TYPE_FINGERPRINT = (1 << 1),
@@ -72,16 +73,9 @@ extern "C"
         KAD_AUTH_TYPE_FACE = (1 << 2),
         // UKEY
         KAD_AUTH_TYPE_UKEY = (1 << 3),
-        KAD_AUTH_TYPE_LAST = (1 << 4),
-    };
-
-    // 认证状态
-    enum KADAuthState
-    {
-        // 认证成功
-        KAD_AUTH_STATE_SUCCESS = 0,
-        // 认证失败
-        KAD_AUTH_STATE_FAILED = 1,
+        // 指静脉认证
+        KAD_AUTH_TYPE_FINGERVEIN = (1 << 4),
+        KAD_AUTH_TYPE_LAST = (1 << 5),
     };
 
     // 认证提示消息类型，接收方需要响应消息
@@ -102,29 +96,38 @@ extern "C"
         KAD_MESSAGE_TYPE_INFO,
     };
 
-    // 认证支持的PAM服务
-    enum KADPAMService
-    {
-        // lightdm
-        KAD_PAM_SERVICE_LIGHTDM,
-        // login
-        KAD_PAM_SERVICE_LOGIN,
-    };
+    /* ------------ 认证场景定义 ----------------- */
+#define AUTH_APPLICATION_STR_LOGIN "login"
+#define AUTH_APPLICATION_STR_UNLOCK "unlock"
+#define AUTH_APPLICATION_STR_EMPOWERMENT "empowerment"
 
+    enum KADAuthApplication
+    {
+        KAD_AUTH_APPLICATION_NONE = 0,
+        // 登录场景
+        KAD_AUTH_APPLICATION_LOGIN,
+        // 解锁场景
+        KAD_AUTH_APPLICATION_UNLOCK,
+        // 授权场景
+        KAD_AUTH_APPLICATION_EMPOWERMENT,
+        KAD_AUTH_APPLICATION_LAST
+    };
     /* ------------ PAM相关的定义 ----------------- */
 
     enum KAPProtoID
     {
         // 告知应用程序当前的认证模式
         KAP_REQ_CMD_NOTIFY_AUTH_MODE = 0x10,
-
+        // 向应用程序请求当前是否允许切换登录用户
+        KAP_REQ_CMD_LOGIN_USER_SWITCHABLE = 0x20,
+        // 告知应用程序当前可选的认证类型
+        KAP_REQ_CMD_NOTIFY_SUPPORT_AUTH_TYPE = 0x30,
         // 向应用请求需要使用的认证类型（只有图形应用才会使用）
-        KAP_REQ_CMD_AUTH_TYPE = 0x20,
+        KAP_REQ_CMD_AUTH_TYPE = 0x40,
         // 回应PAM_REQ_CMD_AUTH_TYPE消息
-        KAP_RSP_CMD_AUTH_TYPE,
-
+        KAP_RSP_CMD_AUTH_TYPE = 0x50,
         // 告知应用程序最终使用的认证类型
-        KAP_REQ_CMD_NOTIFY_AUTH_TYPE = 0x30,
+        KAP_REQ_CMD_NOTIFY_AUTH_TYPE = 0x60,
     };
 
 // PJK: proto json key
@@ -137,7 +140,9 @@ extern "C"
 #define KAP_PJK_KEY_ERROR "error"
 #define KAP_PJK_KEY_BODY "body"
 #define KAP_PJK_KEY_AUTH_MODE "auth_mode"
+#define KAP_PJK_KEY_LOGIN_USER_SWITCHABLE "login_user_switchable"
 #define KAP_PJK_KEY_AUTH_TYPE "auth_type"
+#define KAP_PJK_KEY_AUTH_TYPES "auth_types"
 
 #ifdef __cplusplus
 }

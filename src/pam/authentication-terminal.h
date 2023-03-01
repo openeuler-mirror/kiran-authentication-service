@@ -26,8 +26,10 @@ public:
 
 private:
     virtual void notifyAuthMode() {}
+    virtual bool requestLoginUserSwitchable() { return false; };
+    virtual void notifySupportAuthType() {};
     virtual int32_t requestAuthType();
-    virtual void notifyAuthType() {}
+    virtual void notifyAuthType(int authType) {}
 };
 
 }  // namespace Kiran

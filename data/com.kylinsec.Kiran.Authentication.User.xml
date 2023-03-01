@@ -32,8 +32,11 @@
         </method>
 
         <method name="EnrollStart">
-            <arg name="device_type" direction="in" type="i">
-                <description>The device type. Refer to BiometricsDeviceType in biometrics-i.h</description>
+            <arg name="authtype" direction="in" type="i">
+                <description>The authentication type being or to be performed. Refer to enum AuthType in file kas-authentication-i.h.</description>
+            </arg>
+            <arg name="extra_info" direction="in" type="s">
+                <description>For additional information, use JSON format, such as Ukey with PIN code information</description>
             </arg>
             <description>Use the selected default device to enroll.</description>
         </method>

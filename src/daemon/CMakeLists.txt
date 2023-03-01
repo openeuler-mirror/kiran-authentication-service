@@ -41,28 +41,28 @@ qt_add_dbus_interface(
   accounts_user_proxy)
 
 set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.xml
-  PROPERTIES CLASSNAME BiometricsProxy NO_NAMESPACE true)
+  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.AuthDevice.xml
+  PROPERTIES CLASSNAME AuthDeviceManagerProxy NO_NAMESPACE true)
 
 qt_add_dbus_interface(
   BIOMETRICS_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.xml biometrics_proxy)
+  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.AuthDevice.xml auth_device_manager_proxy)
 
 set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.Device.xml
-  PROPERTIES CLASSNAME DeviceProxy NO_NAMESPACE true)
+  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.AuthDevice.Device.xml
+  PROPERTIES CLASSNAME AuthDeviceProxy NO_NAMESPACE true)
 
 qt_add_dbus_interface(
   BIOMETRICS_DEVICE_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Biometrics.Device.xml
-  device_proxy)
+  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.AuthDevice.Device.xml
+  auth_device_proxy)
 
 set(TARGET_NAME kiran-authentication-daemon)
 
 configure_file(config-daemon.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-daemon.h)
 
 set(TS_FILES "${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts")
-qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+qt_create_translation(QM_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${TS_FILES})
 
 add_executable(
   ${TARGET_NAME}
@@ -79,8 +79,9 @@ add_executable(
 
 target_include_directories(
   ${TARGET_NAME}
-  PRIVATE ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}
-          ${PROJECT_SOURCE_DIR}/include ${KLOG_QT5_INCLUDE_DIRS}
+  PRIVATE ${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
+          ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include 
+          ${KLOG_QT5_INCLUDE_DIRS}
           ${KIRAN_CC_DAEMON_INCLUDE_DIRS})
 
 target_link_libraries(

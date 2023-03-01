@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+    <interface name="com.kylinsec.Kiran.AuthDevice.Device">
+
+        <method name="EnrollStart">
+            <arg name="enrollInfo" direction="in" type="s">
+                <description>Json format. For UKey authentication, the PIN code is passed in, and the biometric authentication is passed in blank</description>
+            </arg>        
+            <description>Start enrollemnt.</description>
+        </method>
+
+        <method name="EnrollStop">
+            <description>Stop an on-going fingerprint enrollment started with EnrollStart.</description>
+        </method>
+
+        <method name="VerifyStart">
+            <arg name="verifyInfo" direction="in" type="s">
+                <description>Json format, input feature id; For UKey authentication, extra PIN code is required.</description>
+            </arg>
+            <description>Performs a new scan and verify it against a previously enrolled print.Verification might be seen as a one-to-one fingerprint comparison where you know the identity of the user that you wish to authenticate</description>
+        </method>
+
+        <method name="VerifyStop">
+            <description>Stop an on-going fingerprint verification started with VerifyStart.</description>
+        </method>
+
+        <method name="IdentifyStart">
+            <arg name="identifyInfo" direction="in" type="s">
+                <description>Json format, The biometric authentication incoming feature id list can also be empty; For UKey authentication, extra PIN code is required</description>
+            </arg>          
+            <description>Performs a new scan and attempts to identify the scanned finger against a collection of previously enrolled fingerprints.Identification is a one-to-many comparison where you do not know the identity of the user that you wish to authenticate.</description>
+        </method>
+
+        <method name="IdentifyStop">
+            <description>Stop an on-going fingerprint identification started with IdentifyStart.</description>
+        </method>
+
+        <method name="GetFeatureIDList">
+            <arg name="feature_id_list" direction="out" type="as">
+                <description>Get the feature ID list of the current device </description>
+            </arg>
+        </method>
+
+        <property name="DeviceID" type="s" access="read">
+            <description>The device id.</description>
+        </property>
+
+        <property name="DeviceType" type="i" access="read">
+            <description>The device type.</description>
+        </property>
+
+        <signal name="EnrollStatus">
+            <arg name="feature_id" type="s">
+                <description>Feature ID associate with feature or ukey data.</description>
+            </arg>
+            <arg name="progress" type="i">
+                <description>A number between 0 and 100 to describe the progress of enrolling fingerprint. 0 is failed </description>
+            </arg>
+            <arg name="result" type="i">
+                <description>Represent the status of the enrollment. Refer to enum DeviceType in file kiran-auth-device-i.h</description>
+            </arg>
+            <arg name="message" type="s">
+                <description>Status description information.</description>
+            </arg>
+        </signal>
+
+        <signal name="VerifyStatus">
+            <arg name="result" type="i">
+                <description>Represent the status of the verification.</description>
+            </arg>
+            <arg name="message" type="s">
+                <description>Status description information.</description>
+            </arg>            
+        </signal>
+
+        <signal name="IdentifyStatus">
+            <arg name="feature_id" type="s">
+                <description>Feature ID.</description>
+            </arg>
+            <arg name="result" type="i">
+                <description>Represent the status of the identification. Refer to enum DeviceType in file kiran-auth-device-i.h.</description>
+            </arg>
+            <arg name="message" type="s">
+                <description>Status description information.</description>
+            </arg>            
+        </signal>
+
+        <signal name="DeviceStatus">
+            <arg name="status" type="i">
+                <description>device status.Refer to enum DeviceType in file kiran-auth-device-i.h.</description>
+            </arg>
+            <arg name="message" type="s">
+                <description>Status description information.</description>
+            </arg>   
+        </signal>
+    </interface>
+</node>

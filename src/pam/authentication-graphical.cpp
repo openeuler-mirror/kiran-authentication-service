@@ -38,6 +38,46 @@ void AuthenticationGraphical::notifyAuthMode()
     this->m_pamHandle->sendTextMessage(KAP_PROTO_JSON_PREFIX + QString(jsonDoc.toJson()));
 }
 
+bool AuthenticationGraphical::requestLoginUserSwitchable()
+{
+    QJsonDocument jsonReqDoc(QJsonObject{
+        {KAP_PJK_KEY_HEAD, QJsonObject{{KAP_PJK_KEY_CMD, KAPProtoID::KAP_REQ_CMD_LOGIN_USER_SWITCHABLE}}},
+    });
+
+    QString response;
+    auto retval = this->m_pamHandle->sendQuestionPrompt(KAP_PROTO_JSON_PREFIX + QString(jsonReqDoc.toJson()), response);
+    auto jsonRspDoc = QJsonDocument::fromJson(response.toUtf8());
+
+    // 请求失败的情况下使用默认值
+    if (retval != PAM_SUCCESS)
+    {
+        auto errorMsg = jsonReqDoc[KAP_PJK_KEY_HEAD][KAP_PJK_KEY_ERROR].toString();
+        this->m_pamHandle->syslog(LOG_WARNING, QString("Request login user switchable failed: %1").arg(errorMsg));
+        return false;
+    }
+    
+    return jsonRspDoc[KAP_PJK_KEY_BODY][KAP_PJK_KEY_LOGIN_USER_SWITCHABLE].toBool();
+}
+
+void AuthenticationGraphical::notifySupportAuthType()
+{
+    auto authType = this->m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
+    QList<int> authTypeList = authType.value();
+    authTypeList << KAD_AUTH_TYPE_PASSWORD;
+    
+    QStringList authTypeStrList;
+    for (auto authType : authTypeList)
+    {
+        authTypeStrList << QString::number(authType);
+    }
+
+    QJsonDocument jsonDoc(QJsonObject{
+        {KAP_PJK_KEY_HEAD, QJsonObject{{KAP_PJK_KEY_CMD, KAPProtoID::KAP_REQ_CMD_NOTIFY_SUPPORT_AUTH_TYPE}}},
+        {KAP_PJK_KEY_BODY, QJsonObject{{KAP_PJK_KEY_AUTH_TYPES, QJsonArray::fromStringList(authTypeStrList)}}}});
+
+    this->m_pamHandle->sendTextMessage(KAP_PROTO_JSON_PREFIX + QString(jsonDoc.toJson()));
+}
+
 int32_t AuthenticationGraphical::requestAuthType()
 {
     QJsonDocument jsonReqDoc(QJsonObject{
@@ -57,9 +97,8 @@ int32_t AuthenticationGraphical::requestAuthType()
     return jsonRspDoc[KAP_PJK_KEY_BODY][KAP_PJK_KEY_AUTH_TYPE].toInt();
 }
 
-void AuthenticationGraphical::notifyAuthType()
+void AuthenticationGraphical::notifyAuthType(int authType)
 {
-    auto authType = this->m_authSessionProxy->authType();
     QJsonDocument jsonDoc(QJsonObject{
         {KAP_PJK_KEY_HEAD, QJsonObject{{KAP_PJK_KEY_CMD, KAPProtoID::KAP_REQ_CMD_NOTIFY_AUTH_TYPE}}},
         {KAP_PJK_KEY_BODY, QJsonObject{{KAP_PJK_KEY_AUTH_TYPE, authType}}}});

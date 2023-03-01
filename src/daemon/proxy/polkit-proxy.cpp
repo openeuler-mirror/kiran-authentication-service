@@ -1,14 +1,14 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
  * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
@@ -23,14 +23,14 @@
 #include <QDBusVariant>
 #include "src/daemon/config-daemon.h"
 
-namespace Kiran
-{
 #define POLKIT_DBUS_NAME "org.freedesktop.PolicyKit1"
 #define POLKIT_DBUS_OBJECT_PATH "/org/freedesktop/PolicyKit1/Authority"
 #define POLKIT_DBUS_INTERFACE_NAME "org.freedesktop.PolicyKit1.Authority"
 // 单位：秒
 #define POLKIT_AUTH_CHECK_TIMEOUT 20
 
+namespace Kiran
+{
 struct PolkitSubject
 {
     QString kind;
@@ -216,7 +216,6 @@ void PolkitProxy::onFinishCheckAuth(QDBusPendingCallWatcher *watcher, QSharedPoi
         QDBusConnection::systemBus().send(replyMessage);
     }
 }
-
 }  // namespace Kiran
 
 Q_DECLARE_METATYPE(Kiran::PolkitSubject);

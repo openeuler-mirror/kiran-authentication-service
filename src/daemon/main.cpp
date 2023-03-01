@@ -22,6 +22,7 @@
 #include "src/daemon/config-daemon.h"
 #include "src/daemon/device/device-adaptor-factory.h"
 #include "src/daemon/user-manager.h"
+#include "src/daemon/auth-config.h"
 
 int main(int argc, char *argv[])
 {
@@ -53,15 +54,18 @@ int main(int argc, char *argv[])
     parser.addVersionOption();
     parser.process(app);
 
+    Kiran::AuthConfig::globalInit();
     Kiran::UserManager::globalInit();
-    Kiran::AuthManager::globalInit(Kiran::UserManager::getInstance());
+    Kiran::AuthManager::globalInit(Kiran::UserManager::getInstance(),Kiran::AuthConfig::getInstance());
     Kiran::DeviceAdaptorFactory::globalInit(Kiran::AuthManager::getInstance());
 
+    KLOG_INFO() << Kiran::AuthConfig::getInstance();
     auto retval = app.exec();
 
     Kiran::DeviceAdaptorFactory::globalDeinit();
     Kiran::AuthManager::globalDeinit();
     Kiran::UserManager::globalDeinit();
+    Kiran::AuthConfig::globalDeinit();
 
     return retval;
 }

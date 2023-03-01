@@ -16,7 +16,7 @@
 
 #include "src/daemon/device/device-adaptor.h"
 
-class BiometricsProxy;
+class AuthDeviceManagerProxy;
 
 namespace Kiran
 {
@@ -25,31 +25,37 @@ class AuthManager;
 class DeviceAdaptorFactory : public QObject
 {
     Q_OBJECT
-public:
+private:
     DeviceAdaptorFactory(AuthManager *authManager);
+
+public:
     virtual ~DeviceAdaptorFactory(){};
 
     static DeviceAdaptorFactory *getInstance() { return m_instance; };
-
     static void globalInit(AuthManager *authManager);
-
     static void globalDeinit() { delete m_instance; };
 
-    QSharedPointer<DeviceAdaptor> getDeviceAdaptor(int32_t deviceType);
-
+    QSharedPointer<DeviceAdaptor> getDeviceAdaptor(int32_t authType);
+    QString getDeivcesForType(int32_t authType);
+    
 private:
     void init();
 
 private:
-    QSharedPointer<DeviceAdaptor> createDeviceAdaptor(int32_t deviceType);
-    QSharedPointer<DeviceProxy> getDBusDeviceProxy(int deviceType, const QString &suggestDeviceID);
-    void onDefaultDeviceChanged(int deviceType, const QString &deviceID);
+    QSharedPointer<DeviceAdaptor> createDeviceAdaptor(int32_t authType);
+    QSharedPointer<AuthDeviceProxy> getDBusDeviceProxy(int authType, const QString &suggestDeviceID);
+    void onDefaultDeviceChanged(int authType, const QString &deviceID);
+
+private slots:
+    void onAuthDeviceManagerLost(const QString& service);
+    void onDeviceDeleted(int deviceType, const QString &deviceID);
 
 private:
     static DeviceAdaptorFactory *m_instance;
     AuthManager *m_authManager;
-    BiometricsProxy *m_biometricsProxy;
+    AuthDeviceManagerProxy *m_authDeviceManagerProxy;
     QMap<int32_t, QSharedPointer<DeviceAdaptor>> m_devices;
+    QDBusServiceWatcher *m_serviceWatcher;
 };
 
 }  // namespace Kiran

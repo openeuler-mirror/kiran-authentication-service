@@ -50,7 +50,8 @@ enum KADErrorCode
     // Common
     SUCCESS,
     ERROR_FAILED,
-
+    ERROR_INVALID_ARGUMENT,
+    
     // User
     ERROR_USER_IID_ALREADY_EXISTS = 0x10000,
     // 正在录入中

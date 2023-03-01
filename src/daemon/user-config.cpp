@@ -1,0 +1,214 @@
+#include "user-config.h"
+#include "config-daemon.h"
+#include "kas-authentication-i.h"
+#include "utils.h"
+#include "auxiliary.h"
+
+#include <qt5-log-i.h>
+#include <QFile>
+#include <QSettings>
+
+#define INIFILE_GENERAL_GROUP_NAME "General"
+#define INIFILE_GENERAL_GROUP_KEY_IIDS "IIDs"
+// 连续认证失败次数计数
+#define INIFILE_GENERAL_GROUP_KEY_FAILURES "Failures"
+
+#define INIFILE_IID_GROUP_KEY_AUTH_TYPE "AuthType"
+#define INIFILE_IID_GROUP_KEY_NAME "Name"
+#define INIFILE_IID_GROUP_KEY_BID "Bid"
+
+using namespace Kiran;
+
+UserConfig::UserConfig(const QString& name, QObject* parent)
+    : QObject(parent)
+{
+    this->m_settings = new QSettings(QString(KDA_UESR_DATA_DIR "/").append(name), QSettings::IniFormat, this);
+    init();
+}
+
+UserConfig::~UserConfig()
+{
+    // 如果缓存已经被清理，则删除文件
+    if (this->m_settings->childGroups().size() == 0)
+    {
+        QFile file(this->m_settings->fileName());
+        file.remove();
+        this->m_settings = nullptr;
+    }
+}
+
+void UserConfig::removeCache()
+{
+    this->m_settings->remove(QString());
+}
+
+void UserConfig::deleteIID(const QString& iid)
+{
+    this->m_iids.removeOne(iid);
+    this->m_IIDAuthInfoMap.remove(iid);
+
+    this->m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
+    m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_IIDS, this->m_iids);
+    this->m_settings->endGroup();
+
+    this->m_settings->beginGroup(iid);
+    this->m_settings->remove("");
+    this->m_settings->endGroup();
+}
+
+QStringList UserConfig::getIIDs()
+{
+    return m_iids;
+}
+
+QStringList UserConfig::getIIDs(int authType)
+{
+    QStringList iids;
+
+    for (auto iter = this->m_IIDAuthInfoMap.begin(); iter != this->m_IIDAuthInfoMap.end(); iter++)
+    {
+        if( iter->authType == authType )
+        {
+            iids << iter.key();
+        }
+    }
+
+    return iids;
+}
+
+QStringList UserConfig::getBIDs(int authType)
+{
+    QStringList bids;
+
+    for (auto iter = this->m_IIDAuthInfoMap.begin(); iter != this->m_IIDAuthInfoMap.end(); iter++)
+    {
+        if( iter->authType == authType )
+        {
+            bids << iter->bid;
+        }
+    }
+
+    return bids;
+}
+
+QString UserConfig::getIIDName(const QString& iid)
+{
+    auto iter = m_IIDAuthInfoMap.find(iid);
+
+    if (iter == m_IIDAuthInfoMap.end())
+    {
+        // 正常逻辑,不应进入到该处
+        return "";
+    }
+
+    return iter->name;
+}
+
+QString UserConfig::getIIDBid(const QString& iid)
+{
+    auto iter = m_IIDAuthInfoMap.find(iid);
+
+    if (iter == m_IIDAuthInfoMap.end())
+    {
+        // 正常逻辑,不应进入到该处
+        return "";
+    }
+
+    return iter->bid;
+}
+
+int UserConfig::getIIDAuthType(const QString& iid)
+{
+    auto iter = m_IIDAuthInfoMap.find(iid);
+
+    if (iter == m_IIDAuthInfoMap.end())
+    {
+        // 正常逻辑不应进入到该处
+        return KAD_AUTH_TYPE_NONE;
+    }
+
+    return iter->authType;
+}
+
+int UserConfig::getFailures()
+{
+    return m_failures;
+}
+
+void UserConfig::init()
+{
+    m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
+    auto iids = m_settings->value(INIFILE_GENERAL_GROUP_KEY_IIDS, QStringList()).toStringList();
+    this->m_failures = m_settings->value(INIFILE_GENERAL_GROUP_KEY_FAILURES, 0).toInt();
+    m_settings->endGroup();
+
+    for (auto iid : iids)
+    {
+        m_settings->beginGroup(iid);
+
+        auto name = m_settings->value(INIFILE_IID_GROUP_KEY_NAME, QString("")).toString();
+        auto authTypeStr = m_settings->value(INIFILE_IID_GROUP_KEY_AUTH_TYPE, "").toString();
+        auto bid = m_settings->value(INIFILE_IID_GROUP_KEY_BID, QString("")).toString();
+        int authType = Utils::authTypeStr2Enum(authTypeStr);
+        if (name.isEmpty() || authTypeStr.isEmpty() || authType == KAD_AUTH_MODE_NONE)
+        {
+            KLOG_WARNING() << "user config:" << m_settings->fileName() << "iid:" << iid << " value is invalid!";
+            this->m_settings->remove(QString());
+            continue;
+        }
+        IIDInfo iidInfo{
+            .name = name,
+            .authType = authType,
+            .bid = bid
+        };
+
+        m_IIDAuthInfoMap[iid] = iidInfo;
+        m_iids << iid;
+
+        m_settings->endGroup();
+    }
+}
+
+void UserConfig::addIID(int authType, const QString& iid, const QString& name, const QString& bid)
+{
+    QString authTypeStr = Utils::authTypeEnum2Str(authType);
+
+    m_iids << iid;
+    m_IIDAuthInfoMap[iid] = {.name = name,.authType=authType,.bid=bid};
+
+    m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
+    m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_IIDS, m_iids);
+    m_settings->endGroup();
+
+    m_settings->beginGroup(iid);
+    m_settings->setValue(INIFILE_IID_GROUP_KEY_AUTH_TYPE, authTypeStr);
+    m_settings->setValue(INIFILE_IID_GROUP_KEY_NAME, name);
+    m_settings->setValue(INIFILE_IID_GROUP_KEY_BID, bid);
+    m_settings->endGroup();
+}
+
+void UserConfig::changeIIDName(const QString& iid, const QString& name)
+{
+    if (!m_iids.contains(iid) || !m_IIDAuthInfoMap.contains(iid))
+    {
+        KLOG_ERROR() << "change iid name failed,can not find iid:" << iid;
+        return;
+    }
+
+    m_IIDAuthInfoMap.find(iid)->name = name;
+
+    m_settings->beginGroup(iid);
+    m_settings->setValue(INIFILE_IID_GROUP_KEY_NAME, name);
+    m_settings->endGroup();
+}
+
+void UserConfig::setFailures(int failures)
+{
+    RETURN_IF_TRUE(failures == m_failures);
+
+    m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
+    m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_FAILURES, failures);
+    m_settings->endGroup();
+
+    m_failures = failures;
+}
