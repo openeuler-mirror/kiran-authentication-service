@@ -36,6 +36,7 @@ public:
     QString getItemDirect(int itemType);
     QString getItem(int itemType);
     void setItem(int itemType, const QString &value);
+    void syslogDirect(int priority, const QString& log);
     void syslog(int priority, const QString &log);
     // PAM结束
     void finish(int result);

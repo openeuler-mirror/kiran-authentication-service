@@ -31,7 +31,8 @@ class AuthenticationController : public QObject,
     Q_OBJECT
 public:
     AuthenticationController(void* pamh, const QStringList& arguments);
-    virtual ~AuthenticationController(){};
+    virtual ~AuthenticationController();
+    
 
     int32_t run();
 
@@ -55,6 +56,8 @@ private:
     QMutex m_mutex;
     QWaitCondition m_waitCondition;
     QList<std::function<void(void)>> m_tasks;
+
+    bool m_isGraphical = false;
 };
 
 }  // namespace Kiran

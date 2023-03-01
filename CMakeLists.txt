@@ -23,6 +23,7 @@ pkg_search_module(KLOG_QT5 REQUIRED klog-qt5)
 pkg_search_module(SYSTEMD REQUIRED systemd)
 pkg_search_module(KIRAN_CC_DAEMON REQUIRED kiran-cc-daemon)
 pkg_search_module(PAM REQUIRED pam)
+pkg_search_module(LIBSYSTEMD REQUIRED libsystemd)
 
 configure_file(config.h.in ${PROJECT_BINARY_DIR}/config.h)
 

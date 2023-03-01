@@ -13,11 +13,11 @@
  */
 
 #pragma once
-
 #include <QDBusContext>
 #include <QDBusObjectPath>
 #include <QList>
 #include <QRandomGenerator>
+#include "kas-authentication-i.h"
 
 class AuthManagerAdaptor;
 class QSettings;
@@ -28,60 +28,75 @@ namespace Kiran
 {
 class Session;
 class UserManager;
-
+class AuthConfig;
 class AuthManager : public QObject, protected QDBusContext
 {
     Q_OBJECT
-
-    Q_PROPERTY(int AuthMode READ getAuthMode NOTIFY authModeChanged)
+    Q_PROPERTY(int AuthMode READ getAuthMode)
     Q_PROPERTY(int MaxFailures READ getMaxFailures)
+private:
+    AuthManager(UserManager *userManager,AuthConfig* config);
 
 public:
-    AuthManager(UserManager *userManager);
     virtual ~AuthManager(){};
 
     static AuthManager *getInstance() { return m_instance; };
-
-    static void globalInit(UserManager *userManager);
-
+    static void globalInit(UserManager *userManager,AuthConfig* auhtConfig);
     static void globalDeinit() { delete m_instance; };
-
+    
     int getAuthMode();
     int getMaxFailures();
-    QList<int32_t> getAuthOrder() { return this->m_authOrder; }
 
 public Q_SLOTS:  // DBUS METHODS
-    QDBusObjectPath CreateSession(const QString &userName, int timeout);
+    // 认证会话创建以及销毁
+    QDBusObjectPath CreateSession(const QString &userName, int timeout,int authApp);
     void DestroySession(uint sessionID);
+
+    // 获取认证服务中用户DBUS对象
     QDBusObjectPath FindUserByID(qulonglong uid);
     QDBusObjectPath FindUserByName(const QString &userName);
-    QString GetDefaultDeviceID(int deviceType);
-    QString GetPAMServies();
-    void SwitchPAMServie(bool enabled, const QString &service);
-    bool PAMServieIsEnabled(const QString &service);
-    void SetDefaultDeviceID(int deviceType, const QString &deviceID);
+    
+    // 获取认证设备
+    QString GetDevicesForType(int authType);
+    // 获取默认认证设备
+    QString GetDefaultDeviceID(int authType);
+    // 设置默认设备ID
+    void SetDefaultDeviceID(int authType, const QString &deviceID);
+
+    // 认证类型总开关
+    bool GetAuthTypeEnabled(int authType);
+    void SetAuthTypeEnabled(int authType,bool enabled);
+
+    // 获取/设置指定认证场景下认证类型的开关
+    bool GetAuthTypeEnabledForApp(int authType,int authApp);
+    void SetAuthTypeEnabledForApp(int authType, int authApp, bool enabled);
+    
+    // 通过pam服务名查询属于哪个认证场景
+    int QueryAuthApp(const QString &pamServiceName);
+    // 通过指定的认证应用获取支持的认证类型,返回值为有序列表
+    QList<int> GetAuthTypeByApp(int32_t authApp);
+
     void onNameLost(const QString &serviceName);
 
-Q_SIGNALS:
-    void authModeChanged(int authMode);
-    void DefaultDeviceChanged(int deviceType, const QString &deviceID);
+signals:
+    void defaultDeviceChanged(int authType,const QString& deviceID,QPrivateSignal);
 
 private:
     void init();
-
-    QString deviceTypeEnum2Group(int32_t deviceType);
-    int32_t deviceTypeGroup2Enum(const QString &deviceType);
     // 生成一个唯一的会话ID
     int32_t generateSessionID();
 
 private:
     static AuthManager *m_instance;
+    AuthConfig *m_authConfig;
     UserManager *m_userManager;
-    QSettings *m_settings;
     AuthManagerAdaptor *m_dbusAdaptor;
+
+    // 结合其他信息生成的认证顺序
+    QList<KADAuthType> m_authOrder;
+
     // <会话ID，会话>
     QMap<int32_t, Session *> m_sessions;
-    QList<int32_t> m_authOrder;
     QRandomGenerator m_randomGenerator;
     QDBusServiceWatcher *m_serviceWatcher;
 };

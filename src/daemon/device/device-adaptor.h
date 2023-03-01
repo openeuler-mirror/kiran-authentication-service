@@ -19,7 +19,7 @@
 #include <QTime>
 #include <functional>
 #include "src/daemon/device/device-protocol.h"
-#include "src/daemon/device_proxy.h"
+#include "src/daemon/auth_device_proxy.h"
 
 namespace Kiran
 {
@@ -32,24 +32,28 @@ class DeviceAdaptor : public QObject
 {
     Q_OBJECT
 public:
-    DeviceAdaptor(QSharedPointer<DeviceProxy> dbusDeviceProxy);
+    DeviceAdaptor(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy);
     virtual ~DeviceAdaptor(){};
 
-    QString getDeviceID() { return this->m_dbusDeviceProxy->deviceID(); }
+    QString getDeviceID() { return m_deviceID; }
 
-    void enroll(DeviceRequestSource *source);
-    void verify(const QString &bid, DeviceRequestSource *source);
-    void identify(const QStringList &bids, DeviceRequestSource *source);
+    void enroll(DeviceRequestSource *source,const QString& extraInfo);
+    void verify(DeviceRequestSource *source,const QString& extraInfo);
+    void identify(DeviceRequestSource *source,const QString& extraInfo);
     void stop(int64_t requestID);
 
-    void updateDBusDeviceProxy(QSharedPointer<DeviceProxy> dbusDeviceProxy);
+    // 取消/清空 所有的认证请求
+    void removeAllRequest();
+
+    // 更新设备代理
+    void updateDBusDeviceProxy(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy);
 
 private:
     // 将请求添加到队列
     void pushRequest(QSharedPointer<DeviceRequest> request);
     // 唤醒一个请求
     void wakeRequest(QSharedPointer<DeviceRequest> request);
-    // 移除请求
+    // 取消该请求，并从队列中移出
     void removeRequest(int64_t requestID);
     // 中断当前请求
     void interruptRequest();
@@ -61,28 +65,28 @@ private:
     // 生成一个唯一的请求ID
     int64_t generateRequestID();
 
-    void enrollStart();
+    void enrollStart(const QString& extraInfo);
     void enrollStop();
-    void verifyStart(const QString &bid);
+    void verifyStart(const QString& extraInfo);
     void verifyStop();
-    void identifyStart(const QStringList &bids);
+    void identifyStart(const QString& extraInfo);
     void identifyStop();
 
     // 判断进程是否是活跃会话
     bool isActiveSession(uint32_t pid);
 
 private Q_SLOTS:
-    void onEnrollStatus(const QString &bid, int result, int progress);
-    void onVerifyStatus(int result);
-    void onIdentifyStatus(const QString &bid, int result);
+    void onEnrollStatus(const QString &featureID, int result, int progress,const QString& message);
+    void onVerifyStatus(int result,const QString& message);
+    void onIdentifyStatus(const QString &featureID, int result,const QString& message);
     void onActiveSessionChanged(const Login1SessionItem &sessionItem);
 
 private:
-    static QSharedPointer<DeviceAdaptor> m_instance;
-    QSharedPointer<DeviceProxy> m_dbusDeviceProxy;
+    QSharedPointer<AuthDeviceProxy> m_dbusDeviceProxy;
     QMap<int64_t, QSharedPointer<DeviceRequest>> m_requests;
     QSharedPointer<DeviceRequest> m_currentRequest;
     int64_t m_requestIDCount;
+    QString m_deviceID;
 };
 
 }  // namespace Kiran

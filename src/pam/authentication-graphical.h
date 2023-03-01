@@ -25,9 +25,11 @@ public:
     virtual ~AuthenticationGraphical(){};
 
 private:
-    virtual void notifyAuthMode();
-    virtual int32_t requestAuthType();
-    virtual void notifyAuthType();
+    virtual void notifyAuthMode() override;
+    virtual bool requestLoginUserSwitchable();
+    virtual void notifySupportAuthType() override;
+    virtual int32_t requestAuthType() override;
+    virtual void notifyAuthType(int authType) override;
 };
 
 }  // namespace Kiran

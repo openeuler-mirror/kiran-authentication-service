@@ -18,6 +18,7 @@
 #include <QDBusMessage>
 #include <QDBusObjectPath>
 #include "src/daemon/device/device-protocol.h"
+#include "kas-authentication-i.h"
 
 class UserAdaptor;
 class QSettings;
@@ -26,7 +27,7 @@ struct passwd;
 namespace Kiran
 {
 class DeviceAdaptor;
-
+class UserConfig;
 struct Passwd
 {
     Passwd() = delete;
@@ -48,7 +49,7 @@ class User : public QObject,
     Q_OBJECT
 
     Q_PROPERTY(QString UserName READ getUserName)
-    Q_PROPERTY(QString Failures READ getFailures)
+    Q_PROPERTY(int Failures READ getFailures)
 
 public:
     User() = delete;
@@ -57,7 +58,8 @@ public:
 
     QDBusObjectPath getObjectPath() { return this->m_objectPath; }
     QStringList getIIDs();
-    QStringList getDataIDs(int authType);
+    QStringList getIIDs(int authType);
+    QStringList getBIDs(int authType);
     bool hasIdentification(int authType);
     void removeCache();
 
@@ -69,7 +71,7 @@ public:
 public Q_SLOTS:  // DBUS METHODS
     QString AddIdentification(int authType, const QString &name, const QString &dataID);
     void DeleteIdentification(const QString &iid);
-    void EnrollStart(int deviceType);
+    void EnrollStart(int authType,const QString& extraInfo);
     void EnrollStop();
     QString GetIdentifications(int authType);
     void ResetFailures();
@@ -95,16 +97,17 @@ private:
     virtual QString getSpecifiedUser() { return QString(); };
     virtual void start(QSharedPointer<DeviceRequest> request);
     virtual void interrupt();
+    virtual void cancel();
     virtual void end();
-    virtual void onEnrollStatus(const QString &bid, int result, int progress);
-    virtual void onVerifyStatus(int result){};
-    virtual void onIdentifyStatus(const QString &bid, int result){};
+    virtual void onEnrollStatus(const QString &bid, int result, int progress,const QString& message);
+    virtual void onVerifyStatus(int result,const QString& message){};
+    virtual void onIdentifyStatus(const QString &bid, int result,const QString& message){};
 
 private:
     // 如果请求用户和当前用户相同则使用originAction，否则需要管理员权限
     QString calcAction(const QString &originAction);
 
-    void onEnrollStart(const QDBusMessage &message, int deviceType);
+    void onEnrollStart(const QDBusMessage &message, int authType,const QString& extraInfo);
     void onEnrollStop(const QDBusMessage &message);
     void onResetFailures(const QDBusMessage &message);
     void onAddIdentification(const QDBusMessage &message, int authType, const QString &name, const QString &dataID);
@@ -112,8 +115,8 @@ private:
 
 private:
     UserAdaptor *m_dbusAdaptor;
+    UserConfig *m_userConfig = nullptr;
     Passwd m_pwent;
-    QSettings *m_settings;
     QDBusObjectPath m_objectPath;
     UserEnrollInfo m_enrollInfo;
 };

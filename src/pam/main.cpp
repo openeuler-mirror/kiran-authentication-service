@@ -69,6 +69,7 @@ extern "C" int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         delete app;
     }
 
+    pam_syslog(pamh, LOG_DEBUG, "auth result for %d.", retval);
     return retval;
 }
 

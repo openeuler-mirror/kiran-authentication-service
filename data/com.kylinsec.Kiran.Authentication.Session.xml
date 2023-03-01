@@ -18,6 +18,20 @@
             <description>Set the authentication type to be performed. Only valid when auth_mode is equal to AUTH_MODE_OR.</description>
         </method>
 
+        <method name="SetLoginUserSwitchable">
+            <arg name="switchable" direction="in" type="b">
+                <description>Whether to allow the user to switch to another user when other user features are detected</description>
+            </arg>
+            <description>Set whether to allow users to switch to other users when other user features are detected</description>
+        </method>
+
+        <method name="GetLoginUserSwitchable">
+            <arg name="switchable" direction="out" type="b">
+                <description>Whether to allow the user to switch to another user when other user features are detected</description>
+            </arg>
+            <description>Get whether to allow users to switch to other users when other user features are detected</description>
+        </method>
+
         <method name="ResponsePrompt">
             <arg name="text" direction="in" type="s">
                 <description>Response the prompt message. </description>
@@ -66,5 +80,10 @@
 
         <signal name="AuthFailed" />
 
+        <signal name="AuthTypeChanged">
+            <arg name="authtype" type="i">
+                <description>The authentication type being or to be performed. Refer to enum AuthType in file kas-authentication-i.h.</description>
+            </arg>
+        </signal>
     </interface>
 </node>

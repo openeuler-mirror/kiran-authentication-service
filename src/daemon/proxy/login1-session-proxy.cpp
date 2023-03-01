@@ -26,22 +26,21 @@ Login1SessionProxy::Login1SessionProxy(const QDBusObjectPath &objectPath) : m_ob
 {
 }
 
+//FIXME:由方法调用修改为获取session属性
 bool Login1SessionProxy::activate()
 {
-    auto sendMessage = QDBusMessage::createMethodCall(LOGIN1_MANAGE_DBUS_NAME,
-                                                      this->m_objectPath.path(),
-                                                      LOGIN1_SESSION_DBUS_INTERFACE_NAME,
-                                                      "Activate");
+    auto getPropertyCall = QDBusMessage::createMethodCall(LOGIN1_MANAGE_DBUS_NAME, this->m_objectPath.path(), QStringLiteral("org.freedesktop.DBus.Properties"), QStringLiteral("Get"));
+    getPropertyCall << LOGIN1_SESSION_DBUS_INTERFACE_NAME << "Active";
 
-    auto replyMessage = QDBusConnection::systemBus().call(sendMessage, QDBus::Block, DBUS_TIMEOUT_MS);
+    auto replyMessage = QDBusConnection::systemBus().call(getPropertyCall, QDBus::Block, DBUS_TIMEOUT_MS);
 
     if (replyMessage.type() == QDBusMessage::ErrorMessage)
     {
         KLOG_WARNING() << "Call Activate failed: " << replyMessage.errorMessage();
         return false;
     }
-
-    auto firstArg = replyMessage.arguments().takeFirst();
-    return firstArg.toBool();
+    QVariant firstArg = replyMessage.arguments().first().value<QDBusVariant>().variant();
+    bool isActivate = firstArg.value<bool>();
+    return isActivate;
 }
 }  // namespace Kiran

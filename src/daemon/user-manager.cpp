@@ -37,22 +37,21 @@ void UserManager::globalInit()
     m_instance->init();
 }
 
-User *UserManager::findUser(const QString &userName)
+QSharedPointer<User> UserManager::findUser(const QString &userName)
 {
     auto user = this->m_users.value(userName, nullptr);
     RETURN_VAL_IF_TRUE(user, user);
 
     auto pwent = getpwnam(userName.toStdString().c_str());
     RETURN_VAL_IF_TRUE(pwent == NULL, NULL);
-    user = new User(pwent, this);
-    this->m_users.insert(userName, user);
+
+    user = addUser(userName);
     return user;
 }
 
 void UserManager::init()
 {
     this->initUsers();
-
     connect(this->m_accountsProxy, SIGNAL(UserDeleted(const QDBusObjectPath &)), this, SLOT(onUserDeleted(const QDBusObjectPath &)));
 }
 
@@ -68,24 +67,24 @@ void UserManager::initUsers()
     }
 }
 
-void UserManager::addUser(const QString &userName)
+QSharedPointer<User> UserManager::addUser(const QString &userName)
 {
     auto pwent = getpwnam(userName.toStdString().c_str());
-    RETURN_IF_TRUE(pwent == NULL);
-    auto user = new User(pwent, this);
+    RETURN_VAL_IF_TRUE(pwent == NULL,QSharedPointer<User>());
 
+    auto user = QSharedPointer<User>(new User(pwent, this));
     for (auto &iid : user->getIIDs())
     {
         this->addIID(iid, user);
     }
 
-    connect(user, &User::IdentificationAdded, std::bind(&UserManager::addIID, this, std::placeholders::_1, user));
-    connect(user, &User::IdentificationDeleted, std::bind(&UserManager::deleteIID, this, std::placeholders::_1));
-
+    connect(user.data(), &User::IdentificationAdded, std::bind(&UserManager::addIID, this, std::placeholders::_1, user));
+    connect(user.data(), &User::IdentificationDeleted, std::bind(&UserManager::deleteIID, this, std::placeholders::_1));
     this->m_users.insert(userName, user);
+    return user;
 }
 
-void UserManager::addIID(const QString &iid, User *user)
+void UserManager::addIID(const QString &iid, QSharedPointer<User>user)
 {
     if (this->m_iid2User.contains(iid))
     {
@@ -110,6 +109,7 @@ void UserManager::deleteUser(const QString &userName)
 
     user->removeCache();
     this->m_users.remove(userName);
+    return;
 }
 
 void UserManager::deleteIID(const QString &iid)

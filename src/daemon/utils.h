@@ -15,6 +15,7 @@
 #pragma once
 
 #include <QString>
+#include "kas-authentication-i.h"
 
 namespace Kiran
 {
@@ -24,21 +25,24 @@ public:
     Utils(){};
     virtual ~Utils(){};
 
+    template <typename T>
+    static QList<int> converEnumListToInt(QList<T> list);
+
     static QString GenerateIID(int32_t authType, const QString &dataID);
+    
+    static QString authModeEnum2Str(int authMode);
+    static int authModeStr2Enum(const QString &authMode);
 
-    static QString authModeEnum2Str(int32_t authMode);
-    static int32_t authModeStr2Enum(const QString &authMode);
-
-    static QString authTypeEnum2Str(int32_t authType);
-    static int32_t authTypeStr2Enum(const QString &authType);
+    static QString authTypeEnum2Str(int authType);
+    static int authTypeStr2Enum(const QString &authType);
 
     static int32_t authType2DeviceType(int32_t authType);
     static int32_t deviceType2AuthType(int32_t deviceType);
 
-    static QStringList authOrderEnum2Str(const QList<int32_t> &authOrder);
-    static QList<int32_t> authOrderStr2Enum(const QStringList &authOrder);
+    static QStringList authOrderEnum2Str(const QList<int> &authOrder);
+    static QList<int> authOrderStr2Enum(const QStringList &authOrder);
 
     static QString fpEnrollResultEnum2Str(int32_t fpEnrollResult);
-    static QString fpVerifyResultEnum2Str(int32_t fpVerifyResult);
+    static QString verifyResultEnum2Str(int32_t fpVerifyResult);
 };
 }  // namespace Kiran

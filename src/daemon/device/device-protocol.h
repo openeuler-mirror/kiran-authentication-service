@@ -66,15 +66,17 @@ public:
 
     // 已经加入请求队列
     virtual void start(QSharedPointer<DeviceRequest> request) = 0;
-    // 操作被中断，可能是有更高优先级的请求或者设备不可用等原因导致。
+    // 操作被中断，可能是有更高优先级的请求或者设备不可用等原因导致。任务还在处理队列中
     virtual void interrupt() = 0;
-    // 结束操作
+    // 操作被取消, 可能是切换会话或其他原因导致，操作被取消应返回错误，但不应记录失败，任务将会被删除
+    virtual void cancel() = 0;
+    // 结束操作，任务队列中该任务已处理完成
     virtual void end() = 0;
     // 录入状态
-    virtual void onEnrollStatus(const QString &bid, int result, int progress) = 0;
+    virtual void onEnrollStatus(const QString &bid, int result, int progress,const QString& message) = 0;
     // 认证状态
-    virtual void onVerifyStatus(int result) = 0;
-    virtual void onIdentifyStatus(const QString &bid, int result) = 0;
+    virtual void onVerifyStatus(int result,const QString& message) = 0;
+    virtual void onIdentifyStatus(const QString &bid, int result,const QString& message) = 0;
 };
 
 struct DeviceRequest
