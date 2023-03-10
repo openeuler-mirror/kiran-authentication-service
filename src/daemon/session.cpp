@@ -394,7 +394,6 @@ void Session::finishAuth(bool isSuccess, bool recordFailure)
         }
         Q_EMIT this->AuthFailed();
     }
-
     m_verifyInfo.m_inAuth = false;
 }
 

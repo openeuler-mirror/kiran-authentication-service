@@ -19,6 +19,7 @@
 #include <QDBusObjectPath>
 #include "kas-authentication-i.h"
 #include "src/daemon/device/device-protocol.h"
+#include "kas-authentication-i.h"
 
 class UserAdaptor;
 class QSettings;
@@ -112,11 +113,7 @@ private:
 
     void onEnrollStart(const QDBusMessage &message, int authType, const QString &name, const QString &extraInfo);
     void onEnrollStop(const QDBusMessage &message);
-    void onResetFailures(const QDBusMessage &message);
     void onAddIdentification(const QDBusMessage &message, int authType, const QString &name, const QString &dataID);
-    void onDeleteIdentification(const QDBusMessage &message, const QString &iid);
-    void onRenameIdentification(const QDBusMessage &message, const QString &iid, const QString &name);
-    Q_INVOKABLE void onNameLost(const QString& service);
     
 private:
     UserAdaptor *m_dbusAdaptor;

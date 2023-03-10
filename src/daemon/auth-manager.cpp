@@ -113,6 +113,11 @@ void AuthManager::SetDrivereEanbled(const QString &driverName, bool enabled)
         DBUS_ERROR_REPLY(QDBusError::InternalError,
                          KADErrorCode::ERROR_FAILED);
     }
+
+    this->m_sessions.remove(sessionID);
+    session->StopAuth();
+    delete session;
+    KLOG_DEBUG() << "destory session" << sessionID;
 }
 
 QDBusObjectPath AuthManager::FindUserByID(qulonglong uid)

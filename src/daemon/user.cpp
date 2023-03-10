@@ -125,7 +125,6 @@ CHECK_AUTH_WITH_2ARGS(User, RenameIdentification, onRenameIdentification, AUTH_U
 CHECK_AUTH_WITH_3ARGS(User, EnrollStart, onEnrollStart, AUTH_USER_SELF, int, const QString &, const QString &)
 CHECK_AUTH(User, EnrollStop, onEnrollStop, AUTH_USER_SELF)
 CHECK_AUTH(User, ResetFailures, onResetFailures, AUTH_USER_SELF)
-
 QString User::GetIdentifications(int authType)
 {
     QJsonDocument jsonDoc;
@@ -169,6 +168,11 @@ void User::cancel()
 {
     USER_DEBUG() << "request cancel";
     Q_EMIT this->EnrollStatus(QString(), true, 0, tr("Enroll has been cancelled"));
+}
+
+void User::cancel()
+{
+    Q_EMIT this->EnrollStatus(QString(), FPEnrollResult::FP_ENROLL_RESULT_FAIL, 0, true);
 }
 
 void User::end()
