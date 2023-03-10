@@ -70,8 +70,8 @@ void Authentication::start()
 
 int Authentication::init()
 {
-    this->m_serviceName = this->m_pamHandle->getItemDirect(PAM_SERVICE);
-    this->m_userName = this->m_pamHandle->getItemDirect(PAM_USER);
+    this->m_serviceName = this->m_pamHandle->getItem(PAM_SERVICE);
+    this->m_userName = this->m_pamHandle->getItem(PAM_USER);
 
     if (!QDBusConnection::systemBus().interface()->isServiceRegistered(KAD_MANAGER_DBUS_NAME))
     {
@@ -132,18 +132,14 @@ int Authentication::startAction()
     {
     case CONNECT(KAP_ARG_ACTION_DO_AUTH, _hash):
     {
-        result = checkFailures();
-        if (result == PAM_SUCCESS)
-        {
-            result = this->startActionDoAuth();
-        }
+        result = this->startActionDoAuth();
         break;
     }
     case CONNECT(KAP_ARG_ACTION_AUTH_SUCC, _hash):
         result = this->startActionAuthSucc();
         break;
     default:
-        KLOG_WARNING() << "PAM action '" << argsInfo.action << "' is unsupported, so the pam module is ignored.";
+        this->m_pamHandle->syslog(LOG_WARNING, QString("PAM action %1 is unsupported, so the pam module is ignored.").arg(argsInfo.action));
         result = PAM_IGNORE;
         break;
     }
@@ -208,6 +204,10 @@ int Authentication::startAuthPre()
             return PAM_IGNORE;
         }
 
+        // 在选择非密码认证类型后，再开始检查失败
+        auto result = checkFailures();
+        RETURN_VAL_IF_TRUE(result != PAM_SUCCESS, result);
+
         auto setAuthTypeReply = this->m_authSessionProxy->SetAuthType(authType);
         setAuthTypeReply.waitForFinished();
         if (setAuthTypeReply.isError())
@@ -265,11 +265,12 @@ bool Authentication::initSession()
                                                     QDBusConnection::systemBus(),
                                                     this);
 
-    connect(this->m_authSessionProxy, SIGNAL(AuthPrompt(const QString &, int)), this, SLOT(onAuthPrompt(const QString &, int)));
-    connect(this->m_authSessionProxy, SIGNAL(AuthMessage(const QString &, int)), this, SLOT(onAuthMessage(const QString &, int)));
-    connect(this->m_authSessionProxy, SIGNAL(AuthFailed()), this, SLOT(onAuthFailed()));
-    connect(this->m_authSessionProxy, SIGNAL(AuthSuccessed(const QString &)), this, SLOT(onAuthSuccessed(const QString &)));
-
+    m_sessionID = this->m_authSessionProxy->iD();
+    connect(this->m_authSessionProxy, &AuthSessionProxy::AuthPrompt, this, &Authentication::onAuthPrompt);
+    connect(this->m_authSessionProxy, &AuthSessionProxy::AuthMessage, this, &Authentication::onAuthMessage);
+    connect(this->m_authSessionProxy, &AuthSessionProxy::AuthFailed, this, &Authentication::onAuthFailed);
+    connect(this->m_authSessionProxy, &AuthSessionProxy::AuthSuccessed, this, &Authentication::onAuthSuccessed);
+    this->m_pamHandle->syslog(LOG_DEBUG, QString("init session,%1").arg(m_sessionID));
     return true;
 }
 
@@ -328,7 +329,7 @@ void Authentication::onAuthMessage(const QString &text, int type)
 
 void Authentication::onAuthFailed()
 {
-    this->m_pamHandle->syslog(LOG_DEBUG, "Authentication failed");
+    this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication failed,session ID:%1").arg(m_sessionID));
     this->finishAuth(PAM_AUTH_ERR);
 }
 
@@ -338,6 +339,7 @@ void Authentication::onAuthSuccessed(const QString &userName)
     {
         this->m_pamHandle->setItem(PAM_USER, userName);
     }
+    this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication successed,session ID:%1").arg(m_sessionID));
     this->finishAuth(PAM_SUCCESS);
 }
 

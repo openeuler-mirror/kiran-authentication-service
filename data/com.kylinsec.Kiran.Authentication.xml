@@ -42,6 +42,24 @@
             </arg>
         </method>
 
+        <method name="GetDriversForType">
+            <arg name="auth_type" direction="in" type="i">
+                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
+            </arg>
+            <arg name="drivers" direction="out" type="s">
+                <description>Json string of drivers information, including driver name, enable status, etc </description>
+            </arg>
+        </method>
+
+        <method name="SetDrivereEanbled">
+            <arg name="driver_name" direction="in" type="s">
+                <description>driver name</description>
+            </arg>
+            <arg name="enable" direction="in" type="b">
+                <description>Enable drive or not.</description>
+            </arg>
+        </method>
+
         <method name="GetDevicesForType">
             <arg name="auth_type" direction="in" type="i">
                 <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>

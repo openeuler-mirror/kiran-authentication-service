@@ -52,10 +52,13 @@ public Q_SLOTS:  // DBUS METHODS
     QDBusObjectPath CreateSession(const QString &userName, int timeout,int authApp);
     void DestroySession(uint sessionID);
 
+    QString GetDriversForType(int authType);
+    void SetDrivereEanbled(const QString& driverName,bool enabled);
+
     // 获取认证服务中用户DBUS对象
     QDBusObjectPath FindUserByID(qulonglong uid);
     QDBusObjectPath FindUserByName(const QString &userName);
-    
+
     // 获取认证设备
     QString GetDevicesForType(int authType);
     // 获取默认认证设备

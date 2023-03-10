@@ -25,6 +25,9 @@
 #include "src/daemon/proxy/login1-seat-proxy.h"
 #include "src/daemon/proxy/login1-session-proxy.h"
 
+
+#define DEVICE_DEBUG() KLOG_DEBUG() << this->m_deviceID
+
 namespace Kiran
 {
 // TOOD:处理设备断开事件
@@ -245,7 +248,7 @@ void DeviceAdaptor::enrollStart(const QString &extraInfo)
     }
     else
     {
-        KLOG_DEBUG("Not found fingerprint device, enroll failed.");
+        DEVICE_DEBUG() << "Not found fingerprint device, enroll failed.";
         this->onEnrollStatus(QString(), EnrollResult::ENROLL_RESULT_FAIL, 0, "");
     }
 }
@@ -266,7 +269,7 @@ void DeviceAdaptor::verifyStart(const QString &extraInfo)
     }
     else
     {
-        KLOG_DEBUG("Not found fingerprint device, verify failed.");
+        DEVICE_DEBUG() << "Not found fingerprint device, verify failed.";
         this->onVerifyStatus(VerifyResult::VERIFY_RESULT_NOT_MATCH, "");
     }
 }
@@ -283,12 +286,12 @@ void DeviceAdaptor::identifyStart(const QString &extraInfo)
 {
     if (this->m_dbusDeviceProxy)
     {
-        KLOG_DEBUG() << "device proxy identify start";
+        DEVICE_DEBUG() << "device proxy identify start";
         this->m_dbusDeviceProxy->IdentifyStart(extraInfo);
     }
     else
     {
-        KLOG_DEBUG("Not found fingerprint device, identify failed.");
+        DEVICE_DEBUG() << "Not found fingerprint device, identify failed.";
         this->onIdentifyStatus(QString(), IdentifyResult::IDENTIFY_RESULT_NOT_MATCH, "");
     }
 }
@@ -298,7 +301,7 @@ void DeviceAdaptor::identifyStop()
     if (this->m_dbusDeviceProxy)
     {
         this->m_dbusDeviceProxy->IdentifyStop();
-        KLOG_DEBUG() << "device proxy identify stop";
+        DEVICE_DEBUG() << "device proxy identify stop";
     }
 }
 
@@ -306,17 +309,17 @@ bool DeviceAdaptor::isActiveSession(uint32_t pid)
 {
     auto sessionObjectPath = Login1ManagerProxy::getDefault()->getSessionByPID(pid);
     auto session = QSharedPointer<Login1SessionProxy>::create(sessionObjectPath);
-    KLOG_DEBUG() << pid << sessionObjectPath.path() << session->activate();
+    DEVICE_DEBUG() << pid << sessionObjectPath.path() << session->activate();
     return session->activate();
 }
 
-void DeviceAdaptor::onEnrollStatus(const QString &featureID, int result, int progress, const QString &message)
+void DeviceAdaptor::onEnrollStatus(const QString &featureID, int progress, int result, const QString &message)
 {
-    KLOG_DEBUG(kasAuthDevice) << "enroll status:" << featureID << result << progress << message;
+    DEVICE_DEBUG() << "enroll status:" << featureID << result << progress << message;
 
     if (this->m_currentRequest)
     {
-        this->m_currentRequest->source->onEnrollStatus(featureID, result, progress, message);
+        this->m_currentRequest->source->onEnrollStatus(featureID, progress,result, message);
     }
     else
     {
@@ -352,7 +355,7 @@ void DeviceAdaptor::onVerifyStatus(int result, const QString &message)
 
 void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const QString &message)
 {
-    KLOG_DEBUG(kasAuthDevice) << "identify status:" << featureID << result << message;
+    DEVICE_DEBUG() << "identify status:" << featureID << result << message;
 
     if (this->m_currentRequest)
     {
@@ -379,7 +382,7 @@ void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const
 //  认证队列里只存当前会话里的认证请求
 void DeviceAdaptor::onActiveSessionChanged(const Login1SessionItem &sessionItem)
 {
-    KLOG_DEBUG() << "active session changed:" << sessionItem.sessionID << sessionItem.sessionObjectPath;
+    DEVICE_DEBUG() << "active session changed:" << sessionItem.sessionID << sessionItem.sessionObjectPath;
 
     // 清空之前会话里的所有认证请求
     removeAllRequest();

@@ -68,7 +68,7 @@ Session::Session(uint32_t sessionID,
     auto systemConnection = QDBusConnection::systemBus();
     if (!systemConnection.registerObject(this->m_objectPath.path(), this))
     {
-        KLOG_WARNING() << "can't register object:" << systemConnection.lastError();
+        KLOG_WARNING() << m_sessionID << "can't register object:" << systemConnection.lastError();
     }
 }
 
@@ -108,7 +108,7 @@ void Session::SetAuthType(int authType)
 {
     if (this->m_authMode == KADAuthMode::KAD_AUTH_MODE_AND)
     {
-        KLOG_WARNING() << "can't change authentication type in this authentication mode" << m_authMode;
+        KLOG_WARNING() << m_sessionID << "can't change authentication type in this authentication mode" << m_authMode;
         DBUS_ERROR_REPLY_AND_RET(QDBusError::AccessDenied, KADErrorCode::ERROR_FAILED);
     }
 
@@ -117,7 +117,7 @@ void Session::SetAuthType(int authType)
         DBUS_ERROR_REPLY_AND_RET(QDBusError::InvalidArgs, KADErrorCode::ERROR_INVALID_ARGUMENT);
     }
     this->m_authType = authType;
-    KLOG_DEBUG() << "session " << m_sessionID << "change auth type to:" << this->m_authType;
+    KLOG_DEBUG() << m_sessionID << "session change auth type to:" << this->m_authType;
 }
 
 void Session::StartAuth()
@@ -197,23 +197,23 @@ QString Session::getSpecifiedUser()
 void Session::start(QSharedPointer<DeviceRequest> request)
 {
     this->m_verifyInfo.m_requestID = request->reqID;
-    KLOG_DEBUG("%d request(%d) start", m_sessionID, request->reqID);
+    KLOG_DEBUG() << m_sessionID << "session (request id:" << request->reqID << ") start";
 }
 
 void Session::interrupt()
 {
-    KLOG_DEBUG("%d request(%d) interrupt", m_sessionID, this->m_verifyInfo.m_requestID);
+    KLOG_DEBUG() << m_sessionID << "session (request id:" << this->m_verifyInfo.m_requestID << ") interrupt";
 }
 
 void Session::cancel()
 {
-    KLOG_DEBUG("%d request(%d) cancel", m_sessionID, this->m_verifyInfo.m_requestID);
+    KLOG_DEBUG() << m_sessionID << "session (request id:" << this->m_verifyInfo.m_requestID << ") cancel";
     this->finishPhaseAuth(false, false);
 }
 
 void Session::end()
 {
-    KLOG_DEBUG("%d request(%d) end", m_sessionID, this->m_verifyInfo.m_requestID);
+    KLOG_DEBUG() << m_sessionID << "session (request id:" << this->m_verifyInfo.m_requestID << ") end";
     this->m_verifyInfo.m_requestID = -1;
     this->m_verifyInfo.deviceAdaptor = nullptr;
 }
@@ -222,7 +222,7 @@ void Session::end()
 void Session::onVerifyStatus(int result, const QString &message)
 {
     KLOG_DEBUG() << m_sessionID << "verify status changed:" << result << message;
-    KLOG_DEBUG() << "Unsupported operation.";
+    KLOG_DEBUG() << m_sessionID << "Unsupported operation.";
 }
 
 void Session::onIdentifyStatus(const QString &bid, int result, const QString &message)
@@ -231,7 +231,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
         result == VerifyResult::VERIFY_RESULT_MATCH)
     {
-        KLOG_DEBUG() << "Fingerprint match successfully, but it isn't a legal user.";
+        KLOG_DEBUG() << m_sessionID << "feature match successfully, but it isn't a legal user.";
         result = VerifyResult::VERIFY_RESULT_NOT_MATCH;
     }
 
@@ -282,7 +282,7 @@ void Session::startGeneralAuth(const QString &extraInfo)
     if (deviceType == -1)
     {
         auto authTypeStr = Utils::authTypeEnum2Str(this->m_authType);
-        KLOG_DEBUG() << QString("start phase auth failed,invalid auth type:%1").arg(m_authType);
+        KLOG_WARNING() << m_sessionID << "start phase auth failed,invalid auth type:" << m_authType;
         Q_EMIT this->AuthMessage(tr(QString("Auth type %1 invalid").arg(authTypeStr).toStdString().c_str()), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
         this->finishPhaseAuth(false, m_authMode == KAD_AUTH_MODE_AND);
         return;
@@ -292,7 +292,7 @@ void Session::startGeneralAuth(const QString &extraInfo)
     if (!device)
     {
         auto authTypeStr = Utils::authTypeEnum2Str(this->m_authType);
-        KLOG_DEBUG() << QString("Start phase auth failed,can not find device,auth type:%1").arg(m_authType);
+        KLOG_WARNING() << m_sessionID << "start phase auth failed,can not find device,auth type:" << m_authType;
         Q_EMIT this->AuthMessage(tr(QString("can not find %1 device").arg(authTypeStr).toStdString().c_str()), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
         this->finishPhaseAuth(false, m_authMode == KAD_AUTH_MODE_AND);
         return;
@@ -306,12 +306,18 @@ void Session::startGeneralAuth(const QString &extraInfo)
     }
 
     QJsonDocument doc(rootObject);
+
     QStringList bids;
-    auto user = UserManager::getInstance()->findUser(this->m_userName);
-    if (user)
+    if (!m_loginUserSwitchable)
     {
-        bids = user->getBIDs(this->m_authType);
+        auto user = UserManager::getInstance()->findUser(this->m_userName);
+        if (user)
+        {
+            bids = user->getBIDs(this->m_authType);
+        }
     }
+
+    KLOG_DEBUG() << m_sessionID << "start phase auth for auth type:" << m_authType;
     rootObject["feature_ids"] = QJsonArray::fromStringList(bids);
     this->m_verifyInfo.deviceAdaptor = device;
     this->m_verifyInfo.authType = this->m_authType;
@@ -320,7 +326,10 @@ void Session::startGeneralAuth(const QString &extraInfo)
 
 void Session::finishPhaseAuth(bool isSuccess, bool recordFailure)
 {
-    KLOG_DEBUG() << m_sessionID << "finish phase auth" << "auth result:" << isSuccess << "record failure:" << recordFailure;
+    KLOG_DEBUG() << m_sessionID
+                 << "session finish phase auth, auth type:" << this->m_authType
+                 << "auth result:" << isSuccess
+                 << "record failure:" << recordFailure;
 
     // 如果阶段认证失败，则直接结束
     if (!isSuccess)
@@ -356,7 +365,9 @@ void Session::finishPhaseAuth(bool isSuccess, bool recordFailure)
 
 void Session::finishAuth(bool isSuccess, bool recordFailure)
 {
-    KLOG_DEBUG() << m_sessionID << "finish auth" << "auth result:" << isSuccess;
+    KLOG_DEBUG() << m_sessionID << "finish auth"
+                 << "auth result:" << isSuccess
+                 << "record failure:" << recordFailure;
 
     const QString &authenticatedUserName = this->m_verifyInfo.m_authenticatedUserName;
     if (isSuccess && !authenticatedUserName.isEmpty())
@@ -383,7 +394,7 @@ void Session::finishAuth(bool isSuccess, bool recordFailure)
         }
         Q_EMIT this->AuthFailed();
     }
-    
+
     m_verifyInfo.m_inAuth = false;
 }
 

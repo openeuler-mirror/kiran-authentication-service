@@ -129,7 +129,7 @@ extern "C"
         // 告知应用程序最终使用的认证类型
         KAP_REQ_CMD_NOTIFY_AUTH_TYPE = 0x60,
     };
-
+    
 // PJK: proto json key
 // json消息的提示头
 #define KAP_PROTO_JSON_PREFIX "kiran_authentication:"

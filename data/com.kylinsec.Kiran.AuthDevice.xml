@@ -49,16 +49,13 @@
             </arg>
         </method>    
 
-        <method name="EnableDriver">
+        <method name="SetEnableDriver">
             <arg name="driver_name" direction="in" type="s">
                 <description>Driver name.</description>
             </arg>
             <arg name="enable" direction="in" type="b">
                 <description>Enable drive or not.</description>
             </arg>            
-            <arg name="valid" direction="out" type="b">
-                <description>Whether the setting is valid.</description>
-            </arg>
         </method>        
          
         <signal name="DeviceAdded">

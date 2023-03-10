@@ -1,23 +1,24 @@
 #pragma once
 
 #include <QMap>
-#include <QString>
 #include <QObject>
+#include <QString>
 
 class QSettings;
 namespace Kiran
 {
-class UserConfig:public QObject
+class UserConfig : public QObject
 {
     friend class User;
     Q_OBJECT
 public:
     UserConfig() = delete;
-    explicit UserConfig(const QString& userName,QObject* parent = nullptr);
+    explicit UserConfig(const QString& userName, QObject* parent = nullptr);
     ~UserConfig();
 
     void removeCache();
-    void deleteIID(const QString& iid);
+    bool deleteIID(const QString& iid);
+    bool renameIID(const QString& iid, const QString& name);
     QStringList getIIDs();
     QStringList getIIDs(int authType);
     QStringList getBIDs(int authType);
@@ -28,7 +29,7 @@ public:
 
 private:
     void init();
-    void addIID(int authType, const QString& iid, const QString& name,const QString& bid);
+    bool addIID(int authType, const QString& iid, const QString& name, const QString& bid);
     void changeIIDName(const QString& iid, const QString& name);
     void setFailures(int failures);
 

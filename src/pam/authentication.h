@@ -74,7 +74,8 @@ protected:
     QString m_userName;
     int32_t m_result;
     int m_authApplication;
-    
+    uint m_sessionID;
+
     AuthManagerProxy *m_authManagerProxy;
     AuthSessionProxy *m_authSessionProxy;
     AuthUserProxy *m_authUserProxy;

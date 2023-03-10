@@ -50,6 +50,14 @@
             <description>The device type.</description>
         </property>
 
+        <property name="DeviceStatus" type="i" access="read">
+            <description>The device status.</description>
+        </property>
+
+        <property name="DeviceDriver" type="s" access="read">
+            <description>The device driver.</description>
+        </property>
+
         <signal name="EnrollStatus">
             <arg name="feature_id" type="s">
                 <description>Feature ID associate with feature or ukey data.</description>
@@ -86,13 +94,5 @@
             </arg>            
         </signal>
 
-        <signal name="DeviceStatus">
-            <arg name="status" type="i">
-                <description>device status.Refer to enum DeviceType in file kiran-auth-device-i.h.</description>
-            </arg>
-            <arg name="message" type="s">
-                <description>Status description information.</description>
-            </arg>   
-        </signal>
     </interface>
 </node>
