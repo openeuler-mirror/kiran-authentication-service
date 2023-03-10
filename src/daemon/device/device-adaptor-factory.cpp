@@ -47,6 +47,7 @@ QSharedPointer<DeviceAdaptor> DeviceAdaptorFactory::getDeviceAdaptor(int32_t aut
     RETURN_VAL_IF_TRUE(device, device);
     device = this->createDeviceAdaptor(authType);
     RETURN_VAL_IF_FALSE(device, QSharedPointer<DeviceAdaptor>());
+    KLOG_DEBUG() << "authtype:" << authType << "create device adaptor:" << device->getDeviceID();
     this->m_devices.insert(authType, device);
     return device;
 }
@@ -55,12 +56,37 @@ QString DeviceAdaptorFactory::getDeivcesForType(int32_t authType)
 {
     if (!this->m_authDeviceManagerProxy)
     {
-        KLOG_WARNING() << "The biometrics proxy is null.";
+        KLOG_WARNING() << "auth device manager proxy is null.";
         return "";
     }
 
     QString devicesInfo = m_authDeviceManagerProxy->GetDevicesByType(Utils::authType2DeviceType(authType));
     return devicesInfo;
+}
+
+QString DeviceAdaptorFactory::getDriversForType(int32_t authType)
+{
+    if(!this->m_authDeviceManagerProxy)
+    {
+        KLOG_WARNING() << "auth device manager proxy is null.";
+        return "";
+    }
+
+    QString driverInfo = m_authDeviceManagerProxy->GetDriversByType(Utils::authType2DeviceType(authType));
+    return driverInfo;    
+}
+
+bool DeviceAdaptorFactory::setDrivereEanbled(const QString& driverName,bool enabled)
+{
+    if(!this->m_authDeviceManagerProxy)
+    {
+        KLOG_WARNING() << "auth device manager proxy is null.";
+        return false;
+    }
+
+    auto reply = m_authDeviceManagerProxy->SetEnableDriver(driverName,enabled);
+    reply.waitForFinished();
+    return reply.isError()?false:true;
 }
 
 void DeviceAdaptorFactory::init()
@@ -72,6 +98,20 @@ void DeviceAdaptorFactory::init()
     connect(this->m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered, this, &DeviceAdaptorFactory::onAuthDeviceManagerLost);
     connect(this->m_authManager, &AuthManager::defaultDeviceChanged, this, &DeviceAdaptorFactory::onDefaultDeviceChanged);
     connect(this->m_authDeviceManagerProxy, &AuthDeviceManagerProxy::DeviceDeleted, this, &DeviceAdaptorFactory::onDeviceDeleted);
+}
+
+bool DeviceAdaptorFactory::deleteFeature(const QString& dataID)
+{
+    auto reply = m_authDeviceManagerProxy->Remove(dataID);
+    reply.waitForFinished();
+
+    if(reply.isError() )
+    {
+        KLOG_WARNING() << "delete feature" << dataID << "failed," << reply.error().message();
+        return false;
+    }
+
+    return true;
 }
 
 QSharedPointer<DeviceAdaptor> DeviceAdaptorFactory::createDeviceAdaptor(int32_t authType)
@@ -156,8 +196,9 @@ void DeviceAdaptorFactory::onDefaultDeviceChanged(int authType,
 void DeviceAdaptorFactory::onAuthDeviceManagerLost(const QString &service)
 {
     // 设备管理服务消失，认证设备无效，应清理所有无效的设备及其请求
-    for (auto iter = m_devices.begin(); iter != m_devices.end(); )
+    for (auto iter = m_devices.begin(); iter != m_devices.end();)
     {
+        KLOG_DEBUG() << "auth device manager lost,remove device:" << iter->get()->getDeviceID();
         iter->get()->removeAllRequest();
         iter = m_devices.erase(iter);
     }
@@ -170,6 +211,7 @@ void DeviceAdaptorFactory::onDeviceDeleted(int deviceType, const QString &device
     {
         if (iter->get()->getDeviceID() == deviceID)
         {
+            KLOG_DEBUG() << "auth device deleted,remove device:" << iter->get()->getDeviceID();
             iter->get()->removeAllRequest();
             m_devices.erase(iter);
             break;

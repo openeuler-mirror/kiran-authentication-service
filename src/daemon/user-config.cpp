@@ -1,8 +1,8 @@
 #include "user-config.h"
+#include "auxiliary.h"
 #include "config-daemon.h"
 #include "kas-authentication-i.h"
 #include "utils.h"
-#include "auxiliary.h"
 
 #include <qt5-log-i.h>
 #include <QFile>
@@ -42,8 +42,10 @@ void UserConfig::removeCache()
     this->m_settings->remove(QString());
 }
 
-void UserConfig::deleteIID(const QString& iid)
+bool UserConfig::deleteIID(const QString& iid)
 {
+    RETURN_VAL_IF_FALSE(this->m_settings->childGroups().contains(iid),false);
+
     this->m_iids.removeOne(iid);
     this->m_IIDAuthInfoMap.remove(iid);
 
@@ -54,6 +56,20 @@ void UserConfig::deleteIID(const QString& iid)
     this->m_settings->beginGroup(iid);
     this->m_settings->remove("");
     this->m_settings->endGroup();
+
+    return true;
+}
+
+bool UserConfig::renameIID(const QString& iid, const QString& name)
+{
+    RETURN_VAL_IF_FALSE(this->m_settings->childGroups().contains(iid),false);
+
+    this->m_settings->beginGroup(iid);
+    this->m_settings->setValue(INIFILE_IID_GROUP_KEY_NAME,name);
+    this->m_settings->endGroup();
+
+    m_IIDAuthInfoMap[iid].name = name;
+    return true;
 }
 
 QStringList UserConfig::getIIDs()
@@ -67,7 +83,7 @@ QStringList UserConfig::getIIDs(int authType)
 
     for (auto iter = this->m_IIDAuthInfoMap.begin(); iter != this->m_IIDAuthInfoMap.end(); iter++)
     {
-        if( iter->authType == authType )
+        if (iter->authType == authType)
         {
             iids << iter.key();
         }
@@ -82,7 +98,7 @@ QStringList UserConfig::getBIDs(int authType)
 
     for (auto iter = this->m_IIDAuthInfoMap.begin(); iter != this->m_IIDAuthInfoMap.end(); iter++)
     {
-        if( iter->authType == authType )
+        if (iter->authType == authType)
         {
             bids << iter->bid;
         }
@@ -159,8 +175,7 @@ void UserConfig::init()
         IIDInfo iidInfo{
             .name = name,
             .authType = authType,
-            .bid = bid
-        };
+            .bid = bid};
 
         m_IIDAuthInfoMap[iid] = iidInfo;
         m_iids << iid;
@@ -169,12 +184,14 @@ void UserConfig::init()
     }
 }
 
-void UserConfig::addIID(int authType, const QString& iid, const QString& name, const QString& bid)
+bool UserConfig::addIID(int authType, const QString& iid, const QString& name, const QString& bid)
 {
+    RETURN_VAL_IF_FALSE(!this->m_settings->childGroups().contains(iid),false);
+
     QString authTypeStr = Utils::authTypeEnum2Str(authType);
 
     m_iids << iid;
-    m_IIDAuthInfoMap[iid] = {.name = name,.authType=authType,.bid=bid};
+    m_IIDAuthInfoMap[iid] = {.name = name, .authType = authType, .bid = bid};
 
     m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
     m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_IIDS, m_iids);
@@ -185,6 +202,8 @@ void UserConfig::addIID(int authType, const QString& iid, const QString& name, c
     m_settings->setValue(INIFILE_IID_GROUP_KEY_NAME, name);
     m_settings->setValue(INIFILE_IID_GROUP_KEY_BID, bid);
     m_settings->endGroup();
+
+    return true;
 }
 
 void UserConfig::changeIIDName(const QString& iid, const QString& name)

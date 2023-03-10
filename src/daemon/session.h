@@ -92,7 +92,7 @@ private:
     virtual void interrupt();
     virtual void cancel();
     virtual void end();
-    virtual void onEnrollStatus(const QString &bid, int result, int progress, const QString &message){};
+    virtual void onEnrollStatus(const QString &dataID, int progress, int result, const QString &message){};
     virtual void onVerifyStatus(int result, const QString &messsage);
     virtual void onIdentifyStatus(const QString &bid, int result, const QString &message);
 

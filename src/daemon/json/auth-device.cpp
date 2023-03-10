@@ -25,7 +25,7 @@ QList<AuthDevice> authDevicesfromJson(const QString& json)
     QJsonArray jsonArray = doc.array();
     for (int i = 0; i < jsonArray.count(); i++)
     {
-        QJsonValue jsonValue = jsonArray.at(0);
+        QJsonValue jsonValue = jsonArray.at(i);
         if( !jsonValue.isObject() )
         {
             continue;

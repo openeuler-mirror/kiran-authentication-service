@@ -37,18 +37,21 @@ public:
 
     QSharedPointer<DeviceAdaptor> getDeviceAdaptor(int32_t authType);
     QString getDeivcesForType(int32_t authType);
-    
+    QString getDriversForType(int32_t authType);
+    bool deleteFeature(const QString& dataID);
+    bool setDrivereEanbled(const QString& driverName,bool enabled);
+
 private:
     void init();
 
 private:
     QSharedPointer<DeviceAdaptor> createDeviceAdaptor(int32_t authType);
     QSharedPointer<AuthDeviceProxy> getDBusDeviceProxy(int authType, const QString &suggestDeviceID);
-    void onDefaultDeviceChanged(int authType, const QString &deviceID);
 
 private slots:
     void onAuthDeviceManagerLost(const QString& service);
     void onDeviceDeleted(int deviceType, const QString &deviceID);
+    void onDefaultDeviceChanged(int authType, const QString &deviceID);
 
 private:
     static DeviceAdaptorFactory *m_instance;

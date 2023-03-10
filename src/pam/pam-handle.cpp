@@ -93,8 +93,8 @@ this->m_taskPool->pushTask([this, priority, &log, &futureInterface]()
                                    pam_syslog((const pam_handle_t *)this->getPamh(), priority, log.toStdString().c_str());
                                    futureInterface.reportResult(true);
                                    futureInterface.reportFinished(); });
-futureInterface.future().result();
-return;
+    futureInterface.future().result();
+    return;
 }
 
 void PAMHandle::finish(int result)

@@ -56,6 +56,8 @@ enum KADErrorCode
     ERROR_USER_IID_ALREADY_EXISTS = 0x10000,
     // 正在录入中
     ERROR_USER_ENROLLING,
+    // 不存在该类型设备
+    ERROR_NO_DEVICE,
 
     // Session
     ERROR_SESSION_EXCEED_MAX_SESSION_NUM = 0x20000,

@@ -41,6 +41,9 @@ QString KADError::getErrorDesc(KADErrorCode errorCode)
     case KADErrorCode::ERROR_FAILED:
         errorDesc = QObject::tr("Internel error.");
         break;
+    case KADErrorCode::ERROR_NO_DEVICE:
+        errorDesc = QObject::tr("No Such Device.");
+        break;
     default:
         errorDesc = QObject::tr("Unknown error.");
         break;

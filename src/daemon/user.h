@@ -1,14 +1,14 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
  * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
@@ -17,11 +17,13 @@
 #include <QDBusContext>
 #include <QDBusMessage>
 #include <QDBusObjectPath>
+#include "kas-authentication-i.h"
 #include "src/daemon/device/device-protocol.h"
 #include "kas-authentication-i.h"
 
 class UserAdaptor;
 class QSettings;
+class QDBusServiceWatcher;
 struct passwd;
 
 namespace Kiran
@@ -69,15 +71,15 @@ public:
     void setFailures(int32_t failures);
 
 public Q_SLOTS:  // DBUS METHODS
-    QString AddIdentification(int authType, const QString &name, const QString &dataID);
     void DeleteIdentification(const QString &iid);
-    void EnrollStart(int authType,const QString& extraInfo);
+    void RenameIdentification(const QString &iid, const QString &name);
+    void EnrollStart(int authType, const QString &name, const QString &extraInfo);
     void EnrollStop();
     QString GetIdentifications(int authType);
     void ResetFailures();
 
 Q_SIGNALS:  // SIGNALS
-    void EnrollStatus(const QString &bid, int result, int progress, bool interrupt);
+    void EnrollStatus(const QString &iid, bool isComplete, int progress, const QString &message);
     void IdentificationAdded(const QString &iid);
     void IdentificationChanged(const QString &iid);
     void IdentificationDeleted(const QString &iid);
@@ -87,6 +89,8 @@ private:
     {
         UserEnrollInfo() : m_requestID(-1) {}
         int64_t m_requestID;
+        int32_t m_authTpe;
+        QString m_feautreName;
         QDBusMessage m_dbusMessage;
         QSharedPointer<DeviceAdaptor> deviceAdaptor;
     };
@@ -99,26 +103,24 @@ private:
     virtual void interrupt();
     virtual void cancel();
     virtual void end();
-    virtual void onEnrollStatus(const QString &bid, int result, int progress,const QString& message);
-    virtual void onVerifyStatus(int result,const QString& message){};
-    virtual void onIdentifyStatus(const QString &bid, int result,const QString& message){};
+    virtual void onEnrollStatus(const QString &dataID, int progress, int result, const QString &message);
+    virtual void onVerifyStatus(int result, const QString &message){};
+    virtual void onIdentifyStatus(const QString &bid, int result, const QString &message){};
 
 private:
     // 如果请求用户和当前用户相同则使用originAction，否则需要管理员权限
     QString calcAction(const QString &originAction);
 
-    void onEnrollStart(const QDBusMessage &message, int authType,const QString& extraInfo);
+    void onEnrollStart(const QDBusMessage &message, int authType, const QString &name, const QString &extraInfo);
     void onEnrollStop(const QDBusMessage &message);
-    void onResetFailures(const QDBusMessage &message);
     void onAddIdentification(const QDBusMessage &message, int authType, const QString &name, const QString &dataID);
-    void onDeleteIdentification(const QDBusMessage &message, const QString &iid);
-
+    
 private:
     UserAdaptor *m_dbusAdaptor;
     UserConfig *m_userConfig = nullptr;
     Passwd m_pwent;
     QDBusObjectPath m_objectPath;
     UserEnrollInfo m_enrollInfo;
+    QDBusServiceWatcher *m_serviceWatcher;
 };
-
 }  // namespace Kiran

@@ -78,21 +78,40 @@ QDBusObjectPath AuthManager::CreateSession(const QString &username, int timeout,
     auto session = new Session(sessionID, this->message().service(), username, (KADAuthApplication)authApp, this);
     this->m_sessions.insert(sessionID, session);
 
-    KLOG_DEBUG() << QString("create session user(%1) timeout(%2) app type(%3) for %4-> session(%5)")
+    KLOG_DEBUG() << QString("create session user(%1) timeout(%2) app type(%3) for %4 -> session(%5)")
                         .arg(username)
                         .arg(timeout)
                         .arg(authApp)
                         .arg(this->message().service())
-                        .arg(session->getObjectPath().path());
+                        .arg(sessionID);
     return QDBusObjectPath(session->getObjectPath());
 }
 
 void AuthManager::DestroySession(uint sessionID)
 {
     auto session = this->m_sessions.value(sessionID, nullptr);
-    if( !session )
+    if (!session)
     {
         KLOG_WARNING() << "destory session error,can't find session" << sessionID;
+        return;
+    }
+    KLOG_DEBUG() << sessionID << "destory session";
+    this->m_sessions.remove(sessionID);
+    session->StopAuth();
+    delete session;
+}
+
+QString AuthManager::GetDriversForType(int authType)
+{
+    return DeviceAdaptorFactory::getInstance()->getDriversForType(authType);
+}
+
+void AuthManager::SetDrivereEanbled(const QString &driverName, bool enabled)
+{
+    if (!DeviceAdaptorFactory::getInstance()->setDrivereEanbled(driverName, enabled))
+    {
+        DBUS_ERROR_REPLY(QDBusError::InternalError,
+                         KADErrorCode::ERROR_FAILED);
     }
 
     this->m_sessions.remove(sessionID);
@@ -200,8 +219,7 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
             iter++;
         }
     }
-
-    KLOG_DEBUG() << "get auth type by app:" << authApp << "->" << authOrder;
+    KLOG_DEBUG() << "get auth types by app:" << authApp << "result:" << authOrder;
     return authOrder;
 }
 
@@ -220,7 +238,7 @@ int AuthManager::QueryAuthApp(const QString &pamServiceName)
         authApp = iter.value();
     }
 
-    KLOG_DEBUG() << "get auth app by service name:" << pamServiceName << "->" << authApp;
+    KLOG_DEBUG("query auth application by service(%s) result:%d", pamServiceName.toStdString().c_str(), authApp);
     return authApp;
 }
 
