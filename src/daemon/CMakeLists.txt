@@ -61,9 +61,10 @@ set(TARGET_NAME kiran-authentication-daemon)
 
 configure_file(config-daemon.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-daemon.h)
 
+file(GLOB TS_FILES "${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.*.ts")
 qt_create_translation(DAEMON_QM_FILES 
                       ${CMAKE_CURRENT_SOURCE_DIR} ../utils
-                      ${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts
+                      ${TS_FILES}
                       OPTIONS -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_BINARY_DIR} -no-obsolete)
                       
 add_executable(
