@@ -20,7 +20,7 @@
 #include "src/daemon/auth-manager.h"
 #include "src/daemon/auth_device_manager_proxy.h"
 #include "src/daemon/auth_device_proxy.h"
-#include "utils.h"
+#include "src/utils/utils.h"
 
 namespace Kiran
 {

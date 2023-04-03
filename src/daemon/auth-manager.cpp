@@ -23,7 +23,7 @@
 #include "src/daemon/proxy/dbus-daemon-proxy.h"
 #include "src/daemon/session.h"
 #include "src/daemon/user-manager.h"
-#include "src/daemon/utils.h"
+#include "src/utils/utils.h"
 
 #include <kas-authentication-i.h>
 #include <pwd.h>
@@ -113,11 +113,6 @@ void AuthManager::SetDrivereEanbled(const QString &driverName, bool enabled)
         DBUS_ERROR_REPLY(QDBusError::InternalError,
                          KADErrorCode::ERROR_FAILED);
     }
-
-    this->m_sessions.remove(sessionID);
-    session->StopAuth();
-    delete session;
-    KLOG_DEBUG() << "destory session" << sessionID;
 }
 
 QDBusObjectPath AuthManager::FindUserByID(qulonglong uid)
@@ -228,7 +223,9 @@ int AuthManager::QueryAuthApp(const QString &pamServiceName)
     static QMap<QString, int> pamAuthAppMap = {
         {"lightdm", KAD_AUTH_APPLICATION_LOGIN},
         {"kiran-screensaver", KAD_AUTH_APPLICATION_UNLOCK},
-        {"polkit-1", KAD_AUTH_APPLICATION_EMPOWERMENT}};
+        {"polkit-1", KAD_AUTH_APPLICATION_EMPOWERMENT},
+        
+        {"sudo",KAD_AUTH_APPLICATION_EMPOWERMENT}};
 
     int authApp = KAD_AUTH_APPLICATION_NONE;
 

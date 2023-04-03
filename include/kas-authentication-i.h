@@ -55,6 +55,7 @@ extern "C"
         KAD_AUTH_MODE_LAST,
     };
 
+#define AUTH_TYPE_STR_PASSWORD "password"
 #define AUTH_TYPE_STR_FINGERPRINT "fingerprint"
 #define AUTH_TYPE_STR_FACE "face"
 #define AUTH_TYPE_STR_UKEY "uKey"

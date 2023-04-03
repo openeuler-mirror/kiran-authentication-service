@@ -21,7 +21,7 @@
 #include "src/daemon/proxy/dbus-daemon-proxy.h"
 #include "src/daemon/session_adaptor.h"
 #include "src/daemon/user-manager.h"
-#include "src/daemon/utils.h"
+#include "src/utils/utils.h"
 
 #include <kas-authentication-i.h>
 #include <kiran-authentication-devices/kiran-auth-device-i.h>

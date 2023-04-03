@@ -20,6 +20,7 @@ namespace Kiran
 {
 class AuthenticationGraphical : public Authentication
 {
+    Q_OBJECT
 public:
     AuthenticationGraphical(PAMHandle* pamHandle, const QStringList& arguments);
     virtual ~AuthenticationGraphical(){};

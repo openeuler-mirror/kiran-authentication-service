@@ -16,15 +16,15 @@
 #include <auxiliary.h>
 #include <pam_ext.h>
 #include <pam_modules.h>
-#include <syslog.h>
 #include <sys/types.h>
+#include <syslog.h>
 #include <unistd.h>
 #include <QCommandLineParser>
-#include <QFuture>
-#include <QMutexLocker>
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
 #include <QFile>
+#include <QFuture>
+#include <QMutexLocker>
 
 #include "src/pam/authentication-graphical.h"
 #include "src/pam/authentication-terminal.h"
@@ -39,8 +39,7 @@ AuthenticationController::AuthenticationController(void* pamh,
 {
     this->m_pamHandle = new PAMHandle(pamh, this, this);
 
-    auto pamService = this->m_pamHandle->getItemDirect(PAM_SERVICE);
-    m_isGraphical = this->isGraphical(pamService);
+    m_isGraphical = this->isGraphical();
     if (m_isGraphical)
     {
         this->m_authentication = new AuthenticationGraphical(this->m_pamHandle, arguments);
@@ -65,14 +64,6 @@ AuthenticationController::~AuthenticationController()
 
 int32_t AuthenticationController::run()
 {
-    //暂时只接管图形认证
-    if( !m_isGraphical )
-    {
-        m_workerThread.quit();
-        m_workerThread.wait();
-        return PAM_IGNORE;
-    }
-
     this->isRunning = true;
 
     Q_EMIT this->startAuthentication();
@@ -87,7 +78,7 @@ int32_t AuthenticationController::run()
         }
         this->m_tasks.clear();
     }
-    auto pamh = this->m_pamHandle->getPamh();
+
     this->m_workerThread.wait();
     return this->m_result;
 }
@@ -106,34 +97,46 @@ void AuthenticationController::pushTask(std::function<void(void)> task)
     this->m_waitCondition.wakeAll();
 }
 
-bool AuthenticationController::isGraphical(const QString& pamService)
+bool AuthenticationController::isGraphical()
 {
-
+    auto pamService = this->m_pamHandle->getItemDirect(PAM_SERVICE);
     bool isGraphcal = false;
 
-    //TODO: polkit通过服务名判断是否图形还是命令行登录方式
-    
-    if ( pamService == "lightdm" )
+    if (pamService == "lightdm")
     {
         isGraphcal = true;
     }
-    else if( pamService == "polkit-1" )
+    else if (pamService == "polkit-1")
     {
         auto ppid = getppid();
         QFile file(QString("/proc/%1/cmdline").arg(ppid));
-        if( file.open(QIODevice::ReadOnly) )
+        if (file.open(QIODevice::ReadOnly))
         {
             QString cmdline = file.readAll();
             this->m_pamHandle->syslogDirect(LOG_DEBUG, cmdline);
             isGraphcal = cmdline.contains("kiran-polkit-agent");
         }
-    }else if( pamService == "kiran-screensaver" )
+    }
+    else if (pamService == "kiran-screensaver")
     {
         isGraphcal = true;
     }
 
-    this->m_pamHandle->syslogDirect(LOG_DEBUG, QString("is graphical: service(%1) result=%4").arg(pamService).arg(isGraphcal));
+    this->m_pamHandle->syslogDirect(LOG_DEBUG, QString("is graphical: service(%1) result=%2").arg(pamService).arg(isGraphcal));
     return isGraphcal;
 }
+
+#if 0
+//FIXME: 暂时从pam_get_item所给的特征中分辨不了是否是远程认证
+bool AuthenticationController::isRemoteAuth()
+{
+    auto rhost = this->m_pamHandle->getItemDirect(PAM_RHOST);
+    auto xdisplay = this->m_pamHandle->getItemDirect(PAM_XDISPLAY);
+    auto tty = this->m_pamHandle->getItemDirect(PAM_TTY);
+
+    this->m_pamHandle->syslogDirect(LOG_DEBUG, QString("rhost: %1 xdisplay: %2 tty: %3").arg(rhost).arg(xdisplay).arg(tty));
+    return false;
+}
+#endif
 
 }  // namespace Kiran

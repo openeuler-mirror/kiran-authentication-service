@@ -12,7 +12,7 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/daemon/utils.h"
+#include "src/utils/utils.h"
 #include <auxiliary.h>
 #include <kas-authentication-i.h>
 #include <kiran-authentication-devices/kiran-auth-device-i.h>
@@ -87,6 +87,8 @@ QString Utils::authTypeEnum2Str(int authType)
 {
     switch (authType)
     {
+    case KADAuthType::KAD_AUTH_TYPE_PASSWORD:
+        return QStringLiteral(AUTH_TYPE_STR_PASSWORD);
     case KADAuthType::KAD_AUTH_TYPE_FINGERPRINT:
         return QStringLiteral(AUTH_TYPE_STR_FINGERPRINT);
     case KADAuthType::KAD_AUTH_TYPE_FACE:
@@ -105,6 +107,8 @@ int Utils::authTypeStr2Enum(const QString& authType)
 {
     switch (shash(authType.toStdString().c_str()))
     {
+    case CONNECT(AUTH_TYPE_STR_PASSWORD, _hash):
+        return KADAuthType::KAD_AUTH_TYPE_PASSWORD;
     case CONNECT(AUTH_TYPE_STR_FINGERPRINT, _hash):
         return KADAuthType::KAD_AUTH_TYPE_FINGERPRINT;
     case CONNECT(AUTH_TYPE_STR_FACE, _hash):
@@ -169,30 +173,6 @@ QList<int> Utils::authOrderStr2Enum(const QStringList& authOrder)
         retval.push_back(Utils::authTypeStr2Enum(authType));
     }
     return retval;
-}
-
-QString Utils::fpEnrollResultEnum2Str(int32_t fpEnrollResult)
-{
-#if 0
-    switch (fpEnrollResult)
-    {
-    case FPEnrollResult::FP_ENROLL_RESULT_COMPLETE:
-        return QObject::tr("Enrollment completed successfully.");
-    case FPEnrollResult::FP_ENROLL_RESULT_FAIL:
-        return QObject::tr("Enrollment failed.");
-    case FPEnrollResult::FP_ENROLL_RESULT_PASS:
-        return QObject::tr("Enroll stage passed.");
-    case FPEnrollResult::FP_ENROLL_RESULT_RETRY:
-    case FPEnrollResult::FP_ENROLL_RESULT_RETRY_REMOVE_FINGER:
-        return QObject::tr("The enrollment scan did not succeed, please retry it.");
-    case FPEnrollResult::FP_ENROLL_RESULT_RETRY_TOO_SHORT:
-        return QObject::tr("The finger swipe was too short, please retry it.");
-    case FPEnrollResult::FP_ENROLL_RESULT_RETRY_CENTER_FINGER:
-        return QObject::tr("The finger was not centered on the scanner, please retry it.");
-    default:
-        return QObject::tr("Unknown enrollment error.");
-    }
-#endif
 }
 
 QString Utils::verifyResultEnum2Str(int32_t verifyResult)

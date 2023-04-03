@@ -32,13 +32,19 @@ set(TARGET_NAME pam_kiran_authentication)
 
 configure_file(config-pam.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-pam.h)
 
-set(TS_FILES "${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts")
-qt_create_translation(QM_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${TS_FILES})
+set(PAM_TRANSLATOR_SOURCE 
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/../utils/
+      ${PROJECT_SOURCE_DIR})
+qt_create_translation(PAM_QM_FILES 
+                      ${PAM_TRANSLATOR_SOURCE}
+                      ${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts
+                      OPTIONS -I ${PAM_TRANSLATOR_SOURCE})
 
 add_library(
   ${TARGET_NAME} SHARED
-  ${PAM_H_FILES} ${PAM_CPP_FILES} ${AUTH_MANAGER_INTERFACE_SRCS}
-  ${AUTH_SESSION_INTERFACE_SRCS} ${AUTH_USER_INTERFACE_SRCS} ${QM_FILES})
+  ${PAM_H_FILES} ${PAM_CPP_FILES} ${AUTH_MANAGER_INTERFACE_SRCS} ${UTILS_SRC}
+  ${AUTH_SESSION_INTERFACE_SRCS} ${AUTH_USER_INTERFACE_SRCS} ${PAM_QM_FILES})
 
 target_include_directories(
   ${TARGET_NAME}
@@ -52,6 +58,6 @@ target_link_libraries(
 
 set_target_properties(${TARGET_NAME} PROPERTIES PREFIX "")
 
-install(FILES ${QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
+install(FILES ${PAM_QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
 install(TARGETS ${TARGET_NAME}
         LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/security/)
