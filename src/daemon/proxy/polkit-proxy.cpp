@@ -13,7 +13,7 @@
  */
 
 #include "src/daemon/proxy/polkit-proxy.h"
-#include <auxiliary.h>
+#include "auxiliary.h"
 #include <qt5-log-i.h>
 #include <QDBusArgument>
 #include <QDBusConnection>

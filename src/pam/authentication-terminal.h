@@ -15,11 +15,13 @@
 #pragma once
 
 #include "src/pam/authentication.h"
+#include "kas-authentication-i.h"
 
 namespace Kiran
 {
 class AuthenticationTerminal : public Authentication
 {
+    Q_OBJECT
 public:
     AuthenticationTerminal(PAMHandle* pamHandle, const QStringList& arguments);
     virtual ~AuthenticationTerminal(){};
@@ -27,9 +29,12 @@ public:
 private:
     virtual void notifyAuthMode() {}
     virtual bool requestLoginUserSwitchable() { return false; };
-    virtual void notifySupportAuthType() {};
+    virtual void notifySupportAuthType();
     virtual int32_t requestAuthType();
     virtual void notifyAuthType(int authType) {}
+
+private:
+    QList<KADAuthType> m_supportAuthTypes;
 };
 
 }  // namespace Kiran

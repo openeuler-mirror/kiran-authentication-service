@@ -14,7 +14,7 @@
 
 #include "auth-config.h"
 #include "src/daemon/config-daemon.h"
-#include "src/daemon/utils.h"
+#include "src/utils/utils.h"
 
 #include <QSettings>
 #include <qt5-log-i.h>

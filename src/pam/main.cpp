@@ -1,14 +1,14 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
  * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
@@ -17,24 +17,51 @@
 #include <qt5-log-i.h>
 #include <syslog.h>
 #include <QCoreApplication>
+#include <QSet>
 #include <QSharedPointer>
 #include <QTranslator>
 #include "src/pam/authentication-controller.h"
 #include "src/pam/config-pam.h"
 #include "src/pam/pam-args-parser.h"
 
+static const QSet<QString> supportedServiceName = {
+    "lightdm",
+    "kiran-screensaver",
+    "polkit-1",
+    "sudo"};
+
+// 通过PAM句柄获取生物认证是否支持该PAM服务
+bool pam_service_is_support(pam_handle_t *pamh)
+{
+    const char *value = nullptr;
+    int res = pam_get_item(pamh, PAM_SERVICE, (const void **)&value);
+    if (res != PAM_SUCCESS)
+    {
+        pam_syslog(pamh, LOG_ERR, "%s failed.", __FUNCTION__);
+        return false;
+    }
+
+    return supportedServiceName.contains(value);
+}
+
 extern "C" int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                                    const char **argv)
 {
+    if (!pam_service_is_support(pamh))
+    {
+        pam_syslog(pamh, LOG_DEBUG, PROGRAM_NAME " isn't support!, ignore");
+        return PAM_IGNORE;
+    }
+
     bool isLocalApp = false;
     QCoreApplication *app = QCoreApplication::instance();
     if (!app)
     {
         /* 使用sudo运行时会调用setuid，QT程序会检查effective UserID和real UserID是否相同，默认情况下不相同程序直接退出。
            因此需要修改setuidAllowed属性来取消检查，不过这里可能会带来一些风险。文档描述如下：
-           Qt is not an appropriate solution for setuid programs due to its large attack surface. 
-           However some applications may be required to run in this manner for historical reasons. 
-           This flag will prevent Qt from aborting the application when this is detected, 
+           Qt is not an appropriate solution for setuid programs due to its large attack surface.
+           However some applications may be required to run in this manner for historical reasons.
+           This flag will prevent Qt from aborting the application when this is detected,
            and must be set before a QCoreApplication instance is created.*/
         QCoreApplication::setSetuidAllowed(true);
 
@@ -81,15 +108,21 @@ extern "C" int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const cha
 /* Account Management API's */
 extern "C" int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int, const char **)
 {
+    if (!pam_service_is_support(pamh))
+    {
+        pam_syslog(pamh, LOG_DEBUG, PROGRAM_NAME " isn't support!, ignore");
+        return PAM_IGNORE;
+    }
+
     bool isLocalApp = false;
     QCoreApplication *app = QCoreApplication::instance();
     if (!app)
     {
         /* 使用sudo运行时会调用setuid，QT程序会检查effective UserID和real UserID是否相同，默认情况下不相同程序直接退出。
            因此需要修改setuidAllowed属性来取消检查，不过这里可能会带来一些风险。文档描述如下：
-           Qt is not an appropriate solution for setuid programs due to its large attack surface. 
-           However some applications may be required to run in this manner for historical reasons. 
-           This flag will prevent Qt from aborting the application when this is detected, 
+           Qt is not an appropriate solution for setuid programs due to its large attack surface.
+           However some applications may be required to run in this manner for historical reasons.
+           This flag will prevent Qt from aborting the application when this is detected,
            and must be set before a QCoreApplication instance is created.*/
         QCoreApplication::setSetuidAllowed(true);
 

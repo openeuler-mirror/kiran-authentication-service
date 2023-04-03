@@ -28,7 +28,7 @@
 #include "src/daemon/user-config.h"
 #include "src/daemon/user-manager.h"
 #include "src/daemon/user_adaptor.h"
-#include "src/daemon/utils.h"
+#include "src/utils/utils.h"
 
 #define USER_DEBUG() KLOG_DEBUG() << this->m_pwent.pw_uid
 #define USER_WARNING() KLOG_WARNING() << this->m_pwent.pw_uid
@@ -66,7 +66,7 @@ User::User(const Passwd &pwent, QObject *parent)
     this->m_serviceWatcher = new QDBusServiceWatcher(this);
     this->m_serviceWatcher->setConnection(systemConnection);
     this->m_serviceWatcher->setWatchMode(QDBusServiceWatcher::WatchForUnregistration);
-    connect(this->m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered, this, &User::onNameLost);
+    // connect(this->m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered, this, &User::onNameLost);
 }
 
 User::~User()
@@ -125,6 +125,7 @@ CHECK_AUTH_WITH_2ARGS(User, RenameIdentification, onRenameIdentification, AUTH_U
 CHECK_AUTH_WITH_3ARGS(User, EnrollStart, onEnrollStart, AUTH_USER_SELF, int, const QString &, const QString &)
 CHECK_AUTH(User, EnrollStop, onEnrollStop, AUTH_USER_SELF)
 CHECK_AUTH(User, ResetFailures, onResetFailures, AUTH_USER_SELF)
+
 QString User::GetIdentifications(int authType)
 {
     QJsonDocument jsonDoc;
@@ -168,11 +169,6 @@ void User::cancel()
 {
     USER_DEBUG() << "request cancel";
     Q_EMIT this->EnrollStatus(QString(), true, 0, tr("Enroll has been cancelled"));
-}
-
-void User::cancel()
-{
-    Q_EMIT this->EnrollStatus(QString(), FPEnrollResult::FP_ENROLL_RESULT_FAIL, 0, true);
 }
 
 void User::end()
@@ -319,15 +315,5 @@ void User::onRenameIdentification(const QDBusMessage &message, const QString &ii
 
     auto replyMessage = message.createReply();
     QDBusConnection::systemBus().send(replyMessage);
-}
-
-void User::onNameLost(const QString &service)
-{
-    USER_DEBUG() << "start enroll caller name lost,stop enroll";
-    if (this->m_enrollInfo.m_requestID > 0 &&
-        this->m_enrollInfo.deviceAdaptor)
-    {
-        this->m_enrollInfo.deviceAdaptor->stop(this->m_enrollInfo.m_requestID);
-    }
 }
 }  // namespace Kiran
