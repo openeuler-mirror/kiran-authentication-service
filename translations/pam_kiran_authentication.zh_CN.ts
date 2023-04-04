@@ -37,30 +37,14 @@
         <translation>指静脉认证</translation>
     </message>
     <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="78"/>
+        <location filename="../src/pam/authentication-terminal.cpp" line="77"/>
         <source>Select Authentication type (%1): </source>
         <translation>请选择认证类型（%1）： </translation>
     </message>
-</context>
-<context>
-    <name>Kiran::User</name>
     <message>
-        <location filename="../src/daemon/user.cpp" line="165"/>
-        <source>Enroll has been interrupted. Please wait</source>
-        <translation>录入被打断，请稍后</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/user.cpp" line="171"/>
-        <source>Enroll has been cancelled</source>
-        <translation>录入已被取消</translation>
-    </message>
-</context>
-<context>
-    <name>PolkitProxy</name>
-    <message>
-        <location filename="../src/daemon/proxy/polkit-proxy.cpp" line="215"/>
-        <source>Authorization failed.</source>
-        <translation>认证失败。</translation>
+        <location filename="../src/pam/authentication-terminal.cpp" line="94"/>
+        <source>The authentication type is invalid. Please select a new one</source>
+        <translation>该认证类型无效，请重新选择</translation>
     </message>
 </context>
 <context>
@@ -84,46 +68,6 @@
         <location filename="../src/utils/utils.cpp" line="190"/>
         <source>Unknown verfication error.</source>
         <translation>未知认证错误。</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/error.cpp" line="30"/>
-        <source>Authentication ID already exists.</source>
-        <translation>认证ID已存在。</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/error.cpp" line="33"/>
-        <source>The user is enrolling.</source>
-        <translation>用户正在认证中。</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/error.cpp" line="36"/>
-        <source>Too many sessions.</source>
-        <translation>认证会话过多。</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/error.cpp" line="39"/>
-        <source>The session is in authentication.</source>
-        <translation>该认证会话正在认证中。</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/error.cpp" line="42"/>
-        <source>Internel error.</source>
-        <translation>内部错误。</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/error.cpp" line="45"/>
-        <source>No Such Device.</source>
-        <translation>不存在该类型设备。</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/error.cpp" line="48"/>
-        <source>Unknown error.</source>
-        <translation>位置错误。</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/error.cpp" line="52"/>
-        <source> (error code: 0x%x)</source>
-        <translation> (错误码: 0x%x)</translation>
     </message>
 </context>
 </TS>
