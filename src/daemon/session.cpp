@@ -21,7 +21,7 @@
 #include "src/daemon/proxy/dbus-daemon-proxy.h"
 #include "src/daemon/session_adaptor.h"
 #include "src/daemon/user-manager.h"
-#include "src/daemon/utils.h"
+#include "src/utils/utils.h"
 
 #include <kas-authentication-i.h>
 #include <kiran-authentication-devices/kiran-auth-device-i.h>
@@ -42,10 +42,10 @@ Session::Session(uint32_t sessionID,
       m_sessionID(sessionID),
       m_serviceName(serviceName),
       m_userName(userName),
-      m_authMode(KADAuthMode::KAD_AUTH_MODE_OR),
-      m_authType(KADAuthType::KAD_AUTH_TYPE_NONE),
       m_loginUserSwitchable(false),
-      m_authApplication(authApp)
+      m_authApplication(authApp),
+      m_authMode(KADAuthMode::KAD_AUTH_MODE_OR),
+      m_authType(KADAuthType::KAD_AUTH_TYPE_NONE)
 {
     this->m_dbusAdaptor = new SessionAdaptor(this);
     this->m_objectPath = QDBusObjectPath(QString("%1/%2").arg(KAD_SESSION_DBUS_OBJECT_PATH).arg(this->m_sessionID));
@@ -218,25 +218,19 @@ void Session::end()
     this->m_verifyInfo.deviceAdaptor = nullptr;
 }
 
-// 暂时不需要该操作
-void Session::onVerifyStatus(int result, const QString &message)
-{
-    KLOG_DEBUG() << m_sessionID << "verify status changed:" << result << message;
-    KLOG_DEBUG() << m_sessionID << "Unsupported operation.";
-}
-
 void Session::onIdentifyStatus(const QString &bid, int result, const QString &message)
 {
     KLOG_DEBUG() << m_sessionID << "verify identify  status:" << bid << result << message;
+    
     if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
-        result == VerifyResult::VERIFY_RESULT_MATCH)
+        result == IdentifyResult::IDENTIFY_RESULT_MATCH)
     {
         KLOG_DEBUG() << m_sessionID << "feature match successfully, but it isn't a legal user.";
-        result = VerifyResult::VERIFY_RESULT_NOT_MATCH;
+        result = IdentifyResult::IDENTIFY_RESULT_NOT_MATCH;
     }
 
-    auto verifyResultStr = Utils::verifyResultEnum2Str(result);
-    if (result == VerifyResult::VERIFY_RESULT_MATCH)
+    auto verifyResultStr = Utils::identifyResultEnum2Str(result);
+    if (result == IdentifyResult::IDENTIFY_RESULT_MATCH)
     {
         Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_INFO);
     }
@@ -245,10 +239,10 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
         Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
     }
 
-    if (result == VerifyResult::VERIFY_RESULT_MATCH ||
-        result == VerifyResult::VERIFY_RESULT_NOT_MATCH)
+    if (result == IdentifyResult::IDENTIFY_RESULT_MATCH ||
+        result == IdentifyResult::IDENTIFY_RESULT_NOT_MATCH)
     {
-        this->finishPhaseAuth(result == VerifyResult::VERIFY_RESULT_MATCH);
+        this->finishPhaseAuth(result == IdentifyResult::IDENTIFY_RESULT_MATCH);
     }
 }
 

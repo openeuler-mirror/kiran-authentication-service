@@ -43,6 +43,6 @@ public:
     static QList<int> authOrderStr2Enum(const QStringList &authOrder);
 
     static QString fpEnrollResultEnum2Str(int32_t fpEnrollResult);
-    static QString verifyResultEnum2Str(int32_t fpVerifyResult);
+    static QString identifyResultEnum2Str(int32_t fpVerifyResult);
 };
 }  // namespace Kiran

@@ -44,7 +44,7 @@ Q_SIGNALS:
 
 private:
     // 判断当前认证是否为图形模式
-    bool isGraphical(const QString& pamService);
+    bool isGraphical();
 
 private:
     PAMHandle* m_pamHandle;
