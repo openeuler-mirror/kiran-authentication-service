@@ -75,7 +75,6 @@ public:
     // 录入状态
     virtual void onEnrollStatus(const QString &bid, int progress, int result,const QString& message) = 0;
     // 认证状态
-    virtual void onVerifyStatus(int result,const QString& message) = 0;
     virtual void onIdentifyStatus(const QString &bid, int result,const QString& message) = 0;
 };
 

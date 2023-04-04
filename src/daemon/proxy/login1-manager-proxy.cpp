@@ -13,7 +13,7 @@
  */
 
 #include "src/daemon/proxy/login1-manager-proxy.h"
-#include <auxiliary.h>
+#include "include/auxiliary.h"
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include "src/daemon/config-daemon.h"

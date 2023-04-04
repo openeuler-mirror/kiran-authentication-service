@@ -218,25 +218,19 @@ void Session::end()
     this->m_verifyInfo.deviceAdaptor = nullptr;
 }
 
-// 暂时不需要该操作
-void Session::onVerifyStatus(int result, const QString &message)
-{
-    KLOG_DEBUG() << m_sessionID << "verify status changed:" << result << message;
-    KLOG_DEBUG() << m_sessionID << "Unsupported operation.";
-}
-
 void Session::onIdentifyStatus(const QString &bid, int result, const QString &message)
 {
     KLOG_DEBUG() << m_sessionID << "verify identify  status:" << bid << result << message;
+    
     if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
-        result == VerifyResult::VERIFY_RESULT_MATCH)
+        result == IdentifyResult::IDENTIFY_RESULT_MATCH)
     {
         KLOG_DEBUG() << m_sessionID << "feature match successfully, but it isn't a legal user.";
-        result = VerifyResult::VERIFY_RESULT_NOT_MATCH;
+        result = IdentifyResult::IDENTIFY_RESULT_NOT_MATCH;
     }
 
-    auto verifyResultStr = Utils::verifyResultEnum2Str(result);
-    if (result == VerifyResult::VERIFY_RESULT_MATCH)
+    auto verifyResultStr = Utils::identifyResultEnum2Str(result);
+    if (result == IdentifyResult::IDENTIFY_RESULT_MATCH)
     {
         Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_INFO);
     }
@@ -245,10 +239,10 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
         Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
     }
 
-    if (result == VerifyResult::VERIFY_RESULT_MATCH ||
-        result == VerifyResult::VERIFY_RESULT_NOT_MATCH)
+    if (result == IdentifyResult::IDENTIFY_RESULT_MATCH ||
+        result == IdentifyResult::IDENTIFY_RESULT_NOT_MATCH)
     {
-        this->finishPhaseAuth(result == VerifyResult::VERIFY_RESULT_MATCH);
+        this->finishPhaseAuth(result == IdentifyResult::IDENTIFY_RESULT_MATCH);
     }
 }
 

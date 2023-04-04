@@ -13,7 +13,8 @@
  */
 
 #include "src/daemon/proxy/polkit-proxy.h"
-#include "auxiliary.h"
+#include "src/daemon/config-daemon.h"
+#include "include/auxiliary.h"
 #include <qt5-log-i.h>
 #include <QDBusArgument>
 #include <QDBusConnection>
@@ -21,7 +22,6 @@
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
 #include <QDBusVariant>
-#include "src/daemon/config-daemon.h"
 
 #define POLKIT_DBUS_NAME "org.freedesktop.PolicyKit1"
 #define POLKIT_DBUS_OBJECT_PATH "/org/freedesktop/PolicyKit1/Authority"
