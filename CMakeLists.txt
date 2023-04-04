@@ -29,3 +29,5 @@ configure_file(config.h.in ${PROJECT_BINARY_DIR}/config.h)
 
 add_subdirectory(data)
 add_subdirectory(src)
+
+install(FILES include/kas-authentication-i.h DESTINATION ${KAS_INSTALL_INCLUDE}/)
