@@ -19,7 +19,6 @@
 #include <QDBusObjectPath>
 #include "kas-authentication-i.h"
 #include "src/daemon/device/device-protocol.h"
-#include "kas-authentication-i.h"
 
 class UserAdaptor;
 class QSettings;
@@ -110,11 +109,12 @@ private:
 private:
     // 如果请求用户和当前用户相同则使用originAction，否则需要管理员权限
     QString calcAction(const QString &originAction);
-
+    void onResetFailures(const QDBusMessage &message);
     void onEnrollStart(const QDBusMessage &message, int authType, const QString &name, const QString &extraInfo);
     void onEnrollStop(const QDBusMessage &message);
-    void onAddIdentification(const QDBusMessage &message, int authType, const QString &name, const QString &dataID);
-    
+    void onDeleteIdentification(const QDBusMessage &message, const QString &iid);
+    void onRenameIdentification(const QDBusMessage &message, const QString &iid, const QString &name);
+
 private:
     UserAdaptor *m_dbusAdaptor;
     UserConfig *m_userConfig = nullptr;

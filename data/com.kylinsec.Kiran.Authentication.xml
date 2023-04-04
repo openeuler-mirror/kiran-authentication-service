@@ -73,20 +73,14 @@
             <arg name="auth_type" direction="in" type="i">
                 <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
             </arg>
-            <arg name="enabled" direction="in" type="b">
-                <description>Whether the authentication type is enabled</description>
+            <arg name="device_id" type="s">
+                <description>The default device ID.</description>
             </arg>
         </method>
 
         <method name="GetDefaultDeviceID">
             <arg name="auth_type" direction="in" type="i">
                 <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
-            </arg>
-            <arg name="auth_app" direction="in" type="i">
-                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
-            </arg>
-            <arg name="enabled" direction="out" type="b">
-                <description>Whether to enable the authentication type in this application</description>
             </arg>
         </method>
 
@@ -148,37 +142,6 @@
             </arg>
             <arg name="enabled" direction="out" type="b">
                 <description>Whether to enable the authentication type in this application</description>
-            </arg>
-        </method>
-
-        <method name="SetAuthTypeEnabledForApp">
-            <arg name="auth_type" direction="in" type="i">
-                <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
-            </arg>
-            <arg name="auth_app" direction="in" type="i">
-                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
-            </arg>
-            <arg name="enabled" direction="in" type="b">
-                <description>Whether to enable the authentication type in this application</description>
-            </arg>
-        </method>
-
-        <method name="GetAuthTypeByApp">
-            <arg name="auth_app" direction="in" type="i">
-                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
-            </arg>
-            <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QList&lt;int&gt;"/>
-            <arg name="auth_types" direction="out" type="ai">
-                <description>The auth type List. Refer to KADAuthType in kas-authentication-i.h</description>
-            </arg>
-        </method>
-
-        <method name="QueryAuthApp">
-            <arg name="pam_service_name" direction="in" type="s">
-                <description>The PAM service name. For example lightdm, login, etc..</description>
-            </arg>
-            <arg name="auth_app" direction="out" type="i">
-                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
             </arg>
         </method>
 

@@ -2,7 +2,7 @@
 #include "auxiliary.h"
 #include "config-daemon.h"
 #include "kas-authentication-i.h"
-#include "utils.h"
+#include "src/utils/utils.h"
 
 #include <qt5-log-i.h>
 #include <QFile>
@@ -44,7 +44,7 @@ void UserConfig::removeCache()
 
 bool UserConfig::deleteIID(const QString& iid)
 {
-    RETURN_VAL_IF_FALSE(this->m_settings->childGroups().contains(iid),false);
+    RETURN_VAL_IF_FALSE(this->m_settings->childGroups().contains(iid), false);
 
     this->m_iids.removeOne(iid);
     this->m_IIDAuthInfoMap.remove(iid);
@@ -62,10 +62,10 @@ bool UserConfig::deleteIID(const QString& iid)
 
 bool UserConfig::renameIID(const QString& iid, const QString& name)
 {
-    RETURN_VAL_IF_FALSE(this->m_settings->childGroups().contains(iid),false);
+    RETURN_VAL_IF_FALSE(this->m_settings->childGroups().contains(iid), false);
 
     this->m_settings->beginGroup(iid);
-    this->m_settings->setValue(INIFILE_IID_GROUP_KEY_NAME,name);
+    this->m_settings->setValue(INIFILE_IID_GROUP_KEY_NAME, name);
     this->m_settings->endGroup();
 
     m_IIDAuthInfoMap[iid].name = name;
@@ -186,7 +186,7 @@ void UserConfig::init()
 
 bool UserConfig::addIID(int authType, const QString& iid, const QString& name, const QString& bid)
 {
-    RETURN_VAL_IF_FALSE(!this->m_settings->childGroups().contains(iid),false);
+    RETURN_VAL_IF_FALSE(!this->m_settings->childGroups().contains(iid), false);
 
     QString authTypeStr = Utils::authTypeEnum2Str(authType);
 

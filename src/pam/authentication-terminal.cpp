@@ -1,14 +1,14 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
  * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
@@ -17,46 +17,98 @@
 #include <pam_modules.h>
 #include <qt5-log-i.h>
 #include <syslog.h>
+#include "src/pam/auth_manager_proxy.h"
 #include "src/pam/auth_session_proxy.h"
 #include "src/pam/authentication.h"
+#include "src/utils/utils.h"
 
 namespace Kiran
 {
 AuthenticationTerminal::AuthenticationTerminal(PAMHandle* pamHandle,
-                                               const QStringList& arguments) : Authentication(pamHandle, arguments)
+                                               const QStringList& arguments)
+    : Authentication(pamHandle, arguments)
 {
+}
+
+void AuthenticationTerminal::notifySupportAuthType()
+{
+    auto authType = this->m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
+    QList<int> authTypeList = authType.value();
+    authTypeList << KAD_AUTH_TYPE_PASSWORD;
+
+    QList<KADAuthType> tempAuthTypeList;
+    for (auto authType : authTypeList)
+    {
+        tempAuthTypeList << (KADAuthType)authType;
+    }
+
+    m_supportAuthTypes.swap(tempAuthTypeList);
 }
 
 int32_t AuthenticationTerminal::requestAuthType()
 {
+    QMap<KADAuthType, QString> authTypeTranslator = {
+        {KAD_AUTH_TYPE_PASSWORD, tr("passwd")},
+        {KAD_AUTH_TYPE_FINGERPRINT, tr("fingerprint")},
+        {KAD_AUTH_TYPE_FACE, tr("face")},
+        {KAD_AUTH_TYPE_UKEY, tr("ukey")},
+        {KAD_AUTH_TYPE_FINGERVEIN, tr("fingervein")}};
     do
     {
-        auto requestRaw = QObject::tr("Select Authentication type (%1 default, %2 password, %3 fingerprint): ");
-        QString request = requestRaw.arg(KADAuthType::KAD_AUTH_TYPE_NONE)
-                              .arg(KADAuthType::KAD_AUTH_TYPE_PASSWORD)
-                              .arg(KADAuthType::KAD_AUTH_TYPE_FINGERPRINT);
+        // 从1开始生成认证类型以及序号，例如："1 指纹认证","2 指静脉认证"
+        QStringList authTypeStringList;
+        for (int i = 0; i < m_supportAuthTypes.count(); i++)
+        {
+            auto authType = m_supportAuthTypes.at(i);
+            QString authTypeStr = Utils::authTypeEnum2Str(authType);
+
+            if (authTypeTranslator.contains(authType))
+            {
+                authTypeStr = authTypeTranslator[authType];
+            }
+            else
+            {
+                KLOG_WARNING() << "cann't find auth type translator:" << authType;
+            }
+
+            authTypeStringList << QString("%1 %2").arg(i + 1).arg(authTypeStr);
+        }
+        auto authTypeSelectDesc = authTypeStringList.join(",");
+        auto request = QString(tr("Select Authentication type (%1): ")).arg(authTypeSelectDesc);
+
         QString response;
         auto retval = this->m_pamHandle->sendQuestionPrompt(request, response);
-        // 请求失败的情况下使用默认认证类型
+
+        // 请求失败的情况下使用密码认证类型
         if (retval != PAM_SUCCESS)
         {
             this->m_pamHandle->syslog(LOG_WARNING, "Request auth type failed.");
-
-            return KADAuthType::KAD_AUTH_TYPE_NONE;
+            return KADAuthType::KAD_AUTH_TYPE_PASSWORD;
         }
 
-        auto authType = response.toInt();
-        this->m_pamHandle->syslog(LOG_DEBUG, QString("AuthType %1 is selected.").arg(authType));
+        // 校验输入正确
+        bool toIntOk = false;
+        int selectedIdx = response.toInt(&toIntOk);
+        if( !toIntOk || selectedIdx<=0 || selectedIdx>m_supportAuthTypes.count() )
+        {
+            this->m_pamHandle->sendErrorMessage(tr("The authentication type is invalid. Please select a new one"));
+            continue;
+        }
 
-        if (authType == KADAuthType::KAD_AUTH_TYPE_NONE ||
-            authType == KADAuthType::KAD_AUTH_TYPE_PASSWORD ||
-            authType == KADAuthType::KAD_AUTH_TYPE_FINGERPRINT)
+        auto authType = m_supportAuthTypes.at(selectedIdx - 1);
+        this->m_pamHandle->syslog(LOG_DEBUG, QString("AuthType %1 is selected.").arg(authType));
+        if (authType == KADAuthType::KAD_AUTH_TYPE_PASSWORD ||
+            authType == KADAuthType::KAD_AUTH_TYPE_FINGERPRINT ||
+            authType == KADAuthType::KAD_AUTH_TYPE_FINGERVEIN ||
+            authType == KADAuthType::KAD_AUTH_TYPE_UKEY ||
+            authType == KADAuthType::KAD_AUTH_TYPE_FACE)
         {
             return authType;
         }
+
     } while (true);
 
-    return KADAuthType::KAD_AUTH_TYPE_NONE;
+    return KADAuthType::KAD_AUTH_TYPE_PASSWORD;
 }
 
 }  // namespace Kiran

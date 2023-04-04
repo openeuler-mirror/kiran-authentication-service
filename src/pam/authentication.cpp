@@ -32,11 +32,13 @@
 namespace Kiran
 {
 Authentication::Authentication(PAMHandle *pamHandle,
-                               const QStringList &arguments) : m_pamHandle(pamHandle),
-                                                               m_arguments(arguments),
-                                                               m_authManagerProxy(nullptr),
-                                                               m_authSessionProxy(nullptr),
-                                                               m_authUserProxy(nullptr)
+                               const QStringList &arguments)
+    : QObject(),
+      m_pamHandle(pamHandle),
+      m_arguments(arguments),
+      m_authManagerProxy(nullptr),
+      m_authSessionProxy(nullptr),
+      m_authUserProxy(nullptr)
 {
 }
 
@@ -115,7 +117,7 @@ int Authentication::checkFailures()
                                                  .arg(m_userName)
                                                  .arg(this->m_authUserProxy->failures())
                                                  .arg(this->m_authManagerProxy->maxFailures()));
-        this->m_pamHandle->sendErrorMessage(QObject::tr("Too many authentication failures, so the authentication mode is locked."));
+        this->m_pamHandle->sendErrorMessage(tr("Too many authentication failures, so the authentication mode is locked."));
         const int authMode = this->m_authManagerProxy->authMode();
         return authMode == KAD_AUTH_MODE_AND ? PAM_SYSTEM_ERR : PAM_IGNORE;
     }

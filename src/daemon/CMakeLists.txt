@@ -61,9 +61,11 @@ set(TARGET_NAME kiran-authentication-daemon)
 
 configure_file(config-daemon.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-daemon.h)
 
-set(TS_FILES "${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts")
-qt_create_translation(QM_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${TS_FILES})
-
+qt_create_translation(DAEMON_QM_FILES 
+                      ${CMAKE_CURRENT_SOURCE_DIR} ../utils
+                      ${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts
+                      OPTIONS -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_BINARY_DIR} -no-obsolete)
+                      
 add_executable(
   ${TARGET_NAME}
   ${DAEMON_H_FILES}
@@ -75,7 +77,8 @@ add_executable(
   ${ACCOUNTS_USER_INTERFACE_SRCS}
   ${BIOMETRICS_INTERFACE_SRCS}
   ${BIOMETRICS_DEVICE_INTERFACE_SRCS}
-  ${QM_FILES})
+  ${DAEMON_QM_FILES}
+  ${UTILS_SRC})
 
 target_include_directories(
   ${TARGET_NAME}
@@ -88,5 +91,5 @@ target_link_libraries(
   ${TARGET_NAME} PRIVATE ${KLOG_QT5_LIBRARIES} ${KIRAN_CC_DAEMON_LIBRARIES}
                          Qt5::Core Qt5::DBus)
 
-install(FILES ${QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
+install(FILES ${DAEMON_QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
 install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
