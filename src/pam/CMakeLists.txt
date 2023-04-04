@@ -32,7 +32,7 @@ set(TARGET_NAME pam_kiran_authentication)
 
 configure_file(config-pam.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-pam.h)
 
-qt_create_translation(DAEMON_QM_FILES 
+qt_create_translation(PAM_QM_FILES 
                       ${CMAKE_CURRENT_SOURCE_DIR} ../utils
                       ${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts
                       OPTIONS -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_BINARY_DIR} -no-obsolete)

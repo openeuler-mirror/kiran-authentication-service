@@ -42,10 +42,10 @@ Session::Session(uint32_t sessionID,
       m_sessionID(sessionID),
       m_serviceName(serviceName),
       m_userName(userName),
-      m_authMode(KADAuthMode::KAD_AUTH_MODE_OR),
-      m_authType(KADAuthType::KAD_AUTH_TYPE_NONE),
       m_loginUserSwitchable(false),
-      m_authApplication(authApp)
+      m_authApplication(authApp),
+      m_authMode(KADAuthMode::KAD_AUTH_MODE_OR),
+      m_authType(KADAuthType::KAD_AUTH_TYPE_NONE)
 {
     this->m_dbusAdaptor = new SessionAdaptor(this);
     this->m_objectPath = QDBusObjectPath(QString("%1/%2").arg(KAD_SESSION_DBUS_OBJECT_PATH).arg(this->m_sessionID));

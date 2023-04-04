@@ -39,8 +39,8 @@ namespace Kiran
 // 会话ID的最大值
 #define MAX_SESSION_ID 10000
 AuthManager::AuthManager(UserManager *userManager, AuthConfig *authConfig)
-    : m_userManager(userManager),
-      m_authConfig(authConfig)
+    : m_authConfig(authConfig),
+      m_userManager(userManager)
 {
     this->m_dbusAdaptor = new AuthManagerAdaptor(this);
     this->m_serviceWatcher = new QDBusServiceWatcher(this);
@@ -224,8 +224,8 @@ int AuthManager::QueryAuthApp(const QString &pamServiceName)
         {"lightdm", KAD_AUTH_APPLICATION_LOGIN},
         {"kiran-screensaver", KAD_AUTH_APPLICATION_UNLOCK},
         {"polkit-1", KAD_AUTH_APPLICATION_EMPOWERMENT},
-        
-        {"sudo",KAD_AUTH_APPLICATION_EMPOWERMENT}};
+
+        {"sudo", KAD_AUTH_APPLICATION_EMPOWERMENT}};
 
     int authApp = KAD_AUTH_APPLICATION_NONE;
 
