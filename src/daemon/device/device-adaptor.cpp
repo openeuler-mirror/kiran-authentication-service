@@ -52,17 +52,6 @@ void DeviceAdaptor::enroll(DeviceRequestSource *source, const QString &extraInfo
     this->pushRequest(deviceRequst);
 }
 
-void DeviceAdaptor::verify(DeviceRequestSource *source, const QString &extraInfo)
-{
-    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
-        .reqID = this->generateRequestID(),
-        .time = QTime::currentTime(),
-        .source = source,
-        .start = std::bind(&DeviceAdaptor::verifyStart, this, extraInfo),
-        .stop = std::bind(&DeviceAdaptor::verifyStop, this)});
-    this->pushRequest(deviceRequst);
-}
-
 void DeviceAdaptor::identify(DeviceRequestSource *source, const QString &extraInfo)
 {
     auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
@@ -114,7 +103,6 @@ void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<AuthDeviceProxy> dbusDe
 
         connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::EnrollStatus, this, &DeviceAdaptor::onEnrollStatus);
         connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::IdentifyStatus, this, &DeviceAdaptor::onIdentifyStatus);
-        connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::VerifyStatus, this, &DeviceAdaptor::onVerifyStatus);
         this->schedule();
     }
 }
@@ -261,27 +249,6 @@ void DeviceAdaptor::enrollStop()
     }
 }
 
-void DeviceAdaptor::verifyStart(const QString &extraInfo)
-{
-    if (this->m_dbusDeviceProxy)
-    {
-        this->m_dbusDeviceProxy->VerifyStart(extraInfo);
-    }
-    else
-    {
-        DEVICE_DEBUG() << "Not found fingerprint device, verify failed.";
-        this->onVerifyStatus(VerifyResult::VERIFY_RESULT_NOT_MATCH, "");
-    }
-}
-
-void DeviceAdaptor::verifyStop()
-{
-    if (this->m_dbusDeviceProxy)
-    {
-        this->m_dbusDeviceProxy->VerifyStop();
-    }
-}
-
 void DeviceAdaptor::identifyStart(const QString &extraInfo)
 {
     if (this->m_dbusDeviceProxy)
@@ -333,26 +300,6 @@ void DeviceAdaptor::onEnrollStatus(const QString &featureID, int progress, int r
     }
 }
 
-void DeviceAdaptor::onVerifyStatus(int result, const QString &message)
-{
-    KLOG_DEBUG(kasAuthDevice) << "verify status:" << result << message;
-
-    if (this->m_currentRequest)
-    {
-        this->m_currentRequest->source->onVerifyStatus(result, message);
-    }
-    else
-    {
-        KLOG_WARNING("Not found current request.");
-    }
-
-    if (result == VerifyResult::VERIFY_RESULT_NOT_MATCH ||
-        result == VerifyResult::VERIFY_RESULT_MATCH)
-    {
-        this->finishRequest();
-    }
-}
-
 void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const QString &message)
 {
     DEVICE_DEBUG() << "identify status:" << featureID << result << message;
@@ -366,8 +313,8 @@ void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const
         KLOG_WARNING("Not found current request.");
     }
 
-    if (result == VerifyResult::VERIFY_RESULT_NOT_MATCH ||
-        result == VerifyResult::VERIFY_RESULT_MATCH)
+    if (result == IdentifyResult::IDENTIFY_RESULT_NOT_MATCH ||
+        result == IdentifyResult::IDENTIFY_RESULT_MATCH)
     {
         this->finishRequest();
     }

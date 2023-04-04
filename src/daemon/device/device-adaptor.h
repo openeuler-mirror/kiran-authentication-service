@@ -38,7 +38,6 @@ public:
     QString getDeviceID() { return m_deviceID; }
 
     void enroll(DeviceRequestSource *source,const QString& extraInfo);
-    void verify(DeviceRequestSource *source,const QString& extraInfo);
     void identify(DeviceRequestSource *source,const QString& extraInfo);
     void stop(int64_t requestID);
 
@@ -67,8 +66,6 @@ private:
 
     void enrollStart(const QString& extraInfo);
     void enrollStop();
-    void verifyStart(const QString& extraInfo);
-    void verifyStop();
     void identifyStart(const QString& extraInfo);
     void identifyStop();
 
@@ -77,7 +74,6 @@ private:
 
 private Q_SLOTS:
     void onEnrollStatus(const QString &featureID, int result, int progress,const QString& message);
-    void onVerifyStatus(int result,const QString& message);
     void onIdentifyStatus(const QString &featureID, int result,const QString& message);
     void onActiveSessionChanged(const Login1SessionItem &sessionItem);
 

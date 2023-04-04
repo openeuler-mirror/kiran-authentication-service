@@ -32,14 +32,10 @@ set(TARGET_NAME pam_kiran_authentication)
 
 configure_file(config-pam.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-pam.h)
 
-set(PAM_TRANSLATOR_SOURCE 
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/../utils/
-      ${PROJECT_SOURCE_DIR})
-qt_create_translation(PAM_QM_FILES 
-                      ${PAM_TRANSLATOR_SOURCE}
+qt_create_translation(DAEMON_QM_FILES 
+                      ${CMAKE_CURRENT_SOURCE_DIR} ../utils
                       ${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.zh_CN.ts
-                      OPTIONS -I ${PAM_TRANSLATOR_SOURCE})
+                      OPTIONS -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_BINARY_DIR} -no-obsolete)
 
 add_library(
   ${TARGET_NAME} SHARED

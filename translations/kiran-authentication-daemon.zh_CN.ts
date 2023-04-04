@@ -2,49 +2,11 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
-    <name>Kiran::Authentication</name>
+    <name>Kiran::PolkitProxy</name>
     <message>
-        <location filename="../src/pam/authentication.cpp" line="120"/>
-        <source>Too many authentication failures, so the authentication mode is locked.</source>
-        <translation>认证失败次数过多，认证模式已被锁定。</translation>
-    </message>
-</context>
-<context>
-    <name>Kiran::AuthenticationTerminal</name>
-    <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="51"/>
-        <source>passwd</source>
-        <translation>密码认证</translation>
-    </message>
-    <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="52"/>
-        <source>fingerprint</source>
-        <translation>指纹认证</translation>
-    </message>
-    <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="53"/>
-        <source>face</source>
-        <translation>人脸认证</translation>
-    </message>
-    <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="54"/>
-        <source>ukey</source>
-        <translation>UKey认证</translation>
-    </message>
-    <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="55"/>
-        <source>fingervein</source>
-        <translation>指静脉认证</translation>
-    </message>
-    <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="77"/>
-        <source>Select Authentication type (%1): </source>
-        <translation>请选择认证类型(%1): </translation>
-    </message>
-    <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="94"/>
-        <source>The authentication type is invalid. Please select a new one</source>
-        <translation>该认证类型无效，请重新选择</translation>
+        <location filename="../src/daemon/proxy/polkit-proxy.cpp" line="215"/>
+        <source>Authorization failed.</source>
+        <translation>认证失败。</translation>
     </message>
 </context>
 <context>
@@ -58,14 +20,6 @@
         <location filename="../src/daemon/user.cpp" line="171"/>
         <source>Enroll has been cancelled</source>
         <translation>录入已被取消</translation>
-    </message>
-</context>
-<context>
-    <name>PolkitProxy</name>
-    <message>
-        <location filename="../src/daemon/proxy/polkit-proxy.cpp" line="215"/>
-        <source>Authorization failed.</source>
-        <translation>认证失败。</translation>
     </message>
 </context>
 <context>

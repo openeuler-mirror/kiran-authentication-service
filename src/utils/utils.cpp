@@ -175,9 +175,9 @@ QList<int> Utils::authOrderStr2Enum(const QStringList& authOrder)
     return retval;
 }
 
-QString Utils::verifyResultEnum2Str(int32_t verifyResult)
+QString Utils::identifyResultEnum2Str(int32_t identifyResult)
 {
-    switch (verifyResult)
+    switch (identifyResult)
     {
     case IdentifyResult::IDENTIFY_RESULT_NOT_MATCH:
         return QObject::tr("Feature not match.");
