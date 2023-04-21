@@ -5,7 +5,7 @@ set_source_files_properties(
   ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.xml
   PROPERTIES CLASSNAME AuthManagerProxy NO_NAMESPACE true)
 
-qt_add_dbus_interface(
+qt5_add_dbus_interface(
   AUTH_MANAGER_INTERFACE_SRCS
   ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.xml
   auth_manager_proxy)
@@ -14,7 +14,7 @@ set_source_files_properties(
   ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.Session.xml
   PROPERTIES CLASSNAME AuthSessionProxy NO_NAMESPACE true)
 
-qt_add_dbus_interface(
+qt5_add_dbus_interface(
   AUTH_SESSION_INTERFACE_SRCS
   ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.Session.xml
   auth_session_proxy)
@@ -23,7 +23,7 @@ set_source_files_properties(
   ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.User.xml
   PROPERTIES CLASSNAME AuthUserProxy NO_NAMESPACE true)
 
-qt_add_dbus_interface(
+qt5_add_dbus_interface(
   AUTH_USER_INTERFACE_SRCS
   ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.User.xml
   auth_user_proxy)
@@ -33,7 +33,7 @@ set(TARGET_NAME pam_kiran_authentication)
 configure_file(config-pam.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-pam.h)
 
 file(GLOB TS_FILES "${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.*.ts")
-qt_create_translation(PAM_QM_FILES 
+qt5_create_translation(PAM_QM_FILES 
                       ${CMAKE_CURRENT_SOURCE_DIR} ../utils
                       ${TS_FILES}
                       OPTIONS -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_BINARY_DIR} -no-obsolete)
