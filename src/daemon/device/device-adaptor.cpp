@@ -329,7 +329,7 @@ void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const
 //  认证队列里只存当前会话里的认证请求
 void DeviceAdaptor::onActiveSessionChanged(const Login1SessionItem &sessionItem)
 {
-    DEVICE_DEBUG() << "active session changed:" << sessionItem.sessionID << sessionItem.sessionObjectPath;
+    DEVICE_DEBUG() << "active session changed:" << sessionItem.sessionID << sessionItem.sessionObjectPath.path();
 
     // 清空之前会话里的所有认证请求
     removeAllRequest();
