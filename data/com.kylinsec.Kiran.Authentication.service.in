@@ -1,5 +1,5 @@
 [D-BUS Service]
 Name=com.kylinsec.Kiran.Authentication
-Exec=@INSTALL_BINDIR@/kiran-authentication-daemon
+Exec=@CMAKE_INSTALL_FULL_BINDIR@/kiran-authentication-daemon
 User=root
 SystemdService=kiran-authentication-daemon.service
