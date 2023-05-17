@@ -39,6 +39,7 @@ using namespace Kiran;
 #define INIFILE_AUHTTYPE_KEY_UNLOCK_ENABLE  "UnlockEnable"
 #define INIFILE_AUTHTYPE_KEY_EMPOWERMENT    "EmpowermentEnable"
 
+//FIXME:去除该项，group name从utils中取，新增认证类型只需要在utils中做修改
 static const QMap<KADAuthType, QString> AuthTypeGroupMap = {
     {
         KAD_AUTH_TYPE_FINGERPRINT,
@@ -55,6 +56,10 @@ static const QMap<KADAuthType, QString> AuthTypeGroupMap = {
     {
         KAD_AUTH_TYPE_FINGERVEIN,
         "FingerVein"
+    },
+    {
+        KAD_AUTH_TYPE_IRIS,
+        "Iris"
     }
 };
 

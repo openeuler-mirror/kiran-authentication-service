@@ -88,7 +88,7 @@ private:
     virtual int32_t getPriority();
     virtual int64_t getPID();
     virtual QString getSpecifiedUser();
-    virtual void start(QSharedPointer<DeviceRequest> request);
+    virtual void queued(QSharedPointer<DeviceRequest> request);
     virtual void interrupt();
     virtual void cancel();
     virtual void end();

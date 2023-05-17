@@ -194,10 +194,12 @@ QString Session::getSpecifiedUser()
     return this->m_userName;
 }
 
-void Session::start(QSharedPointer<DeviceRequest> request)
+void Session::queued(QSharedPointer<DeviceRequest> request)
 {
     this->m_verifyInfo.m_requestID = request->reqID;
-    KLOG_DEBUG() << m_sessionID << "session (request id:" << request->reqID << ") start";
+    KLOG_DEBUG() << m_sessionID << "session (request id:" << request->reqID << ") queued";
+    auto tips = QString("Please wait while the %1 request is processed").arg(Utils::authTypeEnum2LocaleStr(m_authType));
+    Q_EMIT this->AuthMessage(tips,KAD_MESSAGE_TYPE_INFO);
 }
 
 void Session::interrupt()
@@ -221,7 +223,7 @@ void Session::end()
 void Session::onIdentifyStatus(const QString &bid, int result, const QString &message)
 {
     KLOG_DEBUG() << m_sessionID << "verify identify  status:" << bid << result << message;
-    
+
     if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
         result == IdentifyResult::IDENTIFY_RESULT_MATCH)
     {
@@ -248,6 +250,8 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 
 void Session::startPhaseAuth()
 {
+    m_waitForResponseFunc = nullptr;
+
     // 开始阶段认证前,通知认证类型状态变更
     emit this->m_dbusAdaptor->AuthTypeChanged(this->m_authType);
     switch (this->m_authType)
@@ -263,11 +267,22 @@ void Session::startPhaseAuth()
 
 void Session::startUkeyAuth()
 {
+    auto deviceAdaptor = DeviceAdaptorFactory::getInstance()->getDeviceAdaptor(this->m_authType);
+    if (deviceAdaptor.isNull())
+    {
+        Q_EMIT this->AuthMessage(tr("The UKey device could not be found"), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        this->finishPhaseAuth(false, m_authMode == KAD_AUTH_MODE_AND);
+        return;
+    }
+
     m_waitForResponseFunc = [this](const QString &response)
     {
         QJsonDocument jsonDoc(QJsonObject{QJsonObject{{"ukey", QJsonObject{{"pin", response}}}}});
         startGeneralAuth(jsonDoc.toJson());
     };
+    
+    KLOG_DEBUG() << "auth prompt: input ukey code";
+    Q_EMIT this->AuthPrompt(tr("please input ukey code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);
 }
 
 void Session::startGeneralAuth(const QString &extraInfo)

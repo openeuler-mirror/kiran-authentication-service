@@ -57,15 +57,17 @@ extern "C"
 
 #define AUTH_TYPE_STR_PASSWORD "password"
 #define AUTH_TYPE_STR_FINGERPRINT "fingerprint"
-#define AUTH_TYPE_STR_FACE "face"
-#define AUTH_TYPE_STR_UKEY "uKey"
 #define AUTH_TYPE_STR_FINGERVEIN "fingervein"
+#define AUTH_TYPE_STR_FACE "face"
+#define AUTH_TYPE_STR_IRIS "iris"
+#define AUTH_TYPE_STR_UKEY "uKey"
 
     // 认证类型
     enum KADAuthType
     {
         // 无/默认方式
         KAD_AUTH_TYPE_NONE = 0,
+
         // 密码认证,认证服务不参与密码认证
         KAD_AUTH_TYPE_PASSWORD = (1 << 0),
         // 指纹认证
@@ -76,7 +78,10 @@ extern "C"
         KAD_AUTH_TYPE_UKEY = (1 << 3),
         // 指静脉认证
         KAD_AUTH_TYPE_FINGERVEIN = (1 << 4),
-        KAD_AUTH_TYPE_LAST = (1 << 5),
+        // 虹膜
+        KAD_AUTH_TYPE_IRIS = (1 << 5),
+
+        KAD_AUTH_TYPE_LAST = (1 << 6),
     };
 
     // 认证提示消息类型，接收方需要响应消息
@@ -97,7 +102,7 @@ extern "C"
         KAD_MESSAGE_TYPE_INFO,
     };
 
-    /* ------------ 认证场景定义 ----------------- */
+/* ------------ 认证场景定义 ----------------- */
 #define AUTH_APPLICATION_STR_LOGIN "login"
 #define AUTH_APPLICATION_STR_UNLOCK "unlock"
 #define AUTH_APPLICATION_STR_EMPOWERMENT "empowerment"
@@ -113,7 +118,7 @@ extern "C"
         KAD_AUTH_APPLICATION_EMPOWERMENT,
         KAD_AUTH_APPLICATION_LAST
     };
-    /* ------------ PAM相关的定义 ----------------- */
+/* ------------ PAM相关的定义 ----------------- */
 
     enum KAPProtoID
     {
@@ -130,7 +135,8 @@ extern "C"
         // 告知应用程序最终使用的认证类型
         KAP_REQ_CMD_NOTIFY_AUTH_TYPE = 0x60,
     };
-    
+
+// PAM框架内通信协议
 // PJK: proto json key
 // json消息的提示头
 #define KAP_PROTO_JSON_PREFIX "kiran_authentication:"

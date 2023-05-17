@@ -26,15 +26,20 @@
 #include "src/daemon/proxy/login1-session-proxy.h"
 
 
+#define ENROLL_TIMEOUT_MS   300000
+#define IDENTIFY_TIMEOUT_MS 60000 
+
 #define DEVICE_DEBUG() KLOG_DEBUG() << this->m_deviceID
 
 namespace Kiran
 {
-// TOOD:处理设备断开事件
 DeviceAdaptor::DeviceAdaptor(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy)
     : m_dbusDeviceProxy(nullptr),
       m_requestIDCount(-1)
 {
+    m_deviceOccupyTimer.setSingleShot(true);
+    connect(&m_deviceOccupyTimer,&QTimer::timeout,this,&DeviceAdaptor::onDeviceOccupyTimeout);
+
     auto defaultSeat = Login1SeatProxy::getDefault();
     connect(defaultSeat.get(), SIGNAL(activeSessionChanged(const Login1SessionItem &)), this, SLOT(onActiveSessionChanged(const Login1SessionItem &)));
 
@@ -110,9 +115,11 @@ void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<AuthDeviceProxy> dbusDe
 void DeviceAdaptor::pushRequest(QSharedPointer<DeviceRequest> request)
 {
     this->m_requests.insert(request->reqID, request);
-    request->source->start(request);
+    request->source->queued(request);
+    
     // 如果当前插入的请求优先级比正在执行请求的优先级高，则进行抢占
     auto pushPriority = request->source->getPriority();
+
     if (!this->m_currentRequest ||
         (pushPriority > this->m_currentRequest->source->getPriority()))
     {
@@ -167,10 +174,12 @@ void DeviceAdaptor::finishRequest()
 {
     if (this->m_currentRequest)
     {
+        stopDeviceOccupyTimer();
         this->m_currentRequest->source->end();
         this->m_requests.remove(this->m_currentRequest->reqID);
         this->m_currentRequest = nullptr;
     }
+    
     this->schedule();
 }
 
@@ -232,6 +241,7 @@ void DeviceAdaptor::enrollStart(const QString &extraInfo)
 {
     if (this->m_dbusDeviceProxy)
     {
+        startDeviceOccupyTimer(ENROLL_TIMEOUT_MS);
         this->m_dbusDeviceProxy->EnrollStart(extraInfo);
     }
     else
@@ -245,6 +255,7 @@ void DeviceAdaptor::enrollStop()
 {
     if (this->m_dbusDeviceProxy)
     {
+        stopDeviceOccupyTimer();
         this->m_dbusDeviceProxy->EnrollStop();
     }
 }
@@ -254,6 +265,7 @@ void DeviceAdaptor::identifyStart(const QString &extraInfo)
     if (this->m_dbusDeviceProxy)
     {
         DEVICE_DEBUG() << "device proxy identify start";
+        startDeviceOccupyTimer(IDENTIFY_TIMEOUT_MS);
         this->m_dbusDeviceProxy->IdentifyStart(extraInfo);
     }
     else
@@ -267,6 +279,7 @@ void DeviceAdaptor::identifyStop()
 {
     if (this->m_dbusDeviceProxy)
     {
+        stopDeviceOccupyTimer();
         this->m_dbusDeviceProxy->IdentifyStop();
         DEVICE_DEBUG() << "device proxy identify stop";
     }
@@ -278,6 +291,18 @@ bool DeviceAdaptor::isActiveSession(uint32_t pid)
     auto session = QSharedPointer<Login1SessionProxy>::create(sessionObjectPath);
     DEVICE_DEBUG() << pid << sessionObjectPath.path() << session->activate();
     return session->activate();
+}
+
+void DeviceAdaptor::startDeviceOccupyTimer(int ms)
+{
+    DEVICE_DEBUG() << "start device occupy timer" << ms << "ms" << "for request:" << this->m_currentRequest->reqID;
+    m_deviceOccupyTimer.start(ms);
+}
+
+void DeviceAdaptor::stopDeviceOccupyTimer()
+{
+    DEVICE_DEBUG() << "stop device occupy timer for request:" << this->m_currentRequest->reqID;
+    m_deviceOccupyTimer.stop();
 }
 
 void DeviceAdaptor::onEnrollStatus(const QString &featureID, int progress, int result, const QString &message)
@@ -337,4 +362,11 @@ void DeviceAdaptor::onActiveSessionChanged(const Login1SessionItem &sessionItem)
     // 重新调度设备认证请求
     this->schedule();
 }
+
+void DeviceAdaptor::onDeviceOccupyTimeout()
+{
+    DEVICE_DEBUG() << QString("request: %1 occupy timeout,cancel!").arg(m_currentRequest->reqID);
+    this->removeRequest(m_currentRequest->reqID);
+}
+
 }  // namespace Kiran

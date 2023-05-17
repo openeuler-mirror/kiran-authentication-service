@@ -34,6 +34,7 @@ public:
     static int authModeStr2Enum(const QString &authMode);
 
     static QString authTypeEnum2Str(int authType);
+    static QString authTypeEnum2LocaleStr(int authType);
     static int authTypeStr2Enum(const QString &authType);
 
     static int32_t authType2DeviceType(int32_t authType);
