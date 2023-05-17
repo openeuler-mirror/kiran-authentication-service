@@ -71,11 +71,14 @@ private:
 
     // 判断进程是否是活跃会话
     bool isActiveSession(uint32_t pid);
+    void startDeviceOccupyTimer(int ms);
+    void stopDeviceOccupyTimer();
 
 private Q_SLOTS:
     void onEnrollStatus(const QString &featureID, int result, int progress,const QString& message);
     void onIdentifyStatus(const QString &featureID, int result,const QString& message);
     void onActiveSessionChanged(const Login1SessionItem &sessionItem);
+    void onDeviceOccupyTimeout();
 
 private:
     QSharedPointer<AuthDeviceProxy> m_dbusDeviceProxy;
@@ -83,6 +86,7 @@ private:
     QSharedPointer<DeviceRequest> m_currentRequest;
     int64_t m_requestIDCount;
     QString m_deviceID;
+    QTimer m_deviceOccupyTimer;
 };
 
 }  // namespace Kiran

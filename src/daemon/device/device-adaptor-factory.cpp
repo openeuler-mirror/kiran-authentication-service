@@ -163,7 +163,7 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
         }
         else
         {
-            KLOG_DEBUG() << "Not found available fingerprint device.";
+            KLOG_DEBUG("Not found available %s device.",Utils::authTypeEnum2Str(authType).toStdString().c_str());
         }
     }
 
@@ -176,7 +176,7 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
     }
     else
     {
-        KLOG_WARNING("Not found fingerprint device.");
+        KLOG_DEBUG("Not found %s device.",Utils::authTypeEnum2Str(authType).toStdString().c_str());
     }
 
     return dbusDeviceProxy;

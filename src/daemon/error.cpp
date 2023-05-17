@@ -32,6 +32,9 @@ QString KADError::getErrorDesc(KADErrorCode errorCode)
     case KADErrorCode::ERROR_USER_ENROLLING:
         errorDesc = QObject::tr("The user is enrolling.");
         break;
+    case ERROR_USER_FEATURE_LIMITS_EXCEEDED:
+        errorDesc = QObject::tr("User Feature limits exceeded");
+        break;
     case KADErrorCode::ERROR_SESSION_EXCEED_MAX_SESSION_NUM:
         errorDesc = QObject::tr("Too many sessions.");
         break;
