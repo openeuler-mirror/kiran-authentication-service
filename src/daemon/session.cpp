@@ -198,7 +198,7 @@ void Session::queued(QSharedPointer<DeviceRequest> request)
 {
     this->m_verifyInfo.m_requestID = request->reqID;
     KLOG_DEBUG() << m_sessionID << "session (request id:" << request->reqID << ") queued";
-    auto tips = QString("Please wait while the %1 request is processed").arg(Utils::authTypeEnum2LocaleStr(m_authType));
+    auto tips = QString(tr("Please wait while the %1 request is processed")).arg(Utils::authTypeEnum2LocaleStr(m_authType));
     Q_EMIT this->AuthMessage(tips,KAD_MESSAGE_TYPE_INFO);
 }
 
@@ -244,7 +244,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     if (result == IdentifyResult::IDENTIFY_RESULT_MATCH ||
         result == IdentifyResult::IDENTIFY_RESULT_NOT_MATCH)
     {
-        this->finishPhaseAuth(result == IdentifyResult::IDENTIFY_RESULT_MATCH);
+        this->finishPhaseAuth(result == IdentifyResult::IDENTIFY_RESULT_MATCH,m_authMode==KAD_AUTH_MODE_OR);
     }
 }
 
@@ -267,14 +267,6 @@ void Session::startPhaseAuth()
 
 void Session::startUkeyAuth()
 {
-    auto deviceAdaptor = DeviceAdaptorFactory::getInstance()->getDeviceAdaptor(this->m_authType);
-    if (deviceAdaptor.isNull())
-    {
-        Q_EMIT this->AuthMessage(tr("The UKey device could not be found"), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        this->finishPhaseAuth(false, m_authMode == KAD_AUTH_MODE_AND);
-        return;
-    }
-
     m_waitForResponseFunc = [this](const QString &response)
     {
         QJsonDocument jsonDoc(QJsonObject{QJsonObject{{"ukey", QJsonObject{{"pin", response}}}}});
@@ -282,6 +274,7 @@ void Session::startUkeyAuth()
     };
     
     KLOG_DEBUG() << "auth prompt: input ukey code";
+    Q_EMIT this->AuthMessage(tr("Insert the UKey and enter the PIN code"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
     Q_EMIT this->AuthPrompt(tr("please input ukey code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);
 }
 
@@ -293,7 +286,7 @@ void Session::startGeneralAuth(const QString &extraInfo)
         auto authTypeStr = Utils::authTypeEnum2Str(this->m_authType);
         KLOG_WARNING() << m_sessionID << "start phase auth failed,invalid auth type:" << m_authType;
         Q_EMIT this->AuthMessage(tr(QString("Auth type %1 invalid").arg(authTypeStr).toStdString().c_str()), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        this->finishPhaseAuth(false, m_authMode == KAD_AUTH_MODE_AND);
+        this->finishPhaseAuth(false, false);
         return;
     }
 
@@ -303,7 +296,7 @@ void Session::startGeneralAuth(const QString &extraInfo)
         auto authTypeStr = Utils::authTypeEnum2Str(this->m_authType);
         KLOG_WARNING() << m_sessionID << "start phase auth failed,can not find device,auth type:" << m_authType;
         Q_EMIT this->AuthMessage(tr(QString("can not find %1 device").arg(authTypeStr).toStdString().c_str()), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        this->finishPhaseAuth(false, m_authMode == KAD_AUTH_MODE_AND);
+        this->finishPhaseAuth(false, false);
         return;
     }
 

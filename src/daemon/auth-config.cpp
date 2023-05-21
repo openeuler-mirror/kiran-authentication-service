@@ -102,16 +102,16 @@ bool AuthConfig::init()
 
 bool AuthConfig::load()
 {
-    m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
+    //NOTE: General组不需要beginGroup
     auto autoMode = m_settings->value(INIFILE_GENERAL_KEY_AUTH_MODE, KAD_AUTH_MODE_STR_OR).toString();
     m_authMode = Utils::authModeStr2Enum(autoMode);
 
     auto authOrder = m_settings->value(INIFILE_GENERAL_KEY_AUTH_ORDER, QStringList{AUTH_TYPE_STR_FINGERPRINT,AUTH_TYPE_STR_UKEY}).toStringList();
+    KLOG_DEBUG() << "auth order" << authOrder;
     this->m_authOrder = Utils::authOrderStr2Enum(authOrder);
 
     auto maxFailures = m_settings->value(INIFILE_GENERAL_KEY_MAX_FAILURES, 3).toInt();
     this->m_maxFailures = maxFailures;
-    m_settings->endGroup();
 
     // 读取认证类型下设置项,认证类型开关默认都为关闭
     const bool authTypeDefaultEnable = false;

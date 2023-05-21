@@ -154,7 +154,6 @@ extern "C" int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int, const char *
     {
         delete app;
     }
-
     return retval;
 }
 

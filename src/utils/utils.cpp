@@ -98,6 +98,8 @@ QString Utils::authTypeEnum2Str(int authType)
         return QStringLiteral(AUTH_TYPE_STR_UKEY);
     case KADAuthType::KAD_AUTH_TYPE_FINGERVEIN:
         return QStringLiteral(AUTH_TYPE_STR_FINGERVEIN);
+    case KADAuthType::KAD_AUTH_TYPE_IRIS:
+        return QStringLiteral(AUTH_TYPE_STR_IRIS);
     default:
         KLOG_WARNING() << "Unknown authType: " << authType;
     }
@@ -118,6 +120,8 @@ int Utils::authTypeStr2Enum(const QString& authType)
         return KADAuthType::KAD_AUTH_TYPE_UKEY;
     case CONNECT(AUTH_TYPE_STR_FINGERVEIN, _hash):
         return KADAuthType::KAD_AUTH_TYPE_FINGERVEIN;
+    case CONNECT(AUTH_TYPE_STR_IRIS, _hash):
+        return KADAuthType::KAD_AUTH_TYPE_IRIS;
     default:
         KLOG_WARNING() << "Unknown authType: " << authType;
     }
@@ -187,11 +191,12 @@ QList<int> Utils::authOrderStr2Enum(const QStringList& authOrder)
 QString Utils::authTypeEnum2LocaleStr(int authType)
 {
     QMap<int,QString> localeAuthTypeMap = {
+        {KAD_AUTH_TYPE_PASSWORD,QCoreApplication::tr("password")},
         {KAD_AUTH_TYPE_FINGERPRINT,QCoreApplication::tr("fingerprint")},
         {KAD_AUTH_TYPE_FACE,QCoreApplication::tr("face")},
         {KAD_AUTH_TYPE_FINGERVEIN,QCoreApplication::tr("fingervein")},
         {KAD_AUTH_TYPE_IRIS,QCoreApplication::tr("iris")},
-        {KAD_AUTH_TYPE_UKEY,QCoreApplication::tr("passwd")}
+        {KAD_AUTH_TYPE_UKEY,QCoreApplication::tr("ukey")}
     };
 
     auto iter = localeAuthTypeMap.find(authType);
