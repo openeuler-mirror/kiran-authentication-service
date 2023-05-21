@@ -113,14 +113,20 @@ int Authentication::checkFailures()
 {
     if (this->m_authUserProxy->failures() >= this->m_authManagerProxy->maxFailures())
     {
+        KLOG_DEBUG() << "current failures:" << this->m_authUserProxy->failures();
+        KLOG_DEBUG() << "max failures:    " << this->m_authManagerProxy->maxFailures();
+
         this->m_pamHandle->syslog(LOG_DEBUG, QString("user:%1,failures:%2,max filures:%3")
                                                  .arg(m_userName)
                                                  .arg(this->m_authUserProxy->failures())
                                                  .arg(this->m_authManagerProxy->maxFailures()));
         this->m_pamHandle->sendErrorMessage(tr("Too many authentication failures, so the authentication mode is locked."));
         const int authMode = this->m_authManagerProxy->authMode();
-        return authMode == KAD_AUTH_MODE_AND ? PAM_SYSTEM_ERR : PAM_IGNORE;
+        auto ret = authMode == KAD_AUTH_MODE_AND ? PAM_SYSTEM_ERR : PAM_IGNORE;
+        KLOG_DEBUG() << "ret" << ret;
+        return ret;
     }
+
     return PAM_SUCCESS;
 }
 
@@ -218,6 +224,7 @@ int Authentication::startAuthPre()
             return PAM_SYSTEM_ERR;
         }
     }
+    
     this->notifyAuthType(this->m_authSessionProxy->authType());
     auto connected = connect(m_authSessionProxy, &AuthSessionProxy::AuthTypeChanged, this, &Authentication::onAuthTypeChanged);
     return PAM_SUCCESS;
@@ -341,6 +348,13 @@ void Authentication::onAuthSuccessed(const QString &userName)
     {
         this->m_pamHandle->setItem(PAM_USER, userName);
     }
+
+    auto authMode = this->m_authManagerProxy->authMode();
+    if( authMode == KAD_AUTH_MODE_AND )
+    {
+        this->notifyAuthType(KAD_AUTH_TYPE_PASSWORD);
+    }
+
     this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication successed,session ID:%1").arg(m_sessionID));
     this->finishAuth(PAM_SUCCESS);
 }

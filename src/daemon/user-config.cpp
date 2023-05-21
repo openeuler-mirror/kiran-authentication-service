@@ -8,7 +8,6 @@
 #include <QFile>
 #include <QSettings>
 
-#define INIFILE_GENERAL_GROUP_NAME "General"
 #define INIFILE_GENERAL_GROUP_KEY_IIDS "IIDs"
 // 连续认证失败次数计数
 #define INIFILE_GENERAL_GROUP_KEY_FAILURES "Failures"
@@ -20,7 +19,8 @@
 using namespace Kiran;
 
 UserConfig::UserConfig(const QString& name, QObject* parent)
-    : QObject(parent)
+    : QObject(parent),
+      m_userName(name)
 {
     this->m_settings = new QSettings(QString(KDA_UESR_DATA_DIR "/").append(name), QSettings::IniFormat, this);
     init();
@@ -49,9 +49,7 @@ bool UserConfig::deleteIID(const QString& iid)
     this->m_iids.removeOne(iid);
     this->m_IIDAuthInfoMap.remove(iid);
 
-    this->m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
     m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_IIDS, this->m_iids);
-    this->m_settings->endGroup();
 
     this->m_settings->beginGroup(iid);
     this->m_settings->remove("");
@@ -153,10 +151,15 @@ int UserConfig::getFailures()
 
 void UserConfig::init()
 {
-    m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
+    KLOG_DEBUG() << "user config:" << m_userName;
+
     auto iids = m_settings->value(INIFILE_GENERAL_GROUP_KEY_IIDS, QStringList()).toStringList();
+    KLOG_DEBUG() << "iids:" << iids;
+
+    // NOTE:错误次数记录只针对与多路认证模式
+    // FIXME: 若多路认证模式错误次数过多，切换到多因子认证是否清理掉错误次数?
     this->m_failures = m_settings->value(INIFILE_GENERAL_GROUP_KEY_FAILURES, 0).toInt();
-    m_settings->endGroup();
+    KLOG_DEBUG() << "failures:" << this->m_failures;
 
     for (auto iid : iids)
     {
@@ -170,12 +173,19 @@ void UserConfig::init()
         {
             KLOG_WARNING() << "user config:" << m_settings->fileName() << "iid:" << iid << " value is invalid!";
             this->m_settings->remove(QString());
+            m_settings->endGroup();
             continue;
         }
         IIDInfo iidInfo{
             .name = name,
             .authType = authType,
             .bid = bid};
+
+        KLOG_DEBUG("feature name(%s) auth type(%s) iid(%s) bid(%s)",
+                   name.toStdString().c_str(),
+                   Utils::authTypeEnum2Str(authType).toStdString().c_str(),
+                   iid.toStdString().c_str(),
+                   bid.toStdString().c_str());
 
         m_IIDAuthInfoMap[iid] = iidInfo;
         m_iids << iid;
@@ -193,9 +203,7 @@ bool UserConfig::addIID(int authType, const QString& iid, const QString& name, c
     m_iids << iid;
     m_IIDAuthInfoMap[iid] = {.name = name, .authType = authType, .bid = bid};
 
-    m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
     m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_IIDS, m_iids);
-    m_settings->endGroup();
 
     m_settings->beginGroup(iid);
     m_settings->setValue(INIFILE_IID_GROUP_KEY_AUTH_TYPE, authTypeStr);
@@ -224,10 +232,6 @@ void UserConfig::changeIIDName(const QString& iid, const QString& name)
 void UserConfig::setFailures(int failures)
 {
     RETURN_IF_TRUE(failures == m_failures);
-
-    m_settings->beginGroup(INIFILE_GENERAL_GROUP_NAME);
     m_settings->setValue(INIFILE_GENERAL_GROUP_KEY_FAILURES, failures);
-    m_settings->endGroup();
-
     m_failures = failures;
 }

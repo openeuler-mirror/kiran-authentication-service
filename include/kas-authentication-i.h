@@ -60,7 +60,7 @@ extern "C"
 #define AUTH_TYPE_STR_FINGERVEIN "fingervein"
 #define AUTH_TYPE_STR_FACE "face"
 #define AUTH_TYPE_STR_IRIS "iris"
-#define AUTH_TYPE_STR_UKEY "uKey"
+#define AUTH_TYPE_STR_UKEY "ukey"
 
     // 认证类型
     enum KADAuthType
