@@ -247,7 +247,7 @@ void DeviceAdaptor::enrollStart(const QString &extraInfo)
     else
     {
         DEVICE_DEBUG() << "Not found fingerprint device, enroll failed.";
-        this->onEnrollStatus(QString(), EnrollResult::ENROLL_RESULT_FAIL, 0, "");
+        this->onEnrollStatus(QString(), EnrollStatus::ENROLL_STATUS_FAIL, 0, "");
     }
 }
 
@@ -271,7 +271,7 @@ void DeviceAdaptor::identifyStart(const QString &extraInfo)
     else
     {
         DEVICE_DEBUG() << "Not found fingerprint device, identify failed.";
-        this->onIdentifyStatus(QString(), IdentifyResult::IDENTIFY_RESULT_NOT_MATCH, "");
+        this->onIdentifyStatus(QString(), IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH, "");
     }
 }
 
@@ -318,8 +318,8 @@ void DeviceAdaptor::onEnrollStatus(const QString &featureID, int progress, int r
         KLOG_WARNING("Not found current request.");
     }
 
-    if (result == EnrollResult::ENROLL_RESULT_COMPLETE ||
-        result == EnrollResult::ENROLL_RESULT_FAIL)
+    if (result == EnrollStatus::ENROLL_STATUS_COMPLETE ||
+        result == EnrollStatus::ENROLL_STATUS_FAIL)
     {
         this->finishRequest();
     }
@@ -338,8 +338,8 @@ void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const
         KLOG_WARNING("Not found current request.");
     }
 
-    if (result == IdentifyResult::IDENTIFY_RESULT_NOT_MATCH ||
-        result == IdentifyResult::IDENTIFY_RESULT_MATCH)
+    if (result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH ||
+        result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
     {
         this->finishRequest();
     }

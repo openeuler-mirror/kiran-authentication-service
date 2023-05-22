@@ -213,13 +213,15 @@ QString Utils::identifyResultEnum2Str(int32_t identifyResult)
 {
     switch (identifyResult)
     {
-    case IdentifyResult::IDENTIFY_RESULT_NOT_MATCH:
+    case IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH:
         return QObject::tr("Feature not match.");
-    case IdentifyResult::IDENTIFY_RESULT_MATCH:
+    case IdentifyStatus::IDENTIFY_STATUS_MATCH:
         return QObject::tr("Feature matching successed.");
-    case IdentifyResult::IDENTIFY_RESULT_RETRY:
+    case IdentifyStatus::IDENTIFY_STATUS_RETRY:
         return QObject::tr("Feature not match, please retry it.");
         break;
+    case IdentifyStatus::IDENTIFY_STATUS_NORMAL:
+        return "";
     default:
         return QObject::tr("Unknown verfication error.");
     }

@@ -199,7 +199,7 @@ void Session::queued(QSharedPointer<DeviceRequest> request)
     this->m_verifyInfo.m_requestID = request->reqID;
     KLOG_DEBUG() << m_sessionID << "session (request id:" << request->reqID << ") queued";
     auto tips = QString(tr("Please wait while the %1 request is processed")).arg(Utils::authTypeEnum2LocaleStr(m_authType));
-    Q_EMIT this->AuthMessage(tips,KAD_MESSAGE_TYPE_INFO);
+    Q_EMIT this->AuthMessage(tips, KAD_MESSAGE_TYPE_INFO);
 }
 
 void Session::interrupt()
@@ -225,26 +225,30 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     KLOG_DEBUG() << m_sessionID << "verify identify  status:" << bid << result << message;
 
     if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
-        result == IdentifyResult::IDENTIFY_RESULT_MATCH)
+        result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
     {
         KLOG_DEBUG() << m_sessionID << "feature match successfully, but it isn't a legal user.";
-        result = IdentifyResult::IDENTIFY_RESULT_NOT_MATCH;
+        result = IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH;
     }
 
     auto verifyResultStr = Utils::identifyResultEnum2Str(result);
-    if (result == IdentifyResult::IDENTIFY_RESULT_MATCH)
+    if (result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
     {
         Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_INFO);
     }
-    else
+    else if(result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
     {
         Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
     }
-
-    if (result == IdentifyResult::IDENTIFY_RESULT_MATCH ||
-        result == IdentifyResult::IDENTIFY_RESULT_NOT_MATCH)
+    else
     {
-        this->finishPhaseAuth(result == IdentifyResult::IDENTIFY_RESULT_MATCH,m_authMode==KAD_AUTH_MODE_OR);
+        Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_INFO);
+    }
+
+    if (result == IdentifyStatus::IDENTIFY_STATUS_MATCH ||
+        result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
+    {
+        this->finishPhaseAuth(result == IdentifyStatus::IDENTIFY_STATUS_MATCH, m_authMode == KAD_AUTH_MODE_OR);
     }
 }
 
@@ -272,7 +276,7 @@ void Session::startUkeyAuth()
         QJsonDocument jsonDoc(QJsonObject{QJsonObject{{"ukey", QJsonObject{{"pin", response}}}}});
         startGeneralAuth(jsonDoc.toJson());
     };
-    
+
     KLOG_DEBUG() << "auth prompt: input ukey code";
     Q_EMIT this->AuthMessage(tr("Insert the UKey and enter the PIN code"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
     Q_EMIT this->AuthPrompt(tr("please input ukey code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);

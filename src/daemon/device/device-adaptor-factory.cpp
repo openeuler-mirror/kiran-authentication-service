@@ -45,9 +45,12 @@ QSharedPointer<DeviceAdaptor> DeviceAdaptorFactory::getDeviceAdaptor(int32_t aut
 {
     auto device = this->m_devices.value(authType);
     RETURN_VAL_IF_TRUE(device, device);
+
     device = this->createDeviceAdaptor(authType);
     RETURN_VAL_IF_FALSE(device, QSharedPointer<DeviceAdaptor>());
+
     KLOG_DEBUG() << "authtype:" << authType << "create device adaptor:" << device->getDeviceID();
+    
     this->m_devices.insert(authType, device);
     return device;
 }
