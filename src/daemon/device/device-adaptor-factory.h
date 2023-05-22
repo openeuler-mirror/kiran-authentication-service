@@ -22,6 +22,7 @@ namespace Kiran
 {
 class AuthManager;
 
+// 设备适配器工厂
 class DeviceAdaptorFactory : public QObject
 {
     Q_OBJECT
@@ -35,8 +36,13 @@ public:
     static void globalInit(AuthManager *authManager);
     static void globalDeinit() { delete m_instance; };
 
+    // 获取设备适配器，可通过设备适配器接口进行录入以及认证
     QSharedPointer<DeviceAdaptor> getDeviceAdaptor(int32_t authType);
+
+    // 获取认证类型下当前的设备信息，从认证设备服务中获取,以JSON格式提供,转发出去
     QString getDeivcesForType(int32_t authType);
+    
+    // 获取当前认证类型下所支持的所有驱动信息，从认证服务之中拿到，以JSON格式提供，转发出去
     QString getDriversForType(int32_t authType);
     bool deleteFeature(const QString& dataID);
     bool setDrivereEanbled(const QString& driverName,bool enabled);

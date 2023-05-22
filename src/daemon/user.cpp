@@ -196,7 +196,7 @@ void User::onEnrollStatus(const QString &dataID, int progress,
 
     switch (result)
     {
-    case ENROLL_RESULT_COMPLETE:
+    case ENROLL_STATUS_COMPLETE:
     {
         auto authType = this->m_enrollInfo.m_authTpe;
         auto iidName = this->m_enrollInfo.m_feautreName;
@@ -211,7 +211,7 @@ void User::onEnrollStatus(const QString &dataID, int progress,
         emit this->EnrollStatus(iid, true, progress, message);
         break;
     }
-    case ENROLL_RESULT_FAIL:
+    case ENROLL_STATUS_FAIL:
         emit this->EnrollStatus(QString(), true, progress, message);
         break;
     default:
@@ -231,11 +231,10 @@ QString User::calcAction(const QString &originAction)
     return AUTH_USER_ADMIN;
 }
 
-// TODO:对每个认证类型特征数量做个限制，10个
 void User::onEnrollStart(const QDBusMessage &message, int authType,
                          const QString &name, const QString &extraInfo)
 {
-    if (this->m_enrollInfo.m_requestID > 0)
+    if (this->m_enrollInfo.m_requestID >= 0)
     {
         USER_DEBUG() << "start enroll failed,user is enrolling!";
         DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::AccessDenied, KADErrorCode::ERROR_USER_ENROLLING);
@@ -267,7 +266,7 @@ void User::onEnrollStart(const QDBusMessage &message, int authType,
 
 void User::onEnrollStop(const QDBusMessage &message)
 {
-    if (this->m_enrollInfo.m_requestID > 0 &&
+    if (this->m_enrollInfo.m_requestID >= 0 &&
         this->m_enrollInfo.deviceAdaptor)
     {
         USER_DEBUG() << "enroll stop,stop request" << this->m_enrollInfo.m_requestID;
