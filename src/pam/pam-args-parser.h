@@ -22,7 +22,6 @@ namespace Kiran
 #define KAP_ARG_ACTION_DO_AUTH "doauth"
 // 表示认证已经通过，这里会清理失败次数
 #define KAP_ARG_ACTION_AUTH_SUCC "authsucc"
-
 struct PAMArgsInfo
 {
     QString action;

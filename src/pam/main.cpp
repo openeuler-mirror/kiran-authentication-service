@@ -87,7 +87,9 @@ extern "C" int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     {
         arguments.push_back(argv[i]);
     }
-
+    
+    pam_syslog(pamh,LOG_DEBUG,"arg:%s.",arguments.count()?arguments.first().toStdString().c_str():"null");
+    
     auto controller = QSharedPointer<Kiran::AuthenticationController>::create(pamh, arguments);
     auto retval = controller->run();
 
@@ -152,7 +154,6 @@ extern "C" int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int, const char *
     {
         delete app;
     }
-
     return retval;
 }
 

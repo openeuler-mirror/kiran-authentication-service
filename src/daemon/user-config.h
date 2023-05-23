@@ -34,6 +34,7 @@ private:
     void setFailures(int failures);
 
 private:
+    QString m_userName;
     struct IIDInfo
     {
         // iid名称

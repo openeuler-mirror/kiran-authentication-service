@@ -47,12 +47,6 @@ void AuthenticationTerminal::notifySupportAuthType()
 
 int32_t AuthenticationTerminal::requestAuthType()
 {
-    QMap<KADAuthType, QString> authTypeTranslator = {
-        {KAD_AUTH_TYPE_PASSWORD, tr("passwd")},
-        {KAD_AUTH_TYPE_FINGERPRINT, tr("fingerprint")},
-        {KAD_AUTH_TYPE_FACE, tr("face")},
-        {KAD_AUTH_TYPE_UKEY, tr("ukey")},
-        {KAD_AUTH_TYPE_FINGERVEIN, tr("fingervein")}};
     do
     {
         // 从1开始生成认证类型以及序号，例如："1 指纹认证","2 指静脉认证"
@@ -62,13 +56,11 @@ int32_t AuthenticationTerminal::requestAuthType()
             auto authType = m_supportAuthTypes.at(i);
             QString authTypeStr = Utils::authTypeEnum2Str(authType);
 
-            if (authTypeTranslator.contains(authType))
-            {
-                authTypeStr = authTypeTranslator[authType];
-            }
-            else
+            authTypeStr = Utils::authTypeEnum2LocaleStr(authType);
+            if (authTypeStr.isEmpty())
             {
                 KLOG_WARNING() << "cann't find auth type translator:" << authType;
+                authTypeStr = QString("AuthType%1").arg(authType);
             }
 
             authTypeStringList << QString("%1 %2").arg(i + 1).arg(authTypeStr);
@@ -89,7 +81,7 @@ int32_t AuthenticationTerminal::requestAuthType()
         // 校验输入正确
         bool toIntOk = false;
         int selectedIdx = response.toInt(&toIntOk);
-        if( !toIntOk || selectedIdx<=0 || selectedIdx>m_supportAuthTypes.count() )
+        if (!toIntOk || selectedIdx <= 0 || selectedIdx > m_supportAuthTypes.count())
         {
             this->m_pamHandle->sendErrorMessage(tr("The authentication type is invalid. Please select a new one"));
             continue;
@@ -110,5 +102,11 @@ int32_t AuthenticationTerminal::requestAuthType()
 
     return KADAuthType::KAD_AUTH_TYPE_PASSWORD;
 }
-
+#if 0
+void AuthenticationTerminal::notifyAuthType(int authType)
+{
+    QString tips = QString("%1 authentication is being performed").arg(Utils::authTypeEnum2Str(authType));
+    this->m_pamHandle->sendTextMessage(tips);
+}
+#endif
 }  // namespace Kiran

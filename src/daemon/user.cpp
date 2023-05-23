@@ -32,6 +32,7 @@
 
 #define USER_DEBUG() KLOG_DEBUG() << this->m_pwent.pw_uid
 #define USER_WARNING() KLOG_WARNING() << this->m_pwent.pw_uid
+#define FEATURE_COUNT_MAXIMUN 10
 
 namespace Kiran
 {
@@ -154,9 +155,11 @@ int64_t User::getPID()
     return DBusDaemonProxy::getDefault()->getConnectionUnixProcessID(this->m_enrollInfo.m_dbusMessage);
 }
 
-void User::start(QSharedPointer<DeviceRequest> request)
+void User::queued(QSharedPointer<DeviceRequest> request)
 {
+    KLOG_DEBUG() << getUserName() << "enroll (request id:" << request->reqID << ") queued";
     this->m_enrollInfo.m_requestID = request->reqID;
+    Q_EMIT this->EnrollStatus(tr("Please wait while the request is processed"),false,0,"");
 }
 
 void User::interrupt()
@@ -193,7 +196,7 @@ void User::onEnrollStatus(const QString &dataID, int progress,
 
     switch (result)
     {
-    case ENROLL_RESULT_COMPLETE:
+    case ENROLL_STATUS_COMPLETE:
     {
         auto authType = this->m_enrollInfo.m_authTpe;
         auto iidName = this->m_enrollInfo.m_feautreName;
@@ -208,14 +211,14 @@ void User::onEnrollStatus(const QString &dataID, int progress,
         emit this->EnrollStatus(iid, true, progress, message);
         break;
     }
-    case ENROLL_RESULT_FAIL:
+    case ENROLL_STATUS_FAIL:
         emit this->EnrollStatus(QString(), true, progress, message);
         break;
     default:
         emit this->EnrollStatus(QString(), false, progress, message);
         break;
     }
-}
+    }
 
 QString User::calcAction(const QString &originAction)
 {
@@ -231,7 +234,7 @@ QString User::calcAction(const QString &originAction)
 void User::onEnrollStart(const QDBusMessage &message, int authType,
                          const QString &name, const QString &extraInfo)
 {
-    if (this->m_enrollInfo.m_requestID > 0)
+    if (this->m_enrollInfo.m_requestID >= 0)
     {
         USER_DEBUG() << "start enroll failed,user is enrolling!";
         DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::AccessDenied, KADErrorCode::ERROR_USER_ENROLLING);
@@ -243,7 +246,13 @@ void User::onEnrollStart(const QDBusMessage &message, int authType,
         USER_WARNING() << "start enroll failed,no such device!";
         DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::AddressInUse, KADErrorCode::ERROR_NO_DEVICE);
     }
-    
+
+    if( m_userConfig->getIIDs(authType).count() >= FEATURE_COUNT_MAXIMUN)
+    {
+        USER_WARNING() << "the number of features has reached its maximum:" << FEATURE_COUNT_MAXIMUN; 
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::LimitsExceeded, KADErrorCode::ERROR_USER_FEATURE_LIMITS_EXCEEDED);
+    }
+
     USER_DEBUG() << "enroll start" << authType << name << extraInfo;
     this->m_enrollInfo.m_dbusMessage = message;
     this->m_enrollInfo.deviceAdaptor = deviceAdaptor;
@@ -257,7 +266,7 @@ void User::onEnrollStart(const QDBusMessage &message, int authType,
 
 void User::onEnrollStop(const QDBusMessage &message)
 {
-    if (this->m_enrollInfo.m_requestID > 0 &&
+    if (this->m_enrollInfo.m_requestID >= 0 &&
         this->m_enrollInfo.deviceAdaptor)
     {
         USER_DEBUG() << "enroll stop,stop request" << this->m_enrollInfo.m_requestID;

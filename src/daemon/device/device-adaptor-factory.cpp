@@ -45,9 +45,12 @@ QSharedPointer<DeviceAdaptor> DeviceAdaptorFactory::getDeviceAdaptor(int32_t aut
 {
     auto device = this->m_devices.value(authType);
     RETURN_VAL_IF_TRUE(device, device);
+
     device = this->createDeviceAdaptor(authType);
     RETURN_VAL_IF_FALSE(device, QSharedPointer<DeviceAdaptor>());
+
     KLOG_DEBUG() << "authtype:" << authType << "create device adaptor:" << device->getDeviceID();
+    
     this->m_devices.insert(authType, device);
     return device;
 }
@@ -163,7 +166,7 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
         }
         else
         {
-            KLOG_DEBUG() << "Not found available fingerprint device.";
+            KLOG_DEBUG("Not found available %s device.",Utils::authTypeEnum2Str(authType).toStdString().c_str());
         }
     }
 
@@ -176,7 +179,7 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
     }
     else
     {
-        KLOG_WARNING("Not found fingerprint device.");
+        KLOG_DEBUG("Not found %s device.",Utils::authTypeEnum2Str(authType).toStdString().c_str());
     }
 
     return dbusDeviceProxy;

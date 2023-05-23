@@ -16,6 +16,7 @@
 
 #include "src/pam/authentication.h"
 #include "kas-authentication-i.h"
+#include <QMap>
 
 namespace Kiran
 {
@@ -31,10 +32,11 @@ private:
     virtual bool requestLoginUserSwitchable() { return false; };
     virtual void notifySupportAuthType();
     virtual int32_t requestAuthType();
-    virtual void notifyAuthType(int authType) {}
+    virtual void notifyAuthType(int authType){};
 
 private:
     QList<KADAuthType> m_supportAuthTypes;
+    QMap<KADAuthType, QString> m_authTypeTranslator;
 };
 
 }  // namespace Kiran

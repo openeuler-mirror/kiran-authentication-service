@@ -75,6 +75,7 @@ QDBusObjectPath AuthManager::CreateSession(const QString &username, int timeout,
     }
 
     this->m_serviceWatcher->addWatchedService(this->message().service());
+
     auto session = new Session(sessionID, this->message().service(), username, (KADAuthApplication)authApp, this);
     this->m_sessions.insert(sessionID, session);
 
@@ -84,6 +85,7 @@ QDBusObjectPath AuthManager::CreateSession(const QString &username, int timeout,
                         .arg(authApp)
                         .arg(this->message().service())
                         .arg(sessionID);
+                        
     return QDBusObjectPath(session->getObjectPath());
 }
 
@@ -185,37 +187,32 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
     auto enabledAuthTypes = m_authConfig->getAuthTypeByApp(authApp);
     auto authOrder = m_authConfig->getAuthOrder();
 
-    // 通过默认认证类型顺序,过滤部分未开启的认证类型
-    auto iter = authOrder.begin();
-    while (iter != authOrder.end())
+    // 在认证顺序指定的认证类型中过滤掉未开启的认证类型
+    auto autoOrderIter = authOrder.begin();
+    while (autoOrderIter != authOrder.end())
     {
-        if (!enabledAuthTypes.contains(*iter))
+        if (!enabledAuthTypes.contains(*autoOrderIter))
         {
-            iter = authOrder.erase(iter);
+            autoOrderIter = authOrder.erase(autoOrderIter);
         }
         else
-            iter++;
+            autoOrderIter++;
     }
 
-    if (getAuthMode() == KAD_AUTH_MODE_AND)
+    auto sortedAuthTypes = authOrder;
+
+    auto enabledAuthTypeIter = enabledAuthTypes.begin();
+    while(enabledAuthTypeIter != enabledAuthTypes.end())
     {
-        // 与模式下,不加入未在默认顺序里的认证类型，只采用默认顺序里的配置
-    }
-    else
-    {
-        // 或模式下可选认证类型,加入未在默认顺序里且打开支持该认证应用的认证类型
-        auto iter = enabledAuthTypes.begin();
-        while (iter != enabledAuthTypes.end())
+        if(!sortedAuthTypes.contains(*enabledAuthTypeIter))
         {
-            if (!authOrder.contains(*iter))
-            {
-                authOrder << *iter;
-            }
-            iter++;
+            sortedAuthTypes << *enabledAuthTypeIter;
         }
+        enabledAuthTypeIter++;
     }
-    KLOG_DEBUG() << "get auth types by app:" << authApp << "result:" << authOrder;
-    return authOrder;
+
+    KLOG_DEBUG() << "get auth types by app:" << authApp << "result:" << sortedAuthTypes;
+    return sortedAuthTypes;
 }
 
 int AuthManager::QueryAuthApp(const QString &pamServiceName)
