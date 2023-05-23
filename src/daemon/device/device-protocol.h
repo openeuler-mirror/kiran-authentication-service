@@ -65,7 +65,7 @@ public:
     virtual QString getSpecifiedUser() = 0;
 
     // 已经加入请求队列
-    virtual void start(QSharedPointer<DeviceRequest> request) = 0;
+    virtual void queued(QSharedPointer<DeviceRequest> request) = 0;
     // 操作被中断，可能是有更高优先级的请求或者设备不可用等原因导致。任务还在处理队列中
     virtual void interrupt() = 0;
     // 操作被取消, 可能是切换会话或其他原因导致，操作被取消应返回错误，但不应记录失败，任务将会被删除

@@ -59,6 +59,8 @@ enum KADErrorCode
     ERROR_USER_IID_ALREADY_EXISTS = 0x10000,
     // 正在录入中
     ERROR_USER_ENROLLING,
+    // 达到特征绑定上限
+    ERROR_USER_FEATURE_LIMITS_EXCEEDED,
     // 不存在该类型设备
     ERROR_NO_DEVICE,
 

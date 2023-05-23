@@ -33,3 +33,6 @@ install(FILES ${PROJECT_BINARY_DIR}/data/kiran-authentication-daemon.service
         DESTINATION ${SYSTEM_UNIT_DIR})
 
 install(FILES kad.ini DESTINATION ${KAS_INSTALL_SYSCONFDIR})
+
+install(FILES kiran-authentication-service
+        DESTINATION /${CMAKE_INSTALL_SYSCONFDIR}/pam.d/)
