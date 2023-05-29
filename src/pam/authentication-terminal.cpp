@@ -93,7 +93,8 @@ int32_t AuthenticationTerminal::requestAuthType()
             authType == KADAuthType::KAD_AUTH_TYPE_FINGERPRINT ||
             authType == KADAuthType::KAD_AUTH_TYPE_FINGERVEIN ||
             authType == KADAuthType::KAD_AUTH_TYPE_UKEY ||
-            authType == KADAuthType::KAD_AUTH_TYPE_FACE)
+            authType == KADAuthType::KAD_AUTH_TYPE_FACE ||
+            authType == KADAuthType::KAD_AUTH_TYPE_IRIS)
         {
             return authType;
         }
