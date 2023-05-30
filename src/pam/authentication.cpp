@@ -42,7 +42,6 @@ Authentication::Authentication(PAMHandle *pamHandle,
 {
 }
 
-// TODO polkit 认证 超时,未结束认证
 Authentication::~Authentication()
 {
     if (this->m_authSessionProxy && this->m_authManagerProxy)
