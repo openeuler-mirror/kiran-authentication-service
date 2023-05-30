@@ -21,6 +21,7 @@
 #include "src/daemon/device/device-adaptor-factory.h"
 #include "src/daemon/error.h"
 #include "src/daemon/proxy/dbus-daemon-proxy.h"
+#include "src/daemon/proxy/polkit-proxy.h"
 #include "src/daemon/session.h"
 #include "src/daemon/user-manager.h"
 #include "src/utils/utils.h"
@@ -34,6 +35,9 @@
 #include <QMetaEnum>
 #include <QSettings>
 #include <QTime>
+
+#define AUTH_USER_ADMIN "com.kylinsec.kiran.authentication.user-administration"
+
 namespace Kiran
 {
 // 会话ID的最大值
@@ -85,7 +89,7 @@ QDBusObjectPath AuthManager::CreateSession(const QString &username, int timeout,
                         .arg(authApp)
                         .arg(this->message().service())
                         .arg(sessionID);
-                        
+
     return QDBusObjectPath(session->getObjectPath());
 }
 
@@ -106,15 +110,6 @@ void AuthManager::DestroySession(uint sessionID)
 QString AuthManager::GetDriversForType(int authType)
 {
     return DeviceAdaptorFactory::getInstance()->getDriversForType(authType);
-}
-
-void AuthManager::SetDrivereEanbled(const QString &driverName, bool enabled)
-{
-    if (!DeviceAdaptorFactory::getInstance()->setDrivereEanbled(driverName, enabled))
-    {
-        DBUS_ERROR_REPLY(QDBusError::InternalError,
-                         KADErrorCode::ERROR_FAILED);
-    }
 }
 
 QDBusObjectPath AuthManager::FindUserByID(qulonglong uid)
@@ -164,19 +159,9 @@ bool AuthManager::GetAuthTypeEnabled(int authType)
     return m_authConfig->getAuthTypeEnable((KADAuthType)authType);
 }
 
-void AuthManager::SetAuthTypeEnabled(int authType, bool enabled)
-{
-    m_authConfig->setAuthTypeEnable((KADAuthType)authType, enabled);
-}
-
 bool AuthManager::GetAuthTypeEnabledForApp(int authType, int authApp)
 {
     return m_authConfig->getAuthTypeEnabledForApp((KADAuthType)authType, (KADAuthApplication)authApp);
-}
-
-void AuthManager::SetAuthTypeEnabledForApp(int authType, int authApp, bool enabled)
-{
-    m_authConfig->setAuthTypeEnabledForApp((KADAuthType)authType, (KADAuthApplication)authApp, enabled);
 }
 
 /// @brief 通过认证应用枚举获取支持的认证类型或认证顺序
@@ -202,9 +187,9 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
     auto sortedAuthTypes = authOrder;
 
     auto enabledAuthTypeIter = enabledAuthTypes.begin();
-    while(enabledAuthTypeIter != enabledAuthTypes.end())
+    while (enabledAuthTypeIter != enabledAuthTypes.end())
     {
-        if(!sortedAuthTypes.contains(*enabledAuthTypeIter))
+        if (!sortedAuthTypes.contains(*enabledAuthTypeIter))
         {
             sortedAuthTypes << *enabledAuthTypeIter;
         }
@@ -257,6 +242,10 @@ void AuthManager::onNameLost(const QString &serviceName)
     }
 }
 
+CHECK_AUTH_WITH_2ARGS(AuthManager, SetDrivereEnabled, onSetDriverEnabled, AUTH_USER_ADMIN, const QString &, bool);
+CHECK_AUTH_WITH_2ARGS(AuthManager, SetAuthTypeEnabled, onSetAuthTypeEnabled, AUTH_USER_ADMIN, int, bool);
+CHECK_AUTH_WITH_3ARGS(AuthManager, SetAuthTypeEnabledForApp, onSetAuthTypeEnabledForApp, AUTH_USER_ADMIN, int, int, bool);
+
 void AuthManager::init()
 {
     auto systemConnection = QDBusConnection::systemBus();
@@ -276,6 +265,11 @@ void AuthManager::init()
     connect(m_authConfig, SIGNAL(defaultDeviceChanged(int, QString)), this, SIGNAL(defaultDeviceChanged(int, QString)));
 }
 
+QString AuthManager::calcAction(const QString &originAction)
+{
+    return AUTH_USER_ADMIN;
+}
+
 int32_t AuthManager::generateSessionID()
 {
     // 最多生成10次，超过次数则返回失败
@@ -288,4 +282,32 @@ int32_t AuthManager::generateSessionID()
     }
     return -1;
 }
+
+void AuthManager::onSetDriverEnabled(const QDBusMessage &message, const QString &driverName, bool enabled)
+{
+    if (!DeviceAdaptorFactory::getInstance()->setDrivereEanbled(driverName, enabled))
+    {
+        DBUS_ERROR_REPLY_ASYNC(message, QDBusError::InternalError, KADErrorCode::ERROR_FAILED);
+    }
+
+    auto replyMessage = message.createReply();
+    QDBusConnection::systemBus().send(replyMessage);
+}
+
+void AuthManager::onSetAuthTypeEnabled(const QDBusMessage &message, int authType, bool enabled)
+{
+    m_authConfig->setAuthTypeEnable((KADAuthType)authType, enabled);
+
+    auto replyMessage = message.createReply();
+    QDBusConnection::systemBus().send(replyMessage);
+}
+
+void AuthManager::onSetAuthTypeEnabledForApp(const QDBusMessage &message, int authType, int authApp, bool enabled)
+{
+    m_authConfig->setAuthTypeEnabledForApp((KADAuthType)authType, (KADAuthApplication)authApp, enabled);
+
+    auto replyMessage = message.createReply();
+    QDBusConnection::systemBus().send(replyMessage);
+}
+
 }  // namespace Kiran
