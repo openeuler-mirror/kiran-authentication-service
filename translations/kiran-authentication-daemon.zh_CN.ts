@@ -12,19 +12,24 @@
 <context>
     <name>Kiran::Session</name>
     <message>
-        <location filename="../src/daemon/session.cpp" line="201"/>
+        <location filename="../src/daemon/session.cpp" line="195"/>
         <source>Please wait while the %1 request is processed</source>
         <translation>%1认证请求正在等待处理</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="281"/>
+        <location filename="../src/daemon/session.cpp" line="279"/>
         <source>Insert the UKey and enter the PIN code</source>
         <translation>请插入UKey并输入PIN码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="282"/>
+        <location filename="../src/daemon/session.cpp" line="280"/>
         <source>please input ukey code.</source>
         <translation>请输入PIN码。</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="308"/>
+        <source>can not find %1 device</source>
+        <translation>未能检测到%1设备</translation>
     </message>
 </context>
 <context>
