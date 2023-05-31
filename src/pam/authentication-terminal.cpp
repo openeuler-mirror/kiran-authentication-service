@@ -34,7 +34,6 @@ void AuthenticationTerminal::notifySupportAuthType()
 {
     auto authType = this->m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
     QList<int> authTypeList = authType.value();
-    authTypeList << KAD_AUTH_TYPE_PASSWORD;
 
     QList<KADAuthType> tempAuthTypeList;
     for (auto authType : authTypeList)

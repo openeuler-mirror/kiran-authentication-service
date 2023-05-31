@@ -184,14 +184,8 @@ int Authentication::startAuthPre()
 {
     auto authTypeReply = m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
     QList<int> authTypeList = authTypeReply.value();
-    if (m_authApplication == KAD_AUTH_APPLICATION_NONE || authTypeList.isEmpty())
-    {
-        this->m_pamHandle->syslog(LOG_DEBUG, QString("The pam service '%1' is unsupported or authentication type is not configured.").arg(this->m_serviceName));
-        return PAM_IGNORE;
-    }
 
     this->notifyAuthMode();
-
     RETURN_VAL_IF_TRUE(!this->initSession(), PAM_SYSTEM_ERR);
 
     if (this->m_authManagerProxy->authMode() == KADAuthMode::KAD_AUTH_MODE_OR)

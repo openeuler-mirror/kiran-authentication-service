@@ -196,6 +196,7 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
         enabledAuthTypeIter++;
     }
 
+    sortedAuthTypes << KAD_AUTH_TYPE_PASSWORD;
     KLOG_DEBUG() << "get auth types by app:" << authApp << "result:" << sortedAuthTypes;
     return sortedAuthTypes;
 }

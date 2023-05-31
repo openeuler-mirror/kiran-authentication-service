@@ -64,7 +64,6 @@ void AuthenticationGraphical::notifySupportAuthType()
 {
     auto authType = this->m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
     QList<int> authTypeList = authType.value();
-    authTypeList << KAD_AUTH_TYPE_PASSWORD;
 
     QStringList authTypeStrList;
     for (auto authType : authTypeList)
