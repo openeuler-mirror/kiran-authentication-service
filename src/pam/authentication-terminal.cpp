@@ -34,7 +34,6 @@ void AuthenticationTerminal::notifySupportAuthType()
 {
     auto authType = this->m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
     QList<int> authTypeList = authType.value();
-    authTypeList << KAD_AUTH_TYPE_PASSWORD;
 
     QList<KADAuthType> tempAuthTypeList;
     for (auto authType : authTypeList)
@@ -93,7 +92,8 @@ int32_t AuthenticationTerminal::requestAuthType()
             authType == KADAuthType::KAD_AUTH_TYPE_FINGERPRINT ||
             authType == KADAuthType::KAD_AUTH_TYPE_FINGERVEIN ||
             authType == KADAuthType::KAD_AUTH_TYPE_UKEY ||
-            authType == KADAuthType::KAD_AUTH_TYPE_FACE)
+            authType == KADAuthType::KAD_AUTH_TYPE_FACE ||
+            authType == KADAuthType::KAD_AUTH_TYPE_IRIS)
         {
             return authType;
         }

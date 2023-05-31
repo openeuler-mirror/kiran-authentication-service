@@ -51,7 +51,7 @@
             </arg>
         </method>
 
-        <method name="SetDrivereEanbled">
+        <method name="SetDrivereEnabled">
             <arg name="driver_name" direction="in" type="s">
                 <description>driver name</description>
             </arg>
@@ -73,7 +73,7 @@
             <arg name="auth_type" direction="in" type="i">
                 <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
             </arg>
-            <arg name="device_id" type="s">
+            <arg name="device_id" direction="in" type="s">
                 <description>The default device ID.</description>
             </arg>
         </method>
@@ -81,6 +81,9 @@
         <method name="GetDefaultDeviceID">
             <arg name="auth_type" direction="in" type="i">
                 <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
+            </arg>
+            <arg name="device_id" direction="out" type="s">
+                <description>The default device ID.</description>
             </arg>
         </method>
 

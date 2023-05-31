@@ -48,46 +48,64 @@ public:
     int getMaxFailures();
 
 public Q_SLOTS:  // DBUS METHODS
-    // 认证会话创建以及销毁
-    QDBusObjectPath CreateSession(const QString &userName, int timeout,int authApp);
-    void DestroySession(uint sessionID);
-
-    QString GetDriversForType(int authType);
-    void SetDrivereEanbled(const QString& driverName,bool enabled);
-
+    /// normal
     // 获取认证服务中用户DBUS对象
     QDBusObjectPath FindUserByID(qulonglong uid);
     QDBusObjectPath FindUserByName(const QString &userName);
 
-    // 获取认证设备
+    // 认证会话创建以及销毁
+    QDBusObjectPath CreateSession(const QString &userName, int timeout,int authApp);
+    void DestroySession(uint sessionID);
+
+    // 根据认证类型获取驱动列表
+    QString GetDriversForType(int authType);
+
+    // 根据认证类型获取设备列表
     QString GetDevicesForType(int authType);
-    // 获取默认认证设备
-    QString GetDefaultDeviceID(int authType);
-    // 设置默认设备ID
-    void SetDefaultDeviceID(int authType, const QString &deviceID);
 
-    // 认证类型总开关
+    // 获取认证类型是否启用
     bool GetAuthTypeEnabled(int authType);
-    void SetAuthTypeEnabled(int authType,bool enabled);
 
-    // 获取/设置指定认证场景下认证类型的开关
+    // 获取认证类型认证场景(认证应用)是否启用
     bool GetAuthTypeEnabledForApp(int authType,int authApp);
-    void SetAuthTypeEnabledForApp(int authType, int authApp, bool enabled);
+
+    // 默认设备
+    QString GetDefaultDeviceID(int authType);
+    void SetDefaultDeviceID(int authType, const QString &deviceID);
     
     // 通过pam服务名查询属于哪个认证场景
+    // 例如:
+    // lightdm->KAD_AUTH_APPLICATION_LOGIN,
+    // iran-screensaver->KAD_AUTH_APPLICATION_UNLOCK
     int QueryAuthApp(const QString &pamServiceName);
+
     // 通过指定的认证应用获取支持的认证类型,返回值为有序列表
     QList<int> GetAuthTypeByApp(int32_t authApp);
 
     void onNameLost(const QString &serviceName);
+
+    // root
+    // 设备驱动控制
+    void SetDrivereEnabled(const QString& driverName,bool enabled);
+
+    // 认证类型总开关
+    void SetAuthTypeEnabled(int authType,bool enabled);
+    
+    // 获取/设置指定认证场景下认证类型的开关
+    void SetAuthTypeEnabledForApp(int authType, int authApp, bool enabled);
 
 signals:
     void defaultDeviceChanged(int authType,const QString& deviceID,QPrivateSignal);
 
 private:
     void init();
+    // 需要管理员权限
+    QString calcAction(const QString &originAction);
     // 生成一个唯一的会话ID
     int32_t generateSessionID();
+    void onSetDriverEnabled(const QDBusMessage &message,const QString& driverName,bool enabled);
+    void onSetAuthTypeEnabled(const QDBusMessage &message,int authType,bool enabled);
+    void onSetAuthTypeEnabledForApp(const QDBusMessage &message,int authType, int authApp, bool enabled);
 
 private:
     static AuthManager *m_instance;
