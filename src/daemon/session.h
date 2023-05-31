@@ -98,6 +98,7 @@ private:
 private:
     void startPhaseAuth();
     void startUkeyAuth();
+    void startPasswdAuth();
     void startGeneralAuth(const QString &extraInfo = QString());
 
     void finishPhaseAuth(bool isSuccess,bool recordFailure = true);

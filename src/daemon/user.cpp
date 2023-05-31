@@ -290,7 +290,7 @@ void User::onDeleteIdentification(const QDBusMessage &message, const QString &ii
     if (!getIIDs().contains(iid))
     {
         USER_WARNING() << "delete identification" << iid << "error,can not find!";
-        DBUS_ERROR_REPLY_AND_RET(QDBusError::InvalidArgs, KADErrorCode::ERROR_INVALID_ARGUMENT);
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message,QDBusError::InvalidArgs, KADErrorCode::ERROR_INVALID_ARGUMENT);
     }
 
     USER_DEBUG() << "delete identification" << iid;

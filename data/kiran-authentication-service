@@ -1,11 +1,19 @@
-# 多路认证模式，成/功则认证通过，失败/切换到密码 跳过多因子认证模式
-auth  [success=done ignore=ignore default=die] pam_kiran_authentication.so doauth
+# NOTE:
+# 需要将/etc/pam.d/system-auth中pam_faillock中控制流程字段由required修改为requisite
+# 若不修改，用户已锁定也能开始认证，无论认证是否成功都会失败，并且无提示。
+# sudo 若用户已锁定，仍然会尝试多次
+# sudo visudo ,添加'Defaults passwd_tries=1'行，将sudo尝试次数修改为1
 
+# =========================认证配置项目================================ #
+# 多路认证模式，成/功则认证通过，失败/切换到密码 跳过多因子认证模式
+auth  [success=done ignore=2 default=die] pam_kiran_authentication.so doauth
 # 多因子认证模式, 成功继续执行PAM流程栈,失败或默认值都为失败
-#auth  requisite               pam_faillock.so preauth audit deny=3 even_deny_root unlock_time=60
 #auth  [success=2 default=bad] pam_kiran_authentication.so doauth
-#auth  [default=die]           pam_faillock.so authfail audit deny=3 even_deny_root unlock_time=60
-#auth  required                pam_debug
+# ==================================================================== #
+
+# 认证服务后续认证流程兼容，走系统错误计数failock, pam_debug只是修改认证状态值为成功
+auth  [default=die]           pam_faillock.so authfail audit deny=3 even_deny_root unlock_time=60
+auth  required                pam_debug.so
 
 # 认证成功，清理内部记录错误次数
 account required pam_kiran_authentication.so authsucc
