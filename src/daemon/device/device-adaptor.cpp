@@ -92,13 +92,14 @@ void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<AuthDeviceProxy> dbusDe
 {
     RETURN_IF_FALSE(dbusDeviceProxy);
 
+    DEVICE_DEBUG() << "update auth device";
     if (!this->m_dbusDeviceProxy ||
         this->m_dbusDeviceProxy->deviceID() != dbusDeviceProxy->deviceID())
     {
         if (this->m_dbusDeviceProxy)
         {
-            this->m_dbusDeviceProxy->disconnect();
-            this->m_dbusDeviceProxy = nullptr;
+            this->m_dbusDeviceProxy->disconnect(this);
+            this->m_dbusDeviceProxy.clear();
         }
 
         this->m_dbusDeviceProxy = dbusDeviceProxy;
@@ -108,6 +109,8 @@ void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<AuthDeviceProxy> dbusDe
 
         connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::EnrollStatus, this, &DeviceAdaptor::onEnrollStatus);
         connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::IdentifyStatus, this, &DeviceAdaptor::onIdentifyStatus);
+
+        DEVICE_DEBUG() << "update auth device finished";
         this->schedule();
     }
 }
