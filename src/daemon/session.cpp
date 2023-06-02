@@ -57,6 +57,8 @@ Session::Session(uint32_t sessionID,
     if (m_authMode == KAD_AUTH_MODE_AND)
     {
         this->m_authOrderWaiting = authTypes;
+        // 多因子认证时，不允许调整用户登录
+        this->m_verifyInfo.m_authenticatedUserName = m_userName;
     }
 
     KLOG_DEBUG() << QString("new session authmode(%1),login user switchable(%2),default auth type(%3),auth order(%4)")
