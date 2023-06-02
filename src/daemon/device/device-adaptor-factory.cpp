@@ -189,11 +189,16 @@ void DeviceAdaptorFactory::onDefaultDeviceChanged(int authType,
                                                   const QString &deviceID)
 {
     auto deviceAdaptor = this->getDeviceAdaptor(authType);
-    if (deviceAdaptor && deviceAdaptor->getDeviceID() != deviceID)
-    {
-        auto dbusDeviceProxy = this->getDBusDeviceProxy(authType, deviceID);
-        deviceAdaptor->updateDBusDeviceProxy(dbusDeviceProxy);
-    }
+    // 当前不存在设备设配器的情况，不更新设备适配器代理，需要时会优先考虑默认设备
+    // 设备适配器已使用默认设备代理，不需要更新设备适配器
+    RETURN_IF_FALSE(deviceAdaptor && deviceAdaptor->getDeviceID()!=deviceID);
+
+    // 尝试通过默认设备ID，拿到设备代理
+    auto recommendedDeviceProxy = this->getDBusDeviceProxy(authType, deviceID);
+    // 未能拿到设备，或者拿不到默认设备，不更新设备适配器代理
+    RETURN_IF_FALSE( recommendedDeviceProxy && recommendedDeviceProxy->deviceID()==deviceID);
+
+    deviceAdaptor->updateDBusDeviceProxy(recommendedDeviceProxy);
 }
 
 void DeviceAdaptorFactory::onAuthDeviceManagerLost(const QString &service)
