@@ -57,6 +57,8 @@ Session::Session(uint32_t sessionID,
     if (m_authMode == KAD_AUTH_MODE_AND)
     {
         this->m_authOrderWaiting = authTypes;
+        // 多因子认证时，不允许调整用户登录
+        this->m_verifyInfo.m_authenticatedUserName = m_userName;
     }
 
     KLOG_DEBUG() << QString("new session authmode(%1),login user switchable(%2),default auth type(%3),auth order(%4)")
@@ -132,7 +134,7 @@ void Session::StartAuth()
     this->m_verifyInfo.m_inAuth = true;
     this->m_verifyInfo.m_dbusMessage = this->message();
     this->startPhaseAuth();
-} 
+}
 
 void Session::StopAuth()
 {
@@ -230,7 +232,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     {
         Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_INFO);
     }
-    else if(result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
+    else if (result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
     {
         Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
     }
@@ -283,9 +285,14 @@ void Session::startUkeyAuth()
 void Session::startPasswdAuth()
 {
     KLOG_DEBUG() << "The authentication service does not take over password authentication,ignore!";
+    
     this->m_verifyInfo.m_inAuth = true;
-    this->m_verifyInfo.m_authenticatedUserName = m_userName;
-    this->finishPhaseAuth(true,false);
+    if (this->m_verifyInfo.m_authenticatedUserName.isEmpty())
+    {
+        this->m_verifyInfo.m_authenticatedUserName = m_userName;
+    }
+    
+    this->finishPhaseAuth(true, false);
 }
 
 void Session::startGeneralAuth(const QString &extraInfo)
@@ -305,7 +312,7 @@ void Session::startGeneralAuth(const QString &extraInfo)
     {
         auto authTypeStr = Utils::authTypeEnum2Str(this->m_authType);
         KLOG_WARNING() << m_sessionID << "start phase auth failed,can not find device,auth type:" << m_authType;
-        Q_EMIT this->AuthMessage(QString(tr("can not find %1 device")).arg(Utils::authTypeEnum2LocaleStr(this->m_authType)),KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        Q_EMIT this->AuthMessage(QString(tr("can not find %1 device")).arg(Utils::authTypeEnum2LocaleStr(this->m_authType)), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
 
         this->finishPhaseAuth(false, false);
         return;
@@ -359,7 +366,7 @@ void Session::finishPhaseAuth(bool isSuccess, bool recordFailure)
         break;
     case KADAuthMode::KAD_AUTH_MODE_AND:
     {
-        if( this->m_authOrderWaiting.size() > 0 )
+        if (this->m_authOrderWaiting.size() > 0)
         {
             this->m_authOrderWaiting.removeOne(this->m_authType);
         }

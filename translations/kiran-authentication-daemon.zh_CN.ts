@@ -27,7 +27,7 @@
         <translation>请输入PIN码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="308"/>
+        <location filename="../src/daemon/session.cpp" line="313"/>
         <source>can not find %1 device</source>
         <translation>未能检测到%1设备</translation>
     </message>
