@@ -30,6 +30,7 @@
 #include <QDBusConnectionInterface>
 #include <QEventLoop>
 #include <QJsonDocument>
+#include <QMetaEnum>
 
 namespace Kiran
 {
@@ -49,16 +50,20 @@ Session::Session(uint32_t sessionID,
 {
     this->m_dbusAdaptor = new SessionAdaptor(this);
     this->m_objectPath = QDBusObjectPath(QString("%1/%2").arg(KAD_SESSION_DBUS_OBJECT_PATH).arg(this->m_sessionID));
-    this->m_authMode = AuthManager::getInstance()->getAuthMode();
 
+    this->m_authMode = AuthManager::getInstance()->getAuthMode();
     auto authTypes = AuthManager::getInstance()->GetAuthTypeByApp(m_authApplication);
     this->m_authType = authTypes.count() > 0 ? authTypes.first() : KAD_AUTH_TYPE_NONE;
-
     if (m_authMode == KAD_AUTH_MODE_AND)
     {
         this->m_authOrderWaiting = authTypes;
-        // 多因子认证时，不允许调整用户登录
         this->m_verifyInfo.m_authenticatedUserName = m_userName;
+    }
+
+    auto systemConnection = QDBusConnection::systemBus();
+    if (!systemConnection.registerObject(this->m_objectPath.path(), this))
+    {
+        KLOG_WARNING() << m_sessionID << "can't register object:" << systemConnection.lastError();
     }
 
     KLOG_DEBUG() << QString("new session authmode(%1),login user switchable(%2),default auth type(%3),auth order(%4)")
@@ -66,12 +71,6 @@ Session::Session(uint32_t sessionID,
                         .arg(m_loginUserSwitchable)
                         .arg(Utils::authTypeEnum2Str(m_authType))
                         .arg(Utils::authOrderEnum2Str(m_authOrderWaiting).join(","));
-
-    auto systemConnection = QDBusConnection::systemBus();
-    if (!systemConnection.registerObject(this->m_objectPath.path(), this))
-    {
-        KLOG_WARNING() << m_sessionID << "can't register object:" << systemConnection.lastError();
-    }
 }
 
 Session::~Session()
@@ -206,7 +205,7 @@ void Session::interrupt()
 void Session::cancel()
 {
     KLOG_DEBUG() << m_sessionID << "session (request id:" << this->m_verifyInfo.m_requestID << ") cancel";
-    this->finishPhaseAuth(false, false);
+    this->finishPhaseAuth(SESSION_AUTH_CANCEL);
 }
 
 void Session::end()
@@ -244,7 +243,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     if (result == IdentifyStatus::IDENTIFY_STATUS_MATCH ||
         result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
     {
-        this->finishPhaseAuth(result == IdentifyStatus::IDENTIFY_STATUS_MATCH, m_authMode == KAD_AUTH_MODE_OR);
+        this->finishPhaseAuth(result == IDENTIFY_STATUS_MATCH ? SESSION_AUTH_MATCH : SESSION_AUTH_NOT_MATCH);
     }
 }
 
@@ -285,14 +284,14 @@ void Session::startUkeyAuth()
 void Session::startPasswdAuth()
 {
     KLOG_DEBUG() << "The authentication service does not take over password authentication,ignore!";
-    
+
     this->m_verifyInfo.m_inAuth = true;
     if (this->m_verifyInfo.m_authenticatedUserName.isEmpty())
     {
         this->m_verifyInfo.m_authenticatedUserName = m_userName;
     }
-    
-    this->finishPhaseAuth(true, false);
+
+    this->finishPhaseAuth(SESSION_AUTH_PASSWD_AUTH_IGNORE);
 }
 
 void Session::startGeneralAuth(const QString &extraInfo)
@@ -303,7 +302,7 @@ void Session::startGeneralAuth(const QString &extraInfo)
         auto authTypeStr = Utils::authTypeEnum2Str(this->m_authType);
         KLOG_WARNING() << m_sessionID << "start phase auth failed,invalid auth type:" << m_authType;
         Q_EMIT this->AuthMessage(tr(QString("Auth type %1 invalid").arg(authTypeStr).toStdString().c_str()), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        this->finishPhaseAuth(false, false);
+        this->finishPhaseAuth(SESSION_AUTH_INTERNAL_ERROR);
         return;
     }
 
@@ -313,8 +312,7 @@ void Session::startGeneralAuth(const QString &extraInfo)
         auto authTypeStr = Utils::authTypeEnum2Str(this->m_authType);
         KLOG_WARNING() << m_sessionID << "start phase auth failed,can not find device,auth type:" << m_authType;
         Q_EMIT this->AuthMessage(QString(tr("can not find %1 device")).arg(Utils::authTypeEnum2LocaleStr(this->m_authType)), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-
-        this->finishPhaseAuth(false, false);
+        this->finishPhaseAuth(SESSION_AUTH_NO_DEVICE);
         return;
     }
 
@@ -344,69 +342,94 @@ void Session::startGeneralAuth(const QString &extraInfo)
     this->m_verifyInfo.deviceAdaptor->identify(this, doc.toJson(QJsonDocument::Compact));
 }
 
-void Session::finishPhaseAuth(bool isSuccess, bool recordFailure)
+void Session::finishPhaseAuth(SessionAuthResult authResult)
 {
+    auto authResultEnum = QMetaEnum::fromType<Session::SessionAuthResult>();
+    auto authResultKey = authResultEnum.valueToKey(authResult);
+
     KLOG_DEBUG() << m_sessionID
                  << "session finish phase auth, auth type:" << this->m_authType
-                 << "auth result:" << isSuccess
-                 << "record failure:" << recordFailure;
+                 << "auth result:" << (authResultKey ? authResultKey : "NULL");
 
-    // 如果阶段认证失败，则直接结束
-    if (!isSuccess)
+    switch (authResult)
     {
-        this->finishAuth(isSuccess, recordFailure);
-        return;
-    }
-
-    // 阶段认证成功则进入下个阶段
-    switch (this->m_authMode)
+    case SESSION_AUTH_MATCH:
+    case SESSION_AUTH_PASSWD_AUTH_IGNORE:
     {
-    case KADAuthMode::KAD_AUTH_MODE_OR:
-        this->finishAuth(isSuccess, recordFailure);
-        break;
-    case KADAuthMode::KAD_AUTH_MODE_AND:
-    {
-        if (this->m_authOrderWaiting.size() > 0)
+        if (this->m_authMode == KAD_AUTH_MODE_OR)
         {
-            this->m_authOrderWaiting.removeOne(this->m_authType);
-        }
-
-        if (this->m_authOrderWaiting.size() == 0)
-        {
-            this->finishAuth(isSuccess, recordFailure);
+            // 多路认证，认证一个通过即算通过
+            this->finishAuth(authResult);
         }
         else
         {
-            this->m_authType = this->m_authOrderWaiting.first();
-            this->startPhaseAuth();
+            // 检测是否所有认证类型都已通过
+            // 存在还未认证，则继续开始认证
+            if (this->m_authOrderWaiting.size() > 0)
+            {
+                this->m_authOrderWaiting.removeOne(this->m_authType);
+            }
+
+            if (this->m_authOrderWaiting.size() == 0)
+            {
+                this->finishAuth(SESSION_AUTH_MATCH);
+            }
+            else
+            {
+                this->m_authType = this->m_authOrderWaiting.first();
+                this->startPhaseAuth();
+            }
         }
         break;
     }
+    case SESSION_AUTH_NOT_MATCH:
+    case SESSION_AUTH_NO_DEVICE:
+    case SESSION_AUTH_CANCEL:
+    case SESSION_AUTH_INTERNAL_ERROR:
+    {
+        // 阶段认证失败，则算失败
+        this->finishAuth(authResult);
+        break;
+    }
     default:
+        KLOG_ERROR() << m_sessionID << "invalid session auth result:" << authResult << (authResultKey ? authResultKey : "NULL");
         break;
     }
 }
 
-void Session::finishAuth(bool isSuccess, bool recordFailure)
+void Session::finishAuth(SessionAuthResult authResult)
 {
-    KLOG_DEBUG() << m_sessionID << "finish auth"
-                 << "auth result:" << isSuccess
-                 << "record failure:" << recordFailure;
+    auto authResultEnum = QMetaEnum::fromType<Session::SessionAuthResult>();
+    auto authResultKey = authResultEnum.valueToKey(authResult);
+    KLOG_DEBUG() << m_sessionID << "finish auth\n"
+                 << "auth result:" << (authResultKey ? authResultKey : "NULL");
 
     const QString &authenticatedUserName = this->m_verifyInfo.m_authenticatedUserName;
-    if (isSuccess && !authenticatedUserName.isEmpty())
+    bool isSuccess = (authResult == SESSION_AUTH_MATCH) || (authResult == SESSION_AUTH_PASSWD_AUTH_IGNORE);
+    if (isSuccess)
     {
-        // 认证成功，清空认证通过用户的生物认证错误次数(针对于登录过程中用户跳转)
-        auto user = UserManager::getInstance()->findUser(authenticatedUserName);
-        if (user)
+        if (authenticatedUserName.isEmpty())
         {
-            user->setFailures(0);
+            KLOG_ERROR() << "authentication succeeded, but the user name was empty!";
         }
-        Q_EMIT this->AuthSuccessed(authenticatedUserName);
+        else
+        {
+            auto user = UserManager::getInstance()->findUser(authenticatedUserName);
+            if (user)
+            {
+                user->setFailures(0);
+            }
+            Q_EMIT this->AuthSuccessed(authenticatedUserName);
+        }
     }
     else
     {
-        if (recordFailure)
+        // 是否记录内部错误，内部错误达到上限将不能使用生物认证，只能使用密码解锁
+        // 只在多路认证情况下，并且是特征不匹配的情况下记录
+        bool recordInternalFailure = (this->m_authMode == KAD_AUTH_MODE_OR) &&
+                                     (authResult == SESSION_AUTH_NOT_MATCH);
+
+        if (recordInternalFailure)
         {
             // 认证失败，未通过一次阶段认证，记录失败用户为发起登录请求的用户
             const QString &currentUser = authenticatedUserName.isEmpty() ? m_userName : authenticatedUserName;
@@ -416,8 +439,23 @@ void Session::finishAuth(bool isSuccess, bool recordFailure)
                 user->setFailures(user->getFailures() + 1);
             }
         }
-        Q_EMIT this->AuthFailed();
+
+        // 是否记录外部failock错误，达到上限，将会锁定账户
+        // 多因子认证情况下，任何错误，都将被failock记录
+        // 多路认证情况下，只有特征不匹配才被failock记录
+        bool recordFailure = (this->m_authMode == KAD_AUTH_MODE_AND) ||
+                             (authResult == SESSION_AUTH_NOT_MATCH);
+
+        if (recordFailure)
+        {
+            Q_EMIT this->AuthFailed();
+        }
+        else
+        {
+            Q_EMIT this->AuthUnavail();
+        }
     }
+
     m_verifyInfo.m_inAuth = false;
 }
 

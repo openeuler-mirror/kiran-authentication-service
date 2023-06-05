@@ -271,6 +271,7 @@ bool Authentication::initSession()
     connect(this->m_authSessionProxy, &AuthSessionProxy::AuthPrompt, this, &Authentication::onAuthPrompt);
     connect(this->m_authSessionProxy, &AuthSessionProxy::AuthMessage, this, &Authentication::onAuthMessage);
     connect(this->m_authSessionProxy, &AuthSessionProxy::AuthFailed, this, &Authentication::onAuthFailed);
+    connect(this->m_authSessionProxy, &AuthSessionProxy::AuthUnavail, this, &Authentication::onAuthUnavail);
     connect(this->m_authSessionProxy, &AuthSessionProxy::AuthSuccessed, this, &Authentication::onAuthSuccessed);
     this->m_pamHandle->syslog(LOG_DEBUG, QString("init session,%1").arg(m_sessionID));
     return true;
@@ -333,6 +334,12 @@ void Authentication::onAuthFailed()
 {
     this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication failed,session ID:%1").arg(m_sessionID));
     this->finishAuth(PAM_AUTH_ERR);
+}
+
+void Authentication::onAuthUnavail()
+{
+    this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication unavail,session ID:%1").arg(m_sessionID));
+    this->finishAuth(PAM_AUTHINFO_UNAVAIL);
 }
 
 void Authentication::onAuthSuccessed(const QString &userName)
