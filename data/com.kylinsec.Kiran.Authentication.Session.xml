@@ -80,6 +80,8 @@
 
         <signal name="AuthFailed" />
 
+        <signal name="AuthUnavail"/>
+
         <signal name="AuthTypeChanged">
             <arg name="authtype" type="i">
                 <description>The authentication type being or to be performed. Refer to enum AuthType in file kas-authentication-i.h.</description>
