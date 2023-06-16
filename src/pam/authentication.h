@@ -64,6 +64,7 @@ private Q_SLOTS:
     void onAuthPrompt(const QString &text, int type);
     void onAuthMessage(const QString &text, int type);
     void onAuthFailed();
+    void onAuthUnavail();
     void onAuthSuccessed(const QString &userName);
     void onAuthTypeChanged(int authType);
 

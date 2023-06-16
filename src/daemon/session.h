@@ -38,6 +38,18 @@ class Session : public QObject,
     Q_PROPERTY(QString RSAPublicKey READ getRSAPublicKey)
     Q_PROPERTY(QString Username READ getUsername)
 public:
+    enum SessionAuthResult
+    {
+        SESSION_AUTH_MATCH,               // 特征匹配
+        SESSION_AUTH_NOT_MATCH,           // 特征不匹配
+        SESSION_AUTH_PASSWD_AUTH_IGNORE,  // 多因子认证模式，放行密码认证
+        SESSION_AUTH_NO_DEVICE,           // 不存在该设备
+        SESSION_AUTH_CANCEL,              // 认证会话被取消
+        SESSION_AUTH_INTERNAL_ERROR,      // 内部错误
+        SESSION_AUTH_LAST
+    };
+    Q_ENUM(SessionAuthResult)
+public:
     // 如果只允许对特定用户进行认证，则创建对象时需要指定用户名
     Session(uint32_t sessionID,
             const QString &serviceName,
@@ -68,6 +80,7 @@ Q_SIGNALS:  // SIGNALS
     void AuthMessage(const QString &text, int type);
     void AuthPrompt(const QString &text, int type);
     void AuthSuccessed(const QString &username);
+    void AuthUnavail();
 
 private:
     struct SessionVerifyInfo
@@ -101,8 +114,8 @@ private:
     void startPasswdAuth();
     void startGeneralAuth(const QString &extraInfo = QString());
 
-    void finishPhaseAuth(bool isSuccess,bool recordFailure = true);
-    void finishAuth(bool isSuccess,bool recordFailures = true);
+    void finishPhaseAuth(SessionAuthResult authResult);
+    void finishAuth(SessionAuthResult authResult);
 
     bool matchUser(int32_t authType, const QString &dataID);
 
