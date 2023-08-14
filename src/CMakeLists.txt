@@ -57,7 +57,7 @@ include_directories(${GLIB_JSON_INCLUDE_DIRS} ${KIRAN_CC_DAEMON_INCLUDE_DIRS})
 
 include_directories(${ZLOG_INCLUDE_DIRS} ${GLIB2_INCLUDE_DIRS} ${GIO_INCLUDE_DIRS} ${GIO_UNIX_INCLUDE_DIRS})
 add_executable (kiran_authentication_service main.c kiran-authentication-gen.c kiran-auth-service.c kiran-accounts-gen.c kiran-user-gen.c kiran-biometrics-gen.c kiran-authentication.c)
-target_link_libraries(kiran_authentication_service pam ${ZLOG_LIBRARIES} ${GLIB2_LIBRARIES} ${GIO_LIBRARIES} ${GIO_UNIX_LIBRARIES} ${GLIB_JSON_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARIES})
+target_link_libraries(kiran_authentication_service pam ${ZLOG_LIBRARIES} ${GLIB2_LIBRARIES} ${GIO_LIBRARIES} ${GIO_UNIX_LIBRARIES} ${GLIB_JSON_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARIES} pthread)
 install(TARGETS kiran_authentication_service RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 add_library(pam_kiran_authentication MODULE pam-kiran-authentication.c kiran-authentication-gen.c)
