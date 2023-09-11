@@ -206,8 +206,8 @@ void DeviceAdaptorFactory::onAuthDeviceManagerLost(const QString &service)
     // 设备管理服务消失，认证设备无效，应清理所有无效的设备及其请求
     for (auto iter = m_devices.begin(); iter != m_devices.end();)
     {
-        KLOG_DEBUG() << "auth device manager lost,remove device:" << iter->get()->getDeviceID();
-        iter->get()->removeAllRequest();
+        KLOG_DEBUG() << "auth device manager lost,remove device:" << iter.value().data()->getDeviceID();
+        iter.value().data()->removeAllRequest();
         iter = m_devices.erase(iter);
     }
 }
@@ -217,10 +217,10 @@ void DeviceAdaptorFactory::onDeviceDeleted(int deviceType, const QString &device
     // 认证设备拔出，认证设备变成无效，清理该设备下请求，从缓存中删除该设备
     for (auto iter = m_devices.begin(); iter != m_devices.end(); iter++)
     {
-        if (iter->get()->getDeviceID() == deviceID)
+        if (iter.value().data()->getDeviceID() == deviceID)
         {
-            KLOG_DEBUG() << "auth device deleted,remove device:" << iter->get()->getDeviceID();
-            iter->get()->removeAllRequest();
+            KLOG_DEBUG() << "auth device deleted,remove device:" << iter.value().data()->getDeviceID();
+            iter.value().data()->removeAllRequest();
             m_devices.erase(iter);
             break;
         }

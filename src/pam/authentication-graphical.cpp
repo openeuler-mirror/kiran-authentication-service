@@ -52,12 +52,22 @@ bool AuthenticationGraphical::requestLoginUserSwitchable()
     // 请求失败的情况下使用默认值
     if (retval != PAM_SUCCESS)
     {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
         auto errorMsg = jsonReqDoc[KAP_PJK_KEY_HEAD][KAP_PJK_KEY_ERROR].toString();
+#else
+        QJsonValue val = jsonReqDoc.object()[KAP_PJK_KEY_HEAD];
+        auto errorMsg = val.toObject()[KAP_PJK_KEY_ERROR].toString();
+#endif
         this->m_pamHandle->syslog(LOG_WARNING, QString("Request login user switchable failed: %1").arg(errorMsg));
         return false;
     }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
     return jsonRspDoc[KAP_PJK_KEY_BODY][KAP_PJK_KEY_LOGIN_USER_SWITCHABLE].toBool();
+#else
+    QJsonValue val = jsonRspDoc.object()[KAP_PJK_KEY_BODY];
+    return val.toObject()[KAP_PJK_KEY_LOGIN_USER_SWITCHABLE].toBool();
+#endif
 }
 
 void AuthenticationGraphical::notifySupportAuthType()
@@ -90,11 +100,21 @@ int32_t AuthenticationGraphical::requestAuthType()
     // 请求失败的情况下使用默认认证类型
     if (retval != PAM_SUCCESS)
     {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
         auto errorMsg = jsonReqDoc[KAP_PJK_KEY_HEAD][KAP_PJK_KEY_ERROR].toString();
+#else
+        QJsonValue val = jsonReqDoc.object()[KAP_PJK_KEY_HEAD];
+        auto errorMsg = val.toObject()[KAP_PJK_KEY_ERROR].toString();
+#endif
         this->m_pamHandle->syslog(LOG_WARNING, QString("Request auth type failed: %1").arg(errorMsg));
         return KADAuthType::KAD_AUTH_TYPE_NONE;
     }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
     return jsonRspDoc[KAP_PJK_KEY_BODY][KAP_PJK_KEY_AUTH_TYPE].toInt();
+#else
+    QJsonValue val = jsonRspDoc.object()[KAP_PJK_KEY_BODY];
+    return val.toObject()[KAP_PJK_KEY_AUTH_TYPE].toInt();
+#endif
 }
 
 void AuthenticationGraphical::notifyAuthType(int authType)
