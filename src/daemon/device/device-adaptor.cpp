@@ -41,7 +41,7 @@ DeviceAdaptor::DeviceAdaptor(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy)
     connect(&m_deviceOccupyTimer,&QTimer::timeout,this,&DeviceAdaptor::onDeviceOccupyTimeout);
 
     auto defaultSeat = Login1SeatProxy::getDefault();
-    connect(defaultSeat.get(), SIGNAL(activeSessionChanged(const Login1SessionItem &)), this, SLOT(onActiveSessionChanged(const Login1SessionItem &)));
+    connect(defaultSeat.data(), SIGNAL(activeSessionChanged(const Login1SessionItem &)), this, SLOT(onActiveSessionChanged(const Login1SessionItem &)));
 
     this->updateDBusDeviceProxy(dbusDeviceProxy);
 }
@@ -76,8 +76,8 @@ void DeviceAdaptor::removeAllRequest()
     // 清空/结束所有认证，不再参与调度
     for (auto iter = this->m_requests.begin(); iter != this->m_requests.end();)
     {
-        iter->get()->source->cancel();
-        iter->get()->source->end();
+        iter.value().data()->source->cancel();
+        iter.value().data()->source->end();
         iter = this->m_requests.erase(iter);
     }
 }
@@ -107,8 +107,8 @@ void DeviceAdaptor::updateDBusDeviceProxy(QSharedPointer<AuthDeviceProxy> dbusDe
 
         this->interruptRequest();
 
-        connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::EnrollStatus, this, &DeviceAdaptor::onEnrollStatus);
-        connect(this->m_dbusDeviceProxy.get(), &AuthDeviceProxy::IdentifyStatus, this, &DeviceAdaptor::onIdentifyStatus);
+        connect(this->m_dbusDeviceProxy.data(), &AuthDeviceProxy::EnrollStatus, this, &DeviceAdaptor::onEnrollStatus);
+        connect(this->m_dbusDeviceProxy.data(), &AuthDeviceProxy::IdentifyStatus, this, &DeviceAdaptor::onIdentifyStatus);
 
         DEVICE_DEBUG() << "update auth device finished";
         this->schedule();
@@ -134,7 +134,7 @@ void DeviceAdaptor::wakeRequest(QSharedPointer<DeviceRequest> request)
 {
     RETURN_IF_FALSE(request);
     // 请求未变化，直接返回
-    RETURN_IF_TRUE(this->m_currentRequest && this->m_currentRequest.get() == request.get());
+    RETURN_IF_TRUE(this->m_currentRequest && this->m_currentRequest.data() == request.data());
     // 中断当前的请求
     this->interruptRequest();
 
