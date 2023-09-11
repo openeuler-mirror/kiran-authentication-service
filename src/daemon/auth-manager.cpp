@@ -276,7 +276,12 @@ int32_t AuthManager::generateSessionID()
     // 最多生成10次，超过次数则返回失败
     for (int i = 0; i <= 10; ++i)
     {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
         auto sessionID = this->m_randomGenerator.bounded(1, MAX_SESSION_ID);
+#else
+        qsrand(QTime(0, 0, 0).secsTo(QTime::currentTime()));
+        auto sessionID = qrand() % MAX_SESSION_ID + 1;
+#endif
         auto session = this->m_sessions.value(sessionID, nullptr);
         // KLOG_DEBUG() << "session: " << session << ", sessionID: " << sessionID;
         RETURN_VAL_IF_TRUE(session == nullptr, sessionID);

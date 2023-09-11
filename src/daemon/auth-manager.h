@@ -16,7 +16,9 @@
 #include <QDBusContext>
 #include <QDBusObjectPath>
 #include <QList>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
 #include <QRandomGenerator>
+#endif
 #include "kas-authentication-i.h"
 
 class AuthManagerAdaptor;
@@ -118,7 +120,9 @@ private:
 
     // <会话ID，会话>
     QMap<int32_t, Session *> m_sessions;
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
     QRandomGenerator m_randomGenerator;
+#endif
     QDBusServiceWatcher *m_serviceWatcher;
 };
 
