@@ -1,0 +1,15 @@
+variables:
+  EXTRA_DNF_REPOS: |
+                   [KIRAN-UI-2.6]
+                   name=KIRAN-UI-2.6
+                   gpgcheck=0
+                   baseurl=http://10.20.20.71/kojifiles/repos/KY3.5-1-KiranUI-2.6-build/latest/x86_64/
+
+  RPM_BUILD_REQUIRES: 'qt5-qtbase qt5-qtbase-devel kiran-log-qt5-devel systemd-devel qt5-linguist kiran-authentication-devices-devel kiran-cc-daemon-devel pam-devel'
+  WORK_BRANCHES: '2.6'
+
+include:
+  - project: 'os/ks-devops'
+    ref: main
+    file:
+      - '/entrypoint/develop/cmake.yml'
