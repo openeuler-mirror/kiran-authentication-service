@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -18,8 +18,9 @@
 #include <QDBusMessage>
 #include <QDBusObjectPath>
 
+#include "device/device-protocol.h"
 #include "kas-authentication-i.h"
-#include "src/daemon/device/device-protocol.h"
+#include "lib/feature-data.h"
 
 class SessionAdaptor;
 class QEventLoop;
@@ -105,7 +106,7 @@ private:
     virtual void interrupt();
     virtual void cancel();
     virtual void end();
-    virtual void onEnrollStatus(const QString &dataID, int progress, int result, const QString &message){};
+    virtual void onEnrollStatus(const QString &data, int progress, int result, const QString &message) {};
     virtual void onIdentifyStatus(const QString &bid, int result, const QString &message);
 
 private:

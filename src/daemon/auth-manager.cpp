@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,21 +12,6 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/daemon/auth-manager.h"
-#include "auxiliary.h"
-#include "logging-category.h"
-#include "src/daemon/auth-config.h"
-#include "src/daemon/auth_manager_adaptor.h"
-#include "src/daemon/config-daemon.h"
-#include "src/daemon/device/device-adaptor-factory.h"
-#include "src/daemon/error.h"
-#include "src/daemon/proxy/dbus-daemon-proxy.h"
-#include "src/daemon/proxy/polkit-proxy.h"
-#include "src/daemon/session.h"
-#include "src/daemon/user-manager.h"
-#include "src/utils/utils.h"
-
-#include <kas-authentication-i.h>
 #include <pwd.h>
 #include <QDBusServiceWatcher>
 #include <QDir>
@@ -35,6 +20,21 @@
 #include <QMetaEnum>
 #include <QSettings>
 #include <QTime>
+
+#include "auth-config.h"
+#include "auth-manager.h"
+#include "auth_manager_adaptor.h"
+#include "auxiliary.h"
+#include "config-daemon.h"
+#include "device/device-adaptor-factory.h"
+#include "error.h"
+#include "kas-authentication-i.h"
+#include "lib/utils.h"
+#include "logging-category.h"
+#include "proxy/dbus-daemon-proxy.h"
+#include "proxy/polkit-proxy.h"
+#include "session.h"
+#include "user-manager.h"
 
 #define AUTH_USER_ADMIN "com.kylinsec.kiran.authentication.user-administration"
 

@@ -1,24 +1,25 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
- * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
-
-#include "src/daemon/user-manager.h"
 #include <auxiliary.h>
 #include <kiran-system-daemon/accounts-i.h>
 #include <pwd.h>
 #include <QDir>
-#include "src/daemon/accounts_proxy.h"
-#include "src/daemon/config-daemon.h"
+
+#include "accounts_proxy.h"
+#include "config-daemon.h"
+#include "lib/feature-db.h"
+#include "user-manager.h"
 
 namespace Kiran
 {
@@ -70,31 +71,12 @@ void UserManager::initUsers()
 QSharedPointer<User> UserManager::addUser(const QString &userName)
 {
     auto pwent = getpwnam(userName.toStdString().c_str());
-    RETURN_VAL_IF_TRUE(pwent == NULL,QSharedPointer<User>());
+    RETURN_VAL_IF_TRUE(pwent == NULL, QSharedPointer<User>());
 
     auto user = QSharedPointer<User>(new User(pwent, this));
-    for (auto &iid : user->getIIDs())
-    {
-        this->addIID(iid, user);
-    }
-
-    connect(user.data(), &User::IdentificationAdded, std::bind(&UserManager::addIID, this, std::placeholders::_1, user));
     connect(user.data(), &User::IdentificationDeleted, std::bind(&UserManager::deleteIID, this, std::placeholders::_1));
     this->m_users.insert(userName, user);
     return user;
-}
-
-void UserManager::addIID(const QString &iid, QSharedPointer<User>user)
-{
-    if (this->m_iid2User.contains(iid))
-    {
-        // 正常逻辑是不会执行到这里
-        KLOG_ERROR() << "The iid " << iid << " already exists.";
-    }
-    else
-    {
-        this->m_iid2User.insert(iid, user);
-    }
 }
 
 void UserManager::deleteUser(const QString &userName)
@@ -107,14 +89,15 @@ void UserManager::deleteUser(const QString &userName)
         this->deleteIID(iid);
     }
 
-    user->removeCache();
+    FeatureDB::getInstance()->deleteFearureByUserName(userName);
+
     this->m_users.remove(userName);
     return;
 }
 
 void UserManager::deleteIID(const QString &iid)
 {
-    this->m_iid2User.remove(iid);
+    FeatureDB::getInstance()->deleteFearureByIID(iid);
 }
 
 void UserManager::onUserDeleted(const QDBusObjectPath &userObjectPath)

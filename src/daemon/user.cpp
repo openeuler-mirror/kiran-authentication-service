@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,26 +12,28 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/daemon/user.h"
 #include <auxiliary.h>
-#include <kas-authentication-i.h>
-#include <kiran-authentication-devices/kiran-auth-device-i.h>
 #include <pwd.h>
 #include <qt5-log-i.h>
 #include <QDBusConnection>
 #include <QSettings>
-#include "src/daemon/config-daemon.h"
-#include "src/daemon/device/device-adaptor-factory.h"
-#include "src/daemon/error.h"
-#include "src/daemon/proxy/dbus-daemon-proxy.h"
-#include "src/daemon/proxy/polkit-proxy.h"
-#include "src/daemon/user-config.h"
-#include "src/daemon/user-manager.h"
-#include "src/daemon/user_adaptor.h"
-#include "src/utils/utils.h"
+
+#include "config-daemon.h"
+#include "device/device-adaptor-factory.h"
+#include "error.h"
+#include "kas-authentication-i.h"
+#include "lib/feature-db.h"
+#include "lib/utils.h"
+#include "proxy/dbus-daemon-proxy.h"
+#include "proxy/polkit-proxy.h"
+#include "user-config.h"
+#include "user-manager.h"
+#include "user.h"
+#include "user_adaptor.h"
 
 #define USER_DEBUG() KLOG_DEBUG() << this->m_pwent.pw_uid
 #define USER_WARNING() KLOG_WARNING() << this->m_pwent.pw_uid
+#define USER_INFO() KLOG_INFO() << this->m_pwent.pw_uid
 #define FEATURE_COUNT_MAXIMUN 10
 
 namespace Kiran
@@ -77,27 +79,36 @@ User::~User()
 
 QStringList User::getIIDs()
 {
-    return m_userConfig->getIIDs();
+    return FeatureDB::getInstance()->getIID(m_pwent.pw_name);
 }
 
 QStringList User::getIIDs(int authType)
 {
-    return this->m_userConfig->getIIDs(authType);
+    return FeatureDB::getInstance()->getIID(m_pwent.pw_name, authType);
 }
 
-QStringList User::getBIDs(int authType)
+QStringList User::getFeatureIDs(int authType)
 {
-    return this->m_userConfig->getBIDs(authType);
+    return FeatureDB::getInstance()->getFeatureID(m_pwent.pw_name, authType);
+}
+
+QString User::getFetureIDByIID(const QString &IID)
+{
+    return FeatureDB::getInstance()->getFetureIDByIID(IID);
+}
+QString User::getFeatureNameByIID(const QString &IID)
+{
+    return FeatureDB::getInstance()->getFeatureNameByIID(IID);
+}
+
+bool User::updateFeatureNameByIID(const QString &iid, const QString &featureName)
+{
+    return FeatureDB::getInstance()->updateFeatureNameByIID(iid, featureName);
 }
 
 bool User::hasIdentification(int authType)
 {
-    return this->m_userConfig->getIIDs(authType).size() > 0;
-}
-
-void User::removeCache()
-{
-    this->m_userConfig->removeCache();
+    return getIIDs(authType).size() > 0;
 }
 
 int32_t User::getFailures()
@@ -132,13 +143,13 @@ QString User::GetIdentifications(int authType)
     QJsonDocument jsonDoc;
     QJsonArray jsonArray;
 
-    QStringList iids = this->m_userConfig->getIIDs(authType);
+    QStringList iids = getIIDs(authType);
     for (auto &iid : iids)
     {
         QJsonObject jsonObj{
             {KAD_IJK_KEY_IID, iid},
-            {KAD_IJK_KEY_DATA_ID, this->m_userConfig->getIIDBid(iid)},
-            {KAD_IJK_KEY_NAME, this->m_userConfig->getIIDName(iid)}};
+            {KAD_IJK_KEY_DATA_ID, getFetureIDByIID(iid)},
+            {KAD_IJK_KEY_NAME, getFeatureNameByIID(iid)}};
         jsonArray.append(jsonObj);
     }
     jsonDoc.setArray(jsonArray);
@@ -159,7 +170,7 @@ void User::queued(QSharedPointer<DeviceRequest> request)
 {
     KLOG_DEBUG() << getUserName() << "enroll (request id:" << request->reqID << ") queued";
     this->m_enrollInfo.m_requestID = request->reqID;
-    Q_EMIT this->EnrollStatus(tr("Please wait while the request is processed"),false,0,"");
+    Q_EMIT this->EnrollStatus(tr("Please wait while the request is processed"), false, 0, "");
 }
 
 void User::interrupt()
@@ -183,14 +194,13 @@ void User::end()
     this->m_enrollInfo.m_feautreName.clear();
 }
 
-void User::onEnrollStatus(const QString &dataID, int progress,
+void User::onEnrollStatus(const QString &data, int progress,
                           int result, const QString &message)
 {
-    USER_DEBUG() << "enroll status from device,"
-                 << "data:" << dataID
-                 << "result:" << result
-                 << "progress:" << progress
-                 << "message:" << message;
+    USER_INFO() << "enroll status from device,"
+                << "result:" << result
+                << "progress:" << progress
+                << "message:" << message;
 
     bool isComplete = false;
 
@@ -198,16 +208,25 @@ void User::onEnrollStatus(const QString &dataID, int progress,
     {
     case ENROLL_STATUS_COMPLETE:
     {
+        FeatureData featureData = jsonStringToStruct<FeatureData>(data);
+
         auto authType = this->m_enrollInfo.m_authTpe;
         auto iidName = this->m_enrollInfo.m_feautreName;
-        auto iid = Utils::GenerateIID(authType, dataID);
-        USER_DEBUG() << "enroll success,"
-                     << "iid:" << iid
-                     << "data id:" << dataID
-                     << "name:" << iidName;
+        auto iid = Utils::GenerateIID(authType, featureData.featureID);
+        USER_INFO() << "enroll success,"
+                    << "iid:" << iid
+                    << "data id:" << featureData.featureID
+                    << "name:" << iidName
+                    << "data len:" << featureData.feature.size();
 
-        this->m_userConfig->addIID(authType, iid, iidName, dataID);
-        emit this->IdentificationAdded(iid);
+        featureData.authType = authType;
+        featureData.featureName = iidName;
+        featureData.iid = iid;
+        featureData.userName = getUserName();
+
+        auto ret = FeatureDB::getInstance()->addFeature(featureData);
+        USER_INFO() << "add feature to db:" << ret;
+
         emit this->EnrollStatus(iid, true, progress, message);
         break;
     }
@@ -218,7 +237,7 @@ void User::onEnrollStatus(const QString &dataID, int progress,
         emit this->EnrollStatus(QString(), false, progress, message);
         break;
     }
-    }
+}
 
 QString User::calcAction(const QString &originAction)
 {
@@ -247,9 +266,9 @@ void User::onEnrollStart(const QDBusMessage &message, int authType,
         DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::AddressInUse, KADErrorCode::ERROR_NO_DEVICE);
     }
 
-    if( m_userConfig->getIIDs(authType).count() >= FEATURE_COUNT_MAXIMUN)
+    if (getIIDs(authType).count() >= FEATURE_COUNT_MAXIMUN)
     {
-        USER_WARNING() << "the number of features has reached its maximum:" << FEATURE_COUNT_MAXIMUN; 
+        USER_WARNING() << "the number of features has reached its maximum:" << FEATURE_COUNT_MAXIMUN;
         DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::LimitsExceeded, KADErrorCode::ERROR_USER_FEATURE_LIMITS_EXCEEDED);
     }
 
@@ -290,12 +309,13 @@ void User::onDeleteIdentification(const QDBusMessage &message, const QString &ii
     if (!getIIDs().contains(iid))
     {
         USER_WARNING() << "delete identification" << iid << "error,can not find!";
-        DBUS_ERROR_REPLY_ASYNC_AND_RET(message,QDBusError::InvalidArgs, KADErrorCode::ERROR_INVALID_ARGUMENT);
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::InvalidArgs, KADErrorCode::ERROR_INVALID_ARGUMENT);
     }
 
     USER_DEBUG() << "delete identification" << iid;
-    QString dataID = this->m_userConfig->getIIDBid(iid);
-    this->m_userConfig->deleteIID(iid);
+    FeatureDB::getInstance()->deleteFearureByIID(iid);
+
+    QString dataID = getFetureIDByIID(iid);
     DeviceAdaptorFactory::getInstance()->deleteFeature(dataID);
 
     auto replyMessage = message.createReply();
@@ -313,7 +333,7 @@ void User::onRenameIdentification(const QDBusMessage &message, const QString &ii
     }
 
     USER_DEBUG() << "rename identification" << iid << name;
-    if (this->m_userConfig->renameIID(iid, name))
+    if (updateFeatureNameByIID(iid, name))
     {
         emit IdentificationChanged(iid);
     }

@@ -23,6 +23,12 @@ configure_file(
 configure_file(kiran-authentication-daemon.service.in
                ${PROJECT_BINARY_DIR}/data/kiran-authentication-daemon.service)
 
+configure_file(kiran-authentication-devices.service.in
+               ${PROJECT_BINARY_DIR}/data/kiran-authentication-devices.service)
+
+configure_file(com.kylinsec.Kiran.AuthDevice.service.in
+               ${PROJECT_BINARY_DIR}/data/com.kylinsec.Kiran.AuthDevice.service)
+
 # install
 install(FILES com.kylinsec.Kiran.Authentication.conf
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/dbus-1/system.d)
@@ -30,6 +36,11 @@ install(
   FILES ${PROJECT_BINARY_DIR}/data/com.kylinsec.Kiran.Authentication.service
   DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/dbus-1/system-services)
 install(FILES ${PROJECT_BINARY_DIR}/data/kiran-authentication-daemon.service
+        DESTINATION ${SYSTEM_UNIT_DIR})
+
+install(FILES ${PROJECT_BINARY_DIR}/data/com.kylinsec.Kiran.AuthDevice.service
+        DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/dbus-1/system-services)
+install(FILES ${PROJECT_BINARY_DIR}/data/kiran-authentication-devices.service
         DESTINATION ${SYSTEM_UNIT_DIR})
 
 install(FILES kad.ini DESTINATION ${KAS_INSTALL_SYSCONFDIR})

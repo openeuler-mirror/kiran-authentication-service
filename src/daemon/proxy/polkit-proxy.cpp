@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,9 +12,6 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/daemon/proxy/polkit-proxy.h"
-#include "src/daemon/config-daemon.h"
-#include "include/auxiliary.h"
 #include <qt5-log-i.h>
 #include <QDBusArgument>
 #include <QDBusConnection>
@@ -22,6 +19,10 @@
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
 #include <QDBusVariant>
+
+#include "config-daemon.h"
+#include "include/auxiliary.h"
+#include "polkit-proxy.h"
 
 #define POLKIT_DBUS_NAME "org.freedesktop.PolicyKit1"
 #define POLKIT_DBUS_OBJECT_PATH "/org/freedesktop/PolicyKit1/Authority"

@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,22 +12,22 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/daemon/device/device-adaptor.h"
 #include <auxiliary.h>
-#include <kiran-authentication-devices/kiran-auth-device-i.h>
 #include <QJsonDocument>
 #include <climits>
+
+#include "kas-authentication-i.h"
 #include "logging-category.h"
-#include "src/daemon/auth-manager.h"
-#include "src/daemon/config-daemon.h"
-#include "src/daemon/device/device-protocol.h"
-#include "src/daemon/proxy/login1-manager-proxy.h"
-#include "src/daemon/proxy/login1-seat-proxy.h"
-#include "src/daemon/proxy/login1-session-proxy.h"
+#include "auth-manager.h"
+#include "config-daemon.h"
+#include "device-adaptor.h"
+#include "device-protocol.h"
+#include "proxy/login1-manager-proxy.h"
+#include "proxy/login1-seat-proxy.h"
+#include "proxy/login1-session-proxy.h"
 
-
-#define ENROLL_TIMEOUT_MS   300000
-#define IDENTIFY_TIMEOUT_MS 60000 
+#define ENROLL_TIMEOUT_MS 300000
+#define IDENTIFY_TIMEOUT_MS 60000
 
 #define DEVICE_DEBUG() KLOG_DEBUG() << this->m_deviceID
 
@@ -38,7 +38,7 @@ DeviceAdaptor::DeviceAdaptor(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy)
       m_requestIDCount(-1)
 {
     m_deviceOccupyTimer.setSingleShot(true);
-    connect(&m_deviceOccupyTimer,&QTimer::timeout,this,&DeviceAdaptor::onDeviceOccupyTimeout);
+    connect(&m_deviceOccupyTimer, &QTimer::timeout, this, &DeviceAdaptor::onDeviceOccupyTimeout);
 
     auto defaultSeat = Login1SeatProxy::getDefault();
     connect(defaultSeat.data(), SIGNAL(activeSessionChanged(const Login1SessionItem &)), this, SLOT(onActiveSessionChanged(const Login1SessionItem &)));
@@ -119,7 +119,7 @@ void DeviceAdaptor::pushRequest(QSharedPointer<DeviceRequest> request)
 {
     this->m_requests.insert(request->reqID, request);
     request->source->queued(request);
-    
+
     // 如果当前插入的请求优先级比正在执行请求的优先级高，则进行抢占
     auto pushPriority = request->source->getPriority();
 
@@ -182,7 +182,7 @@ void DeviceAdaptor::finishRequest()
         this->m_requests.remove(this->m_currentRequest->reqID);
         this->m_currentRequest = nullptr;
     }
-    
+
     this->schedule();
 }
 
@@ -250,7 +250,7 @@ void DeviceAdaptor::enrollStart(const QString &extraInfo)
     else
     {
         DEVICE_DEBUG() << "Not found fingerprint device, enroll failed.";
-        this->onEnrollStatus(QString(), EnrollStatus::ENROLL_STATUS_FAIL, 0, "");
+        this->onEnrollStatus({}, EnrollStatus::ENROLL_STATUS_FAIL, 0, "");
     }
 }
 
@@ -298,7 +298,8 @@ bool DeviceAdaptor::isActiveSession(uint32_t pid)
 
 void DeviceAdaptor::startDeviceOccupyTimer(int ms)
 {
-    DEVICE_DEBUG() << "start device occupy timer" << ms << "ms" << "for request:" << this->m_currentRequest->reqID;
+    DEVICE_DEBUG() << "start device occupy timer" << ms << "ms"
+                   << "for request:" << this->m_currentRequest->reqID;
     m_deviceOccupyTimer.start(ms);
 }
 
@@ -308,13 +309,13 @@ void DeviceAdaptor::stopDeviceOccupyTimer()
     m_deviceOccupyTimer.stop();
 }
 
-void DeviceAdaptor::onEnrollStatus(const QString &featureID, int progress, int result, const QString &message)
+void DeviceAdaptor::onEnrollStatus(const QString &data, int progress, int result, const QString &message)
 {
-    DEVICE_DEBUG() << "enroll status:" << featureID << result << progress << message;
+    DEVICE_DEBUG() << "enroll status:" << result << progress << message;
 
     if (this->m_currentRequest)
     {
-        this->m_currentRequest->source->onEnrollStatus(featureID, progress,result, message);
+        this->m_currentRequest->source->onEnrollStatus(data, progress, result, message);
     }
     else
     {

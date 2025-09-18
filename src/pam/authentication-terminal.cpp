@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,15 +12,16 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/pam/authentication-terminal.h"
-#include <kas-authentication-i.h>
 #include <pam_modules.h>
 #include <qt5-log-i.h>
 #include <syslog.h>
-#include "src/pam/auth_manager_proxy.h"
-#include "src/pam/auth_session_proxy.h"
-#include "src/pam/authentication.h"
-#include "src/utils/utils.h"
+
+#include "auth_manager_proxy.h"
+#include "auth_session_proxy.h"
+#include "authentication-terminal.h"
+#include "authentication.h"
+#include "kas-authentication-i.h"
+#include "lib/utils.h"
 
 namespace Kiran
 {
@@ -75,6 +76,9 @@ int32_t AuthenticationTerminal::requestAuthType()
         {
             this->m_pamHandle->syslog(LOG_WARNING, "Request auth type failed.");
             return KADAuthType::KAD_AUTH_TYPE_PASSWORD;
+#include <pam_modules.h>
+#include <qt5-log-i.h>
+#include <syslog.h>
         }
 
         // 校验输入正确

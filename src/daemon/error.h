@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -21,11 +21,11 @@ namespace Kiran
 {
 #define KAD_ERROR2STR(errorCode) KADError::getErrorDesc(errorCode)
 
-#define DBUS_ERROR_REPLY(type, errorCode, ...)                                                       \
-    {                                                                                                \
-        char buffer[1024] = {0};                                                                     \
+#define DBUS_ERROR_REPLY(type, errorCode, ...)                                                      \
+    {                                                                                               \
+        char buffer[1024] = {0};                                                                    \
         qsnprintf(buffer, sizeof(buffer), KAD_ERROR2STR(errorCode).toUtf8().data(), ##__VA_ARGS__); \
-        sendErrorReply(type, QString(buffer));                                                       \
+        sendErrorReply(type, QString(buffer));                                                      \
     }
 
 #define DBUS_ERROR_REPLY_AND_RET(type, errorCode, ...) \
@@ -36,12 +36,12 @@ namespace Kiran
     DBUS_ERROR_REPLY(type, errorCode, ##__VA_ARGS__);           \
     return retval;
 
-#define DBUS_ERROR_REPLY_ASYNC(message, type, errorCode, ...)                                        \
-    {                                                                                                \
-        char buffer[1024] = {0};                                                                     \
+#define DBUS_ERROR_REPLY_ASYNC(message, type, errorCode, ...)                                       \
+    {                                                                                               \
+        char buffer[1024] = {0};                                                                    \
         qsnprintf(buffer, sizeof(buffer), KAD_ERROR2STR(errorCode).toUtf8().data(), ##__VA_ARGS__); \
-        auto replyMessage = message.createErrorReply(type, QString(buffer));                         \
-        QDBusConnection::systemBus().send(replyMessage);                                             \
+        auto replyMessage = message.createErrorReply(type, QString(buffer));                        \
+        QDBusConnection::systemBus().send(replyMessage);                                            \
     }
 
 #define DBUS_ERROR_REPLY_ASYNC_AND_RET(message, type, errorCode, ...) \
@@ -75,7 +75,7 @@ class KADError
 {
 public:
     KADError();
-    virtual ~KADError(){};
+    virtual ~KADError() {};
 
     static QString getErrorDesc(KADErrorCode errorCode);
 };

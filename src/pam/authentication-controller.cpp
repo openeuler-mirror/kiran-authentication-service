@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,7 +12,6 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/pam/authentication-controller.h"
 #include <auxiliary.h>
 #include <pam_ext.h>
 #include <pam_modules.h>
@@ -26,9 +25,10 @@
 #include <QFuture>
 #include <QMutexLocker>
 
-#include "src/pam/authentication-graphical.h"
-#include "src/pam/authentication-terminal.h"
-#include "src/pam/pam-handle.h"
+#include "authentication-controller.h"
+#include "authentication-graphical.h"
+#include "authentication-terminal.h"
+#include "pam-handle.h"
 
 namespace Kiran
 {

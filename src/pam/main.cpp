@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -20,9 +20,10 @@
 #include <QSet>
 #include <QSharedPointer>
 #include <QTranslator>
-#include "src/pam/authentication-controller.h"
-#include "src/pam/config-pam.h"
-#include "src/pam/pam-args-parser.h"
+
+#include "authentication-controller.h"
+#include "config-pam.h"
+#include "pam-args-parser.h"
 
 static const QSet<QString> supportedServiceName = {
     "lightdm",
@@ -87,9 +88,9 @@ extern "C" int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     {
         arguments.push_back(argv[i]);
     }
-    
-    pam_syslog(pamh,LOG_DEBUG,"arg:%s.",arguments.count()?arguments.first().toStdString().c_str():"null");
-    
+
+    pam_syslog(pamh, LOG_DEBUG, "arg:%s.", arguments.count() ? arguments.first().toStdString().c_str() : "null");
+
     auto controller = QSharedPointer<Kiran::AuthenticationController>::create(pamh, arguments);
     auto retval = controller->run();
 
