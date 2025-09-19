@@ -1,0 +1,11 @@
+[Unit]
+Description=Kiran Authentication Devices Service
+
+[Service]
+Type=dbus
+BusName=com.kylinsec.Kiran.AuthDevice
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/kiran-authentication-devices
+
+[Install]
+WantedBy=multi-user.target
+

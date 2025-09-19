@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,25 +12,25 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/daemon/session.h"
-#include "auxiliary.h"
-#include "logging-category.h"
-#include "src/daemon/auth-manager.h"
-#include "src/daemon/device/device-adaptor-factory.h"
-#include "src/daemon/error.h"
-#include "src/daemon/proxy/dbus-daemon-proxy.h"
-#include "src/daemon/session_adaptor.h"
-#include "src/daemon/user-manager.h"
-#include "src/utils/utils.h"
-
-#include <kas-authentication-i.h>
-#include <kiran-authentication-devices/kiran-auth-device-i.h>
 #include <qt5-log-i.h>
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
 #include <QEventLoop>
 #include <QJsonDocument>
 #include <QMetaEnum>
+
+#include "auth-manager.h"
+#include "auxiliary.h"
+#include "device/device-adaptor-factory.h"
+#include "error.h"
+#include "kas-authentication-i.h"
+#include "lib/feature-db.h"
+#include "lib/utils.h"
+#include "logging-category.h"
+#include "proxy/dbus-daemon-proxy.h"
+#include "session.h"
+#include "session_adaptor.h"
+#include "user-manager.h"
 
 namespace Kiran
 {
@@ -217,12 +217,12 @@ void Session::end()
 
 void Session::onIdentifyStatus(const QString &bid, int result, const QString &message)
 {
-    KLOG_DEBUG() << m_sessionID << "verify identify  status:" << bid << result << message;
+    KLOG_INFO() << m_sessionID << "verify identify  status:" << bid << result << message;
 
     if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
         result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
     {
-        KLOG_DEBUG() << m_sessionID << "feature match successfully, but it isn't a legal user.";
+        KLOG_INFO() << m_sessionID << "feature match successfully, but it isn't a legal user.";
         result = IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH;
     }
 
@@ -326,17 +326,18 @@ void Session::startGeneralAuth(const QString &extraInfo)
     QJsonDocument doc(rootObject);
 
     QStringList bids;
-    if (!m_loginUserSwitchable)
+    if (!m_loginUserSwitchable)  // 不允许切换用户，则只认证当前用户
     {
         auto user = UserManager::getInstance()->findUser(this->m_userName);
         if (user)
         {
-            bids = user->getBIDs(this->m_authType);
+            bids = user->getFeatureIDs(this->m_authType);
         }
     }
 
     KLOG_DEBUG() << m_sessionID << "start phase auth for auth type:" << m_authType;
     rootObject["feature_ids"] = QJsonArray::fromStringList(bids);
+
     this->m_verifyInfo.deviceAdaptor = device;
     this->m_verifyInfo.authType = this->m_authType;
     this->m_verifyInfo.deviceAdaptor->identify(this, doc.toJson(QJsonDocument::Compact));
@@ -463,13 +464,11 @@ bool Session::matchUser(int32_t authType, const QString &dataID)
 {
     RETURN_VAL_IF_TRUE(dataID.isEmpty(), false);
 
-    auto iid = Utils::GenerateIID(authType, dataID);
-    auto user = UserManager::getInstance()->getUserByIID(iid);
-
-    RETURN_VAL_IF_TRUE(!user, false);
-
     // 特征匹配到的用户
-    auto userName = user->getUserName();
+    auto userName = FeatureDB::getInstance()->getUserNameByFetureID(dataID);
+    KLOG_INFO() << m_sessionID << "match user:" << userName << "for feature id:" << dataID;
+
+    RETURN_VAL_IF_TRUE(userName.isEmpty(), false);
 
     // 发起认证的用户
     auto specifiedUser = this->getSpecifiedUser();

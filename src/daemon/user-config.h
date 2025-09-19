@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2025 ~ 2026 KylinSec Co., Ltd.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
+ * Author:     yangfeng <yangfeng@kylinsec.com.cn>
+ */
+
 #pragma once
 
 #include <QMap>
@@ -16,37 +30,14 @@ public:
     explicit UserConfig(const QString& userName, QObject* parent = nullptr);
     ~UserConfig();
 
-    void removeCache();
-    bool deleteIID(const QString& iid);
-    bool renameIID(const QString& iid, const QString& name);
-    QStringList getIIDs();
-    QStringList getIIDs(int authType);
-    QStringList getBIDs(int authType);
-    QString getIIDName(const QString& iid);
-    QString getIIDBid(const QString& iid);
-    int getIIDAuthType(const QString& iid);
     int getFailures();
 
 private:
     void init();
-    bool addIID(int authType, const QString& iid, const QString& name, const QString& bid);
-    void changeIIDName(const QString& iid, const QString& name);
     void setFailures(int failures);
 
 private:
     QString m_userName;
-    struct IIDInfo
-    {
-        // iid名称
-        QString name;
-        // iid所属认证类型
-        int authType;
-        // iid对应的bid,该id为该生物特征对于设备的识别id
-        QString bid;
-    };
-    QStringList m_iids;
-    // QMap<iid,特征ID信息> - 每个特征ID关联的认证类型
-    QMap<QString, IIDInfo> m_IIDAuthInfoMap;
     int m_failures;
     QSettings* m_settings;
 };

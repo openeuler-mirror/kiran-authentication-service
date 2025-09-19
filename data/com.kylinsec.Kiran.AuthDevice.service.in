@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=com.kylinsec.Kiran.AuthDevice
+Exec=@CMAKE_INSTALL_FULL_BINDIR@/kiran-authentication-devices
+User=root
+SystemdService=kiran-authentication-devices.service

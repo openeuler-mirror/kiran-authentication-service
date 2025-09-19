@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,7 +12,6 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/pam/pam-handle.h"
 #include <auxiliary.h>
 #include <pam_ext.h>
 #include <pam_modules.h>
@@ -21,7 +20,9 @@
 #include <QPair>
 #include <QTextCodec>
 #include <functional>
-#include "src/pam/task-pool.h"
+
+#include "pam-handle.h"
+#include "task-pool.h"
 
 typedef QPair<int, QString> QPairIS;
 
@@ -90,7 +91,7 @@ void PAMHandle::syslog(int priority, const QString &log)
 
     this->m_taskPool->pushTask([this, priority, &log, &futureInterface]()
                                {
-                                   pam_syslog((const pam_handle_t *)this->getPamh(), priority,"%s", log.toStdString().c_str());
+                                   pam_syslog((const pam_handle_t *)this->getPamh(), priority, "%s", log.toStdString().c_str());
                                    futureInterface.reportResult(true);
                                    futureInterface.reportFinished(); });
     futureInterface.future().result();

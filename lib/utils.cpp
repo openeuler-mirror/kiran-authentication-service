@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,13 +12,14 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/utils/utils.h"
 #include <auxiliary.h>
-#include <kas-authentication-i.h>
-#include <kiran-authentication-devices/kiran-auth-device-i.h>
 #include <qt5-log-i.h>
-#include <QCryptographicHash>
 #include <QCoreApplication>
+#include <QCryptographicHash>
+#include <QJsonDocument>
+#include <QJsonObject>
+
+#include "utils.h"
 
 namespace Kiran
 {
@@ -190,19 +191,18 @@ QList<int> Utils::authOrderStr2Enum(const QStringList& authOrder)
 
 QString Utils::authTypeEnum2LocaleStr(int authType)
 {
-    QMap<int,QString> localeAuthTypeMap = {
-        {KAD_AUTH_TYPE_PASSWORD,QCoreApplication::tr("password")},
-        {KAD_AUTH_TYPE_FINGERPRINT,QCoreApplication::tr("fingerprint")},
-        {KAD_AUTH_TYPE_FACE,QCoreApplication::tr("face")},
-        {KAD_AUTH_TYPE_FINGERVEIN,QCoreApplication::tr("fingervein")},
-        {KAD_AUTH_TYPE_IRIS,QCoreApplication::tr("iris")},
-        {KAD_AUTH_TYPE_UKEY,QCoreApplication::tr("ukey")}
-    };
+    QMap<int, QString> localeAuthTypeMap = {
+        {KAD_AUTH_TYPE_PASSWORD, QCoreApplication::tr("password")},
+        {KAD_AUTH_TYPE_FINGERPRINT, QCoreApplication::tr("fingerprint")},
+        {KAD_AUTH_TYPE_FACE, QCoreApplication::tr("face")},
+        {KAD_AUTH_TYPE_FINGERVEIN, QCoreApplication::tr("fingervein")},
+        {KAD_AUTH_TYPE_IRIS, QCoreApplication::tr("iris")},
+        {KAD_AUTH_TYPE_UKEY, QCoreApplication::tr("ukey")}};
 
     auto iter = localeAuthTypeMap.find(authType);
-    if( iter == localeAuthTypeMap.end() )
+    if (iter == localeAuthTypeMap.end())
     {
-        KLOG_WARNING("convert %d to locale string faield!",authType);
+        KLOG_WARNING("convert %d to locale string faield!", authType);
         return "";
     }
 
@@ -226,4 +226,16 @@ QString Utils::identifyResultEnum2Str(int32_t identifyResult)
         return QObject::tr("Unknown verfication error.");
     }
 }
+
+QJsonValue Utils::getValueFromJsonString(const QString& json, const QString& key)
+{
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(json.toLocal8Bit().data());
+    if (jsonDoc.isEmpty())
+    {
+        return QJsonValue();
+    }
+    QJsonObject jsonObject = jsonDoc.object();
+    return jsonObject.value(key);
+}
+
 }  // namespace Kiran

@@ -1,14 +1,14 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
- * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
@@ -18,8 +18,10 @@
 #include <QSharedPointer>
 #include <QTime>
 #include <functional>
-#include "src/daemon/device/device-protocol.h"
-#include "src/daemon/auth_device_proxy.h"
+
+#include "lib/feature-data.h"
+#include "auth_device_proxy.h"
+#include "device-protocol.h"
 
 namespace Kiran
 {
@@ -33,12 +35,12 @@ class DeviceAdaptor : public QObject
     Q_OBJECT
 public:
     DeviceAdaptor(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy);
-    virtual ~DeviceAdaptor(){};
+    virtual ~DeviceAdaptor() {};
 
     QString getDeviceID() { return m_deviceID; }
 
-    void enroll(DeviceRequestSource *source,const QString& extraInfo);
-    void identify(DeviceRequestSource *source,const QString& extraInfo);
+    void enroll(DeviceRequestSource* source, const QString& extraInfo);
+    void identify(DeviceRequestSource* source, const QString& extraInfo);
     void stop(int64_t requestID);
 
     // 取消/清空 所有的认证请求
@@ -75,9 +77,9 @@ private:
     void stopDeviceOccupyTimer();
 
 private Q_SLOTS:
-    void onEnrollStatus(const QString &featureID, int result, int progress,const QString& message);
-    void onIdentifyStatus(const QString &featureID, int result,const QString& message);
-    void onActiveSessionChanged(const Login1SessionItem &sessionItem);
+    void onEnrollStatus(const QString& data, int result, int progress, const QString& message);
+    void onIdentifyStatus(const QString& featureID, int result, const QString& message);
+    void onActiveSessionChanged(const Login1SessionItem& sessionItem);
     void onDeviceOccupyTimeout();
 
 private:

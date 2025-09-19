@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(kiran-authentication-service VERSION 2.5)
+project(kiran-authentication-service VERSION 2.6)
 
 include(GNUInstallDirs)
 set(KAS_INSTALL_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME})
@@ -17,21 +17,25 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(PkgConfig REQUIRED)
-find_package(Qt5 COMPONENTS Core DBus LinguistTools)
+find_package(Qt5 COMPONENTS Core DBus Sql Concurrent LinguistTools)
 
 pkg_search_module(KLOG_QT5 REQUIRED klog-qt5)
 pkg_search_module(SYSTEMD REQUIRED systemd)
 pkg_search_module(KIRAN_CC_DAEMON REQUIRED kiran-cc-daemon)
 pkg_search_module(PAM QUIET pam)
 if(NOT DEFINED ${PAM_FOUND})
-    set(PAM_INCLUDE_DIRS /usr/include/security)
-    set(PAM_LIBRARIES pam)
+  set(PAM_INCLUDE_DIRS /usr/include/security)
+  set(PAM_LIBRARIES pam)
 endif()
 pkg_search_module(LIBSYSTEMD REQUIRED libsystemd)
 
 configure_file(config.h.in ${PROJECT_BINARY_DIR}/config.h)
 
+file(GLOB_RECURSE COMMON_CPP_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
+
 add_subdirectory(data)
+add_subdirectory(lib)
 add_subdirectory(src)
 
-install(FILES include/kas-authentication-i.h DESTINATION ${KAS_INSTALL_INCLUDE}/)
+install(FILES include/kas-authentication-i.h
+        DESTINATION ${KAS_INSTALL_INCLUDE}/)

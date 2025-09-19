@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -14,10 +14,11 @@
 
 #pragma once
 
-#include "kas-authentication-i.h"
-#include <QObject>
-#include <QMap>
 #include <QDebug>
+#include <QMap>
+#include <QObject>
+
+#include "kas-authentication-i.h"
 
 class QSettings;
 namespace Kiran
@@ -31,7 +32,7 @@ private:
     AuthConfig(QObject* parent = nullptr);
 
 public:
-    static AuthConfig *getInstance() { return m_instance; };
+    static AuthConfig* getInstance() { return m_instance; };
     static void globalInit();
     static void globalDeinit() { delete m_instance; };
 
@@ -40,7 +41,7 @@ public:
     int getAuthMode();
     QList<int> getAuthOrder();
     int getMaxFailures();
-    
+
     QString getDefaultDeviceID(KADAuthType authType);
     bool getAuthTypeEnable(KADAuthType authType);
     bool getAuthTypeEnabledForApp(KADAuthType authType, KADAuthApplication authApplication);
@@ -53,16 +54,16 @@ private:
     QString authType2GroupName(KADAuthType authType);
 
     void setDefaultDeviceID(KADAuthType authType, const QString& deviceID);
-    void setAuthTypeEnable(KADAuthType authType,bool enable);
+    void setAuthTypeEnable(KADAuthType authType, bool enable);
     void setAuthTypeEnabledForApp(KADAuthType authType, KADAuthApplication authApplication, bool enable);
 
 signals:
-    void defaultDeviceChanged(int authType,const QString& deviceID);
-    void authTypeEnableChanged(int authType,bool enabled);
+    void defaultDeviceChanged(int authType, const QString& deviceID);
+    void authTypeEnableChanged(int authType, bool enabled);
     void authTypeApplicationEnableChanged(int authType);
 
 private:
-    static AuthConfig *m_instance;
+    static AuthConfig* m_instance;
     QSettings* m_settings;
 
     int m_authMode;

@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,9 +12,7 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/pam/authentication.h"
 #include <auxiliary.h>
-#include <kas-authentication-i.h>
 #include <pam_ext.h>
 #include <pam_modules.h>
 #include <syslog.h>
@@ -22,12 +20,15 @@
 #include <QJsonDocument>
 #include <QMetaType>
 #include <QTranslator>
-#include "src/pam/auth_manager_proxy.h"
-#include "src/pam/auth_session_proxy.h"
-#include "src/pam/auth_user_proxy.h"
-#include "src/pam/config-pam.h"
-#include "src/pam/pam-args-parser.h"
-#include "src/pam/pam-handle.h"
+
+#include "auth_manager_proxy.h"
+#include "auth_session_proxy.h"
+#include "auth_user_proxy.h"
+#include "authentication.h"
+#include "config-pam.h"
+#include "kas-authentication-i.h"
+#include "pam-args-parser.h"
+#include "pam-handle.h"
 
 namespace Kiran
 {
@@ -217,7 +218,7 @@ int Authentication::startAuthPre()
             return PAM_SYSTEM_ERR;
         }
     }
-    
+
     this->notifyAuthType(this->m_authSessionProxy->authType());
     auto connected = connect(m_authSessionProxy, &AuthSessionProxy::AuthTypeChanged, this, &Authentication::onAuthTypeChanged);
     return PAM_SUCCESS;
@@ -350,7 +351,7 @@ void Authentication::onAuthSuccessed(const QString &userName)
     }
 
     auto authMode = this->m_authManagerProxy->authMode();
-    if( authMode == KAD_AUTH_MODE_AND )
+    if (authMode == KAD_AUTH_MODE_AND)
     {
         this->notifyAuthType(KAD_AUTH_TYPE_PASSWORD);
     }

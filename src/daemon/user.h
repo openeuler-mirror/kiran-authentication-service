@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -17,8 +17,10 @@
 #include <QDBusContext>
 #include <QDBusMessage>
 #include <QDBusObjectPath>
+
+#include "device/device-protocol.h"
 #include "kas-authentication-i.h"
-#include "src/daemon/device/device-protocol.h"
+#include "lib/feature-data.h"
 
 class UserAdaptor;
 class QSettings;
@@ -60,11 +62,15 @@ public:
     QDBusObjectPath getObjectPath() { return this->m_objectPath; }
     QStringList getIIDs();
     QStringList getIIDs(int authType);
-    QStringList getBIDs(int authType);
+    QStringList getFeatureIDs(int authType);
+    QString getFetureIDByIID(const QString &IID);
+    QString getFeatureNameByIID(const QString &IID);
+    bool updateFeatureNameByIID(const QString &IID, const QString &name);
+
     bool hasIdentification(int authType);
-    void removeCache();
 
     QString getUserName() { return this->m_pwent.pw_name; }
+    uint32_t getUserID() { return this->m_pwent.pw_uid; }
     // 该用户连续登陆失败次数
     int32_t getFailures();
     void setFailures(int32_t failures);
@@ -102,9 +108,9 @@ private:
     virtual void interrupt();
     virtual void cancel();
     virtual void end();
-    virtual void onEnrollStatus(const QString &dataID, int progress, int result, const QString &message);
-    virtual void onVerifyStatus(int result, const QString &message){};
-    virtual void onIdentifyStatus(const QString &bid, int result, const QString &message){};
+    virtual void onEnrollStatus(const QString &data, int progress, int result, const QString &message);
+    virtual void onVerifyStatus(int result, const QString &message) {};
+    virtual void onIdentifyStatus(const QString &bid, int result, const QString &message) {};
 
 private:
     // 如果请求用户和当前用户相同则使用originAction，否则需要管理员权限

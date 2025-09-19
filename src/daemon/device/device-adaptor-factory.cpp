@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
- * kiran-session-manager is licensed under Mulan PSL v2.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
  *          http://license.coscl.org.cn/MulanPSL2
@@ -12,15 +12,16 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
-#include "src/daemon/device/device-adaptor-factory.h"
 #include <auxiliary.h>
-#include <kiran-authentication-devices/kiran-auth-device-i.h>
 #include <QString>
+
+#include "auth-manager.h"
+#include "auth_device_manager_proxy.h"
+#include "auth_device_proxy.h"
+#include "device-adaptor-factory.h"
 #include "json/auth-device.h"
-#include "src/daemon/auth-manager.h"
-#include "src/daemon/auth_device_manager_proxy.h"
-#include "src/daemon/auth_device_proxy.h"
-#include "src/utils/utils.h"
+#include "kas-authentication-i.h"
+#include "lib/utils.h"
 
 namespace Kiran
 {
@@ -50,7 +51,7 @@ QSharedPointer<DeviceAdaptor> DeviceAdaptorFactory::getDeviceAdaptor(int32_t aut
     RETURN_VAL_IF_FALSE(device, QSharedPointer<DeviceAdaptor>());
 
     KLOG_DEBUG() << "authtype:" << authType << "create device adaptor:" << device->getDeviceID();
-    
+
     this->m_devices.insert(authType, device);
     return device;
 }
@@ -69,27 +70,27 @@ QString DeviceAdaptorFactory::getDeivcesForType(int32_t authType)
 
 QString DeviceAdaptorFactory::getDriversForType(int32_t authType)
 {
-    if(!this->m_authDeviceManagerProxy)
+    if (!this->m_authDeviceManagerProxy)
     {
         KLOG_WARNING() << "auth device manager proxy is null.";
         return "";
     }
 
     QString driverInfo = m_authDeviceManagerProxy->GetDriversByType(Utils::authType2DeviceType(authType));
-    return driverInfo;    
+    return driverInfo;
 }
 
-bool DeviceAdaptorFactory::setDrivereEanbled(const QString& driverName,bool enabled)
+bool DeviceAdaptorFactory::setDrivereEanbled(const QString &driverName, bool enabled)
 {
-    if(!this->m_authDeviceManagerProxy)
+    if (!this->m_authDeviceManagerProxy)
     {
         KLOG_WARNING() << "auth device manager proxy is null.";
         return false;
     }
 
-    auto reply = m_authDeviceManagerProxy->SetEnableDriver(driverName,enabled);
+    auto reply = m_authDeviceManagerProxy->SetEnableDriver(driverName, enabled);
     reply.waitForFinished();
-    return reply.isError()?false:true;
+    return reply.isError() ? false : true;
 }
 
 void DeviceAdaptorFactory::init()
@@ -103,14 +104,14 @@ void DeviceAdaptorFactory::init()
     connect(this->m_authDeviceManagerProxy, &AuthDeviceManagerProxy::DeviceDeleted, this, &DeviceAdaptorFactory::onDeviceDeleted);
 }
 
-bool DeviceAdaptorFactory::deleteFeature(const QString& dataID)
+bool DeviceAdaptorFactory::deleteFeature(const QString &featureID)
 {
-    auto reply = m_authDeviceManagerProxy->Remove(dataID);
+    auto reply = m_authDeviceManagerProxy->Remove(featureID);
     reply.waitForFinished();
 
-    if(reply.isError() )
+    if (reply.isError())
     {
-        KLOG_WARNING() << "delete feature" << dataID << "failed," << reply.error().message();
+        KLOG_WARNING() << "delete feature" << featureID << "failed," << reply.error().message();
         return false;
     }
 
@@ -166,7 +167,7 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
         }
         else
         {
-            KLOG_DEBUG("Not found available %s device.",Utils::authTypeEnum2Str(authType).toStdString().c_str());
+            KLOG_DEBUG("Not found available %s device.", Utils::authTypeEnum2Str(authType).toStdString().c_str());
         }
     }
 
@@ -179,7 +180,7 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
     }
     else
     {
-        KLOG_DEBUG("Not found %s device.",Utils::authTypeEnum2Str(authType).toStdString().c_str());
+        KLOG_DEBUG("Not found %s device.", Utils::authTypeEnum2Str(authType).toStdString().c_str());
     }
 
     return dbusDeviceProxy;
@@ -191,12 +192,12 @@ void DeviceAdaptorFactory::onDefaultDeviceChanged(int authType,
     auto deviceAdaptor = this->getDeviceAdaptor(authType);
     // 当前不存在设备设配器的情况，不更新设备适配器代理，需要时会优先考虑默认设备
     // 设备适配器已使用默认设备代理，不需要更新设备适配器
-    RETURN_IF_FALSE(deviceAdaptor && deviceAdaptor->getDeviceID()!=deviceID);
+    RETURN_IF_FALSE(deviceAdaptor && deviceAdaptor->getDeviceID() != deviceID);
 
     // 尝试通过默认设备ID，拿到设备代理
     auto recommendedDeviceProxy = this->getDBusDeviceProxy(authType, deviceID);
     // 未能拿到设备，或者拿不到默认设备，不更新设备适配器代理
-    RETURN_IF_FALSE( recommendedDeviceProxy && recommendedDeviceProxy->deviceID()==deviceID);
+    RETURN_IF_FALSE(recommendedDeviceProxy && recommendedDeviceProxy->deviceID() == deviceID);
 
     deviceAdaptor->updateDBusDeviceProxy(recommendedDeviceProxy);
 }

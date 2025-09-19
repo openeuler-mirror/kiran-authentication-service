@@ -48,8 +48,8 @@
         </property>
 
         <signal name="EnrollStatus">
-            <arg name="feature_id" type="s">
-                <description>Feature ID associate with feature or ukey data.</description>
+            <arg name="data" type="s">
+                <description>Feature data json. Refer to struct FeatureData in file feature-data.h</description>
             </arg>
             <arg name="progress" type="i">
                 <description>A number between 0 and 100 to describe the progress of enrolling fingerprint. 0 is failed </description>

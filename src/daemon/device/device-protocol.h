@@ -1,14 +1,14 @@
 /**
- * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd. 
- * kiran-session-manager is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2. 
+ * Copyright (c) 2022 ~ 2023 KylinSec Co., Ltd.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2 
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, 
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, 
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v2 for more details.  
- * 
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 
@@ -17,6 +17,8 @@
 #include <QSharedPointer>
 #include <QTime>
 #include <QVariantMap>
+
+#include "lib/feature-data.h"
 
 namespace Kiran
 {
@@ -73,9 +75,9 @@ public:
     // 结束操作，任务队列中该任务已处理完成
     virtual void end() = 0;
     // 录入状态
-    virtual void onEnrollStatus(const QString &bid, int progress, int result,const QString& message) = 0;
+    virtual void onEnrollStatus(const QString &data, int progress, int result, const QString &message) = 0;
     // 认证状态
-    virtual void onIdentifyStatus(const QString &bid, int result,const QString& message) = 0;
+    virtual void onIdentifyStatus(const QString &bid, int result, const QString &message) = 0;
 };
 
 struct DeviceRequest
