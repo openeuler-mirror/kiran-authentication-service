@@ -212,7 +212,7 @@ void Session::end()
 {
     KLOG_DEBUG() << m_sessionID << "session (request id:" << this->m_verifyInfo.m_requestID << ") end";
     this->m_verifyInfo.m_requestID = -1;
-    this->m_verifyInfo.deviceAdaptor = nullptr;
+    this->m_verifyInfo.deviceAdaptor.clear();
 }
 
 void Session::onIdentifyStatus(const QString &bid, int result, const QString &message)

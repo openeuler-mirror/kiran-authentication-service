@@ -189,7 +189,7 @@ void User::end()
 {
     USER_DEBUG() << "request end";
     this->m_enrollInfo.m_requestID = -1;
-    this->m_enrollInfo.deviceAdaptor = nullptr;
+    this->m_enrollInfo.deviceAdaptor.clear();
     this->m_enrollInfo.m_authTpe = -1;
     this->m_enrollInfo.m_feautreName.clear();
 }

@@ -28,7 +28,7 @@ Login1ManagerProxy::Login1ManagerProxy()
 {
 }
 
-QSharedPointer<Login1ManagerProxy> Login1ManagerProxy::m_instance = nullptr;
+QSharedPointer<Login1ManagerProxy> Login1ManagerProxy::m_instance = QSharedPointer<Login1ManagerProxy>();
 QSharedPointer<Login1ManagerProxy> Login1ManagerProxy::getDefault()
 {
     if (!m_instance)

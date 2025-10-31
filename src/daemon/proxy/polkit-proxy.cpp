@@ -127,7 +127,7 @@ PolkitProxy::PolkitProxy()
     qDBusRegisterMetaType<PolkitDetails>();
 }
 
-QSharedPointer<PolkitProxy> PolkitProxy::m_instance = nullptr;
+QSharedPointer<PolkitProxy> PolkitProxy::m_instance = QSharedPointer<PolkitProxy>();
 QSharedPointer<PolkitProxy> PolkitProxy::getDefault()
 {
     if (!m_instance)

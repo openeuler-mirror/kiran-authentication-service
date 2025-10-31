@@ -1,0 +1,142 @@
+#!/bin/sh
+#
+# kiran-authentication-devices: start and stop the Kiran Authentication Devices
+#
+# chkconfig: 2345 99 01
+# description: Kiran Authentication Devices Service
+# processname: kiran-authentication-devices
+# pidfile: /var/run/kiran-authentication-devices.pid
+
+### BEGIN INIT INFO
+# Provides:          kiran-authentication-devices
+# Required-Start:    $dbus
+# Required-Stop:
+# Default-Start:     3 4 5
+# Default-Stop:      0 1 2 6
+# Short-Description: Kiran Authentication Devices
+### END INIT INFO
+
+DAEMON=/usr/bin/kiran-authentication-devices
+PIDFILE=/var/run/kiran-authentication-devices.pid
+NAME=kiran-authentication-devices
+DESC="Kiran Authentication Devices"
+
+start() {
+    echo "Starting $DESC..."
+    # Check if daemon executable exists
+    if [ ! -x "$DAEMON" ]; then
+        echo "Error: $DAEMON not found or not executable"
+        return 1
+    fi
+    
+    if [ -f "$PIDFILE" ]; then
+        pid=$(cat "$PIDFILE")
+        # Validate PID is a number
+        if ! [ "$pid" -eq "$pid" ] 2>/dev/null; then
+            echo "$NAME pid file contains invalid PID, removing..."
+            rm -f "$PIDFILE"
+        elif ps -p "$pid" > /dev/null 2>&1; then
+            echo "$NAME already running (pid: $pid)"
+            return 0
+        else
+            echo "$NAME pid file exists but process not found, cleaning up..."
+            rm -f "$PIDFILE"
+        fi
+    fi
+    
+    echo "$NAME not running, starting..."
+    $DAEMON &
+    daemon_pid=$!
+    
+    # Wait a moment to check if process is still running
+    sleep 1
+    if ps -p "$daemon_pid" > /dev/null 2>&1; then
+        echo "$daemon_pid" > "$PIDFILE"
+        echo "Started."
+        return 0
+    else
+        echo "Error: Failed to start $NAME"
+        return 1
+    fi
+}
+
+stop() {
+    echo "Stopping $DESC..."
+    if [ ! -f "$PIDFILE" ]; then
+        echo "$NAME not running"
+        return 1
+    fi
+    
+    pid=$(cat "$PIDFILE")
+    # Validate PID is a number
+    if ! [ "$pid" -eq "$pid" ] 2>/dev/null; then
+        echo "$NAME pid file contains invalid PID, removing..."
+        rm -f "$PIDFILE"
+        return 1
+    fi
+    
+    if ! ps -p "$pid" > /dev/null 2>&1; then
+        echo "$NAME process not found (stale pid file)"
+        rm -f "$PIDFILE"
+        return 1
+    fi
+    
+    # Try SIGTERM first, then SIGKILL
+    if kill "$pid" 2>/dev/null; then
+        # Wait for process to terminate
+        count=0
+        while [ $count -lt 10 ] && ps -p "$pid" > /dev/null 2>&1; do
+            sleep 1
+            count=$((count + 1))
+        done
+        
+        if ps -p "$pid" > /dev/null 2>&1; then
+            echo "Process did not terminate, forcing kill..."
+            kill -9 "$pid" 2>/dev/null
+            sleep 1
+        fi
+    else
+        echo "Error: Failed to send signal to process $pid"
+        rm -f "$PIDFILE"
+        return 1
+    fi
+    
+    rm -f "$PIDFILE"
+    echo "Stopped."
+    return 0
+}
+
+status() {
+    if [ -f "$PIDFILE" ]; then
+        pid=$(cat "$PIDFILE")
+        # Validate PID is a number
+        if ! [ "$pid" -eq "$pid" ] 2>/dev/null; then
+            echo "$NAME pid file contains invalid PID"
+            return 1
+        elif ps -p "$pid" > /dev/null 2>&1; then
+            echo "$NAME running (pid $pid)"
+            return 0
+        else
+            echo "$NAME pid file exists but process not found"
+            return 1
+        fi
+    else
+        echo "$NAME not running"
+        return 3
+    fi
+}
+
+restart() {
+    stop
+    sleep 1
+    start
+    return $?
+}
+
+case "$1" in
+    start) start ;;
+    stop) stop ;;
+    restart) restart ;;
+    status) status ;;
+    *) echo "Usage: $0 {start|stop|restart|status}" ;;
+esac

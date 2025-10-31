@@ -15,10 +15,10 @@
 #pragma once
 
 #include <QSharedPointer>
+#include <QFileSystemWatcher>
+#include <QObject>
 
 #include "user.h"
-
-class AccountsProxy;
 
 namespace Kiran
 {
@@ -47,13 +47,14 @@ private:
     void deleteIID(const QString &iid);
 
 private Q_SLOTS:
-    void onUserDeleted(const QDBusObjectPath &userObjectPath);
+    void onPasswdFileChanged(const QString &path);
 
 private:
     static UserManager *m_instance;
 
-    AccountsProxy *m_accountsProxy;
     // <用户名，用户对象>
     QMap<QString, QSharedPointer<User>> m_users;
+    // 监控/etc/passwd文件变化
+    QFileSystemWatcher *m_passwdWatcher;
 };
 }  // namespace Kiran

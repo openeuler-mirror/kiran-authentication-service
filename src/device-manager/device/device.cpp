@@ -27,8 +27,11 @@ Device::Device(DriverPtr driver, QObject* parent) : QObject(parent),
                                                     m_driver(driver)
 {
     QUuid uuid = QUuid::createUuid();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     m_devId = uuid.toString(QUuid::Id128);
-
+#else
+    m_devId = uuid.toString();
+#endif
     m_dbusAdaptor = QSharedPointer<AuthDeviceAdaptor>(new AuthDeviceAdaptor(this));
 
     m_status = DEVICE_STATUS_IDLE;
