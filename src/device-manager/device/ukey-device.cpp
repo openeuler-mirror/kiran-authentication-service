@@ -101,14 +101,15 @@ void UkeyDevice::EnrollStart(const QString& extraInfo)
         {
             // 特征存储
             // NOTE: 这里没有传featureName、IID、userID
+            auto type = deviceType();
             QString featureID = QCryptographicHash::hash(pubKey, QCryptographicHash::Md5).toHex();
-            FeatureData data = {
-                .feature = pubKey,
-                .featureID = featureID,
-                .idVendor = m_idVendor,
-                .idProduct = m_idProduct,
-                .deviceSerialNumber = serialNumber,
-                .deviceType = deviceType()};
+            FeatureData data;
+            data.feature = pubKey;
+            data.featureID = featureID;
+            data.idVendor = m_idVendor;
+            data.idProduct = m_idProduct;
+            data.deviceSerialNumber = serialNumber;
+            data.deviceType = deviceType();
             notifyEnrollProcess(ENROLL_PROCESS_SUCCESS, SAR_OK, data);
         }
 

@@ -2,38 +2,35 @@ file(GLOB_RECURSE H_FILES ./*.h)
 file(GLOB_RECURSE CPP_FILES ./*.cpp)
 
 set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.xml
   PROPERTIES CLASSNAME AuthManagerProxy NO_NAMESPACE true)
 
 qt5_add_dbus_interface(
   AUTH_MANAGER_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.xml
   auth_manager_proxy)
 
 set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.Session.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.Session.xml
   PROPERTIES CLASSNAME AuthSessionProxy NO_NAMESPACE true)
 
 qt5_add_dbus_interface(
   AUTH_SESSION_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.Session.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.Session.xml
   auth_session_proxy)
 
 set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.User.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.User.xml
   PROPERTIES CLASSNAME AuthUserProxy NO_NAMESPACE true)
 
 qt5_add_dbus_interface(
   AUTH_USER_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.User.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.User.xml
   auth_user_proxy)
 
 set(TARGET_NAME pam_kiran_authentication)
 
 configure_file(config-pam.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-pam.h)
-
-# 定义支持的语言列表
-set(LANGUAGES zh_CN) # 可以添加更多语言  # set(LANGUAGES zh_CN bo_CN ug_CN mn_MN ky_KG kk_KZ)
 
 # 定义翻译源文件列表
 set(QM_FILES "")
@@ -46,9 +43,13 @@ foreach(LANG ${LANGUAGES})
   execute_process(COMMAND lupdate-qt5 -no-obsolete ${H_FILES} ${CPP_FILES}
                           ${COMMON_CPP_FILES} -ts ${TS_FILE})
 
-  # 生成 qm 文件
-  qt5_add_translation(QM_FILE ${TS_FILE})
+  # https://bugreports.qt.io/browse/QTBUG-64317 5.9.4以下生成的qm文件不带${LANG}后缀
+  # qt5_add_translation(QM_FILE ${TS_FILE})
+  set(QM_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.${LANG}.qm")
+  # 执行 lrelease 生成qm文件
+  execute_process(COMMAND lrelease ${TS_FILE} -qm ${QM_FILE})
   list(APPEND QM_FILES ${QM_FILE})
+  message(STATUS "QM_FILE: ${QM_FILE}")
 endforeach()
 
 add_library(

@@ -16,18 +16,19 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# 定义支持的语言列表
+set(LANGUAGES zh_CN) # 可以添加更多语言  # set(LANGUAGES zh_CN bo_CN ug_CN mn_MN ky_KG
+                     # kk_KZ)
+
 find_package(PkgConfig REQUIRED)
 find_package(Qt5 COMPONENTS Core DBus Sql Concurrent LinguistTools)
 
 pkg_search_module(KLOG_QT5 REQUIRED klog-qt5)
-pkg_search_module(SYSTEMD REQUIRED systemd)
-pkg_search_module(KIRAN_CC_DAEMON REQUIRED kiran-cc-daemon)
 pkg_search_module(PAM QUIET pam)
 if(NOT DEFINED ${PAM_FOUND})
   set(PAM_INCLUDE_DIRS /usr/include/security)
   set(PAM_LIBRARIES pam)
 endif()
-pkg_search_module(LIBSYSTEMD REQUIRED libsystemd)
 
 configure_file(config.h.in ${PROJECT_BINARY_DIR}/config.h)
 

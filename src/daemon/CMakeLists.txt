@@ -3,7 +3,7 @@ file(GLOB_RECURSE CPP_FILES ./*.cpp)
 
 qt5_add_dbus_adaptor(
   AUTH_MANAGER_ADAPTOR_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.xml
   ${CMAKE_SOURCE_DIR}/src/daemon/auth-manager.h
   Kiran::AuthManager
   auth_manager_adaptor
@@ -11,7 +11,7 @@ qt5_add_dbus_adaptor(
 
 qt5_add_dbus_adaptor(
   AUTH_SESSION_ADAPTOR_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.Session.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.Session.xml
   ${CMAKE_SOURCE_DIR}/src/daemon/session.h
   Kiran::Session
   session_adaptor
@@ -19,51 +19,30 @@ qt5_add_dbus_adaptor(
 
 qt5_add_dbus_adaptor(
   USER_ADAPTOR_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.Authentication.User.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.User.xml
   ${CMAKE_SOURCE_DIR}/src/daemon/user.h Kiran::User user_adaptor UserAdaptor)
 
 set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Accounts.xml
-  PROPERTIES CLASSNAME AccountsProxy NO_NAMESPACE true)
-
-qt5_add_dbus_interface(
-  ACCOUNTS_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Accounts.xml
-  accounts_proxy)
-
-set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Accounts.User.xml
-  PROPERTIES CLASSNAME AccountsUserProxy NO_NAMESPACE true)
-
-qt5_add_dbus_interface(
-  ACCOUNTS_USER_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.SystemDaemon.Accounts.User.xml
-  accounts_user_proxy)
-
-set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.AuthDevice.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.AuthDevice.xml
   PROPERTIES CLASSNAME AuthDeviceManagerProxy NO_NAMESPACE true)
 
 qt5_add_dbus_interface(
   BIOMETRICS_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.AuthDevice.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.AuthDevice.xml
   auth_device_manager_proxy)
 
 set_source_files_properties(
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.AuthDevice.Device.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.AuthDevice.Device.xml
   PROPERTIES CLASSNAME AuthDeviceProxy NO_NAMESPACE true)
 
 qt5_add_dbus_interface(
   BIOMETRICS_DEVICE_INTERFACE_SRCS
-  ${CMAKE_SOURCE_DIR}/data/com.kylinsec.Kiran.AuthDevice.Device.xml
+  ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.AuthDevice.Device.xml
   auth_device_proxy)
 
 set(TARGET_NAME kiran-authentication-daemon)
 
 configure_file(config-daemon.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-daemon.h)
-
-# 定义支持的语言列表
-set(LANGUAGES zh_CN) # 可以添加更多语言  # set(LANGUAGES zh_CN bo_CN ug_CN mn_MN ky_KG kk_KZ)
 
 # 定义翻译源文件列表
 set(QM_FILES "")
@@ -76,9 +55,13 @@ foreach(LANG ${LANGUAGES})
   execute_process(COMMAND lupdate-qt5 -no-obsolete ${H_FILES} ${CPP_FILES}
                           ${COMMON_CPP_FILES} -ts ${TS_FILE})
 
-  # 生成 qm 文件
-  qt5_add_translation(QM_FILE ${TS_FILE})
+  # https://bugreports.qt.io/browse/QTBUG-64317 5.9.4以下生成的qm文件不带${LANG}后缀
+  # qt5_add_translation(QM_FILE ${TS_FILE})
+  set(QM_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.${LANG}.qm")
+  # 执行 lrelease 生成qm文件
+  execute_process(COMMAND lrelease ${TS_FILE} -qm ${QM_FILE})
   list(APPEND QM_FILES ${QM_FILE})
+  message(STATUS "QM_FILE: ${QM_FILE}")
 endforeach()
 
 add_executable(

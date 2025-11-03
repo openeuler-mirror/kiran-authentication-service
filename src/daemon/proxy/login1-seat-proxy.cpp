@@ -57,7 +57,7 @@ Login1SeatProxy::Login1SeatProxy(const QDBusObjectPath &objectPath) : m_objectPa
     }
 }
 
-QSharedPointer<Login1SeatProxy> Login1SeatProxy::m_defaultSeat = nullptr;
+QSharedPointer<Login1SeatProxy> Login1SeatProxy::m_defaultSeat = QSharedPointer<Login1SeatProxy>();
 QSharedPointer<Login1SeatProxy> Login1SeatProxy::getDefault()
 {
     if (!m_defaultSeat)

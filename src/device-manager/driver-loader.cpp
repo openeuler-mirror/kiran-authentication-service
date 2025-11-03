@@ -95,12 +95,12 @@ DriverPtr DriverLoader::loadDriver(const QString &driverName)
     auto libPtr = new QLibrary(driverName);
     if (!libPtr)
     {
-        return nullptr;
+        return DriverPtr();
     }
     if (!libPtr->load())
     {
         delete libPtr;
-        return nullptr;
+        return DriverPtr();
     }
 
     auto createFunc = (CreateDriverFunc)libPtr->resolve("createDriver");
@@ -108,7 +108,7 @@ DriverPtr DriverLoader::loadDriver(const QString &driverName)
     {
         libPtr->unload();
         delete libPtr;
-        return nullptr;
+        return DriverPtr();
     }
 
     auto driver = DriverPtr(createFunc(), [libPtr](Driver *driver)
@@ -126,7 +126,7 @@ DriverPtr DriverLoader::loadDriver(const QString &driverName)
     {
         libPtr->unload();
         delete libPtr;
-        return nullptr;
+        return DriverPtr();
     }
 
     return driver;

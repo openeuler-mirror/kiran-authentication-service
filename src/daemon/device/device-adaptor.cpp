@@ -16,12 +16,12 @@
 #include <QJsonDocument>
 #include <climits>
 
-#include "kas-authentication-i.h"
-#include "logging-category.h"
 #include "auth-manager.h"
 #include "config-daemon.h"
 #include "device-adaptor.h"
 #include "device-protocol.h"
+#include "kas-authentication-i.h"
+#include "logging-category.h"
 #include "proxy/login1-manager-proxy.h"
 #include "proxy/login1-seat-proxy.h"
 #include "proxy/login1-session-proxy.h"
@@ -144,7 +144,7 @@ void DeviceAdaptor::wakeRequest(QSharedPointer<DeviceRequest> request)
 
 void DeviceAdaptor::removeRequest(int64_t requestID)
 {
-    auto request = this->m_requests.value(requestID, nullptr);
+    auto request = this->m_requests.value(requestID, QSharedPointer<DeviceRequest>());
     RETURN_IF_FALSE(request);
 
     if (this->m_currentRequest && (requestID == this->m_currentRequest->reqID))
@@ -169,7 +169,7 @@ void DeviceAdaptor::interruptRequest()
     {
         this->m_currentRequest->stop();
         this->m_currentRequest->source->interrupt();
-        this->m_currentRequest = nullptr;
+        this->m_currentRequest.clear();
     }
 }
 
@@ -180,7 +180,7 @@ void DeviceAdaptor::finishRequest()
         stopDeviceOccupyTimer();
         this->m_currentRequest->source->end();
         this->m_requests.remove(this->m_currentRequest->reqID);
-        this->m_currentRequest = nullptr;
+        this->m_currentRequest.clear();
     }
 
     this->schedule();

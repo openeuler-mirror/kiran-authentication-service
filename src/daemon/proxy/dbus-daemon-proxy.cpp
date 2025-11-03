@@ -28,7 +28,7 @@ DBusDaemonProxy::DBusDaemonProxy()
 {
 }
 
-QSharedPointer<DBusDaemonProxy> DBusDaemonProxy::m_instance = nullptr;
+QSharedPointer<DBusDaemonProxy> DBusDaemonProxy::m_instance = QSharedPointer<DBusDaemonProxy>();
 QSharedPointer<DBusDaemonProxy> DBusDaemonProxy::getDefault()
 {
     if (!m_instance)

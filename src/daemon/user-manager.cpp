@@ -12,23 +12,23 @@
  * Author:     tangjie02 <tangjie02@kylinos.com.cn>
  */
 #include <auxiliary.h>
-#include <kiran-system-daemon/accounts-i.h>
 #include <pwd.h>
 #include <QDir>
+#include <QFileSystemWatcher>
 
-#include "accounts_proxy.h"
 #include "config-daemon.h"
 #include "lib/feature-db.h"
 #include "user-manager.h"
+
+#define ETC_PASSWD_FILE "/etc/passwd"
 
 namespace Kiran
 {
 UserManager::UserManager()
 {
-    this->m_accountsProxy = new AccountsProxy(ACCOUNTS_DBUS_NAME,
-                                              ACCOUNTS_OBJECT_PATH,
-                                              QDBusConnection::systemBus(),
-                                              this);
+    m_passwdWatcher = new QFileSystemWatcher(this);
+    m_passwdWatcher->addPath(ETC_PASSWD_FILE);
+    connect(m_passwdWatcher, SIGNAL(fileChanged(const QString &)), this, SLOT(onPasswdFileChanged(const QString &)));
 }
 
 UserManager *UserManager::m_instance = nullptr;
@@ -40,11 +40,11 @@ void UserManager::globalInit()
 
 QSharedPointer<User> UserManager::findUser(const QString &userName)
 {
-    auto user = this->m_users.value(userName, nullptr);
+    auto user = this->m_users.value(userName, QSharedPointer<User>());
     RETURN_VAL_IF_TRUE(user, user);
 
     auto pwent = getpwnam(userName.toStdString().c_str());
-    RETURN_VAL_IF_TRUE(pwent == NULL, NULL);
+    RETURN_VAL_IF_TRUE(pwent == nullptr, QSharedPointer<User>());
 
     user = addUser(userName);
     return user;
@@ -53,7 +53,6 @@ QSharedPointer<User> UserManager::findUser(const QString &userName)
 void UserManager::init()
 {
     this->initUsers();
-    connect(this->m_accountsProxy, SIGNAL(UserDeleted(const QDBusObjectPath &)), this, SLOT(onUserDeleted(const QDBusObjectPath &)));
 }
 
 void UserManager::initUsers()
@@ -100,12 +99,41 @@ void UserManager::deleteIID(const QString &iid)
     FeatureDB::getInstance()->deleteFearureByIID(iid);
 }
 
-void UserManager::onUserDeleted(const QDBusObjectPath &userObjectPath)
+void UserManager::onPasswdFileChanged(const QString &path)
 {
-    QFileInfo fileInfo(userObjectPath.path());
-    auto uid = fileInfo.baseName().toLongLong();
-    auto pwent = getpwuid(uid);
-    RETURN_IF_TRUE(pwent == NULL);
-    this->deleteUser(pwent->pw_name);
+    auto fp = fopen(ETC_PASSWD_FILE, "r");
+    if (fp == NULL)
+    {
+        KLOG_WARNING() << "Unable to open" << ETC_PASSWD_FILE << ":" << strerror(errno);
+        return;
+    }
+
+    // 从/etc/passwd文件中获取当前存在的用户列表
+    // 将操作系统用户列表与m_users中用户列表进行比较，如果m_users中存在多余的用户，则删除该用户
+    QStringList systemUserList;
+    struct passwd *pwent;
+    do
+    {
+        pwent = fgetpwent(fp);
+        if (pwent != NULL)
+        {
+            auto passwd = QSharedPointer<Passwd>::create(pwent);
+            systemUserList.append(passwd->pw_name);
+        }
+    } while (pwent != NULL);
+
+    fclose(fp);
+
+    for (const auto &userName : this->m_users.keys())
+    {
+        if (!systemUserList.contains(userName))
+        {
+            KLOG_INFO() << "delete user:" << userName << ", because it is not in the system passwd file";
+            this->deleteUser(userName);
+        }
+    }
+
+    m_passwdWatcher->addPath(ETC_PASSWD_FILE);
 }
+
 }  // namespace Kiran
