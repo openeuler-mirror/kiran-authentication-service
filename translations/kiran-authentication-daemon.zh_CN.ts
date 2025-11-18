@@ -6,30 +6,35 @@
     <message>
         <location filename="../src/daemon/proxy/polkit-proxy.cpp" line="216"/>
         <source>Authorization failed.</source>
-        <translation type="unfinished">认证失败。</translation>
+        <translation>认证失败。</translation>
     </message>
 </context>
 <context>
     <name>Kiran::Session</name>
     <message>
-        <location filename="../src/daemon/session.cpp" line="196"/>
+        <location filename="../src/daemon/session.cpp" line="197"/>
         <source>Please wait while the %1 request is processed</source>
-        <translation type="unfinished">请等待,录入请求正在处理</translation>
+        <translation>请等待,%1录入请求正在处理</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="280"/>
+        <location filename="../src/daemon/session.cpp" line="302"/>
         <source>Insert the UKey and enter the PIN code</source>
-        <translation type="unfinished">请插入UKey并输入PIN码</translation>
+        <translation>请插入UKey并输入PIN码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="281"/>
+        <location filename="../src/daemon/session.cpp" line="303"/>
         <source>please input ukey code.</source>
-        <translation type="unfinished">请输入PIN码。</translation>
+        <translation>请输入PIN码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="314"/>
+        <location filename="../src/daemon/session.cpp" line="326"/>
+        <source>Please look at the camera</source>
+        <translation>请直视摄像头</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="360"/>
         <source>can not find %1 device</source>
-        <translation type="unfinished">未能检测到%1设备</translation>
+        <translation>未能检测到%1设备</translation>
     </message>
 </context>
 <context>
@@ -37,50 +42,55 @@
     <message>
         <location filename="../src/daemon/user.cpp" line="173"/>
         <source>Please wait while the request is processed</source>
-        <translation type="unfinished">请等待,录入请求正在处理</translation>
+        <translation>请等待,录入请求正在处理</translation>
     </message>
     <message>
         <location filename="../src/daemon/user.cpp" line="179"/>
         <source>Enroll has been interrupted. Please wait</source>
-        <translation type="unfinished">录入中断请稍等</translation>
+        <translation>录入中断请稍等</translation>
     </message>
     <message>
         <location filename="../src/daemon/user.cpp" line="185"/>
         <source>Enroll has been cancelled</source>
-        <translation type="unfinished">录入已被取消</translation>
+        <translation>录入已被取消</translation>
     </message>
 </context>
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../lib/utils.cpp" line="195"/>
+        <location filename="../lib/utils.cpp" line="203"/>
         <source>password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="196"/>
+        <location filename="../lib/utils.cpp" line="204"/>
         <source>fingerprint</source>
         <translation>指纹</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="197"/>
+        <location filename="../lib/utils.cpp" line="205"/>
         <source>face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="198"/>
+        <location filename="../lib/utils.cpp" line="206"/>
         <source>fingervein</source>
         <translation>指静脉</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="199"/>
+        <location filename="../lib/utils.cpp" line="207"/>
         <source>iris</source>
         <translation>虹膜</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="200"/>
+        <location filename="../lib/utils.cpp" line="208"/>
         <source>ukey</source>
         <translation>UKey</translation>
+    </message>
+    <message>
+        <location filename="../lib/utils.cpp" line="209"/>
+        <source>virtual face</source>
+        <translation>人脸</translation>
     </message>
 </context>
 <context>
@@ -131,22 +141,22 @@
         <translation> (错误码:0x%x)</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="217"/>
+        <location filename="../lib/utils.cpp" line="226"/>
         <source>Feature not match.</source>
         <translation>特征不匹配。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="219"/>
+        <location filename="../lib/utils.cpp" line="228"/>
         <source>Feature matching successed.</source>
         <translation>特征匹配成功。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="221"/>
+        <location filename="../lib/utils.cpp" line="230"/>
         <source>Feature not match, please retry it.</source>
         <translation>特征不匹配，请重试。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="226"/>
+        <location filename="../lib/utils.cpp" line="235"/>
         <source>Unknown verfication error.</source>
         <translation>未知认证错误。</translation>
     </message>

@@ -42,6 +42,7 @@ public:
     void init();
 
     bool genDevice(const QString &driverName, const QString &vendorId, const QString &productId, const QString &devNode);
+    bool genVirtualDevices();
 
     QString getOnlineDevicesInfo();                                               // 获取当前已上线设备信息（含远程设备）（json：type、name）
     QMap<QString, QVector<QPair<QString, QString>>> getPhysicalSupportDevices();  // 获取物理设备支持信息

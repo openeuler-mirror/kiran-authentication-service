@@ -6,7 +6,7 @@
     <message>
         <location filename="../src/pam/authentication.cpp" line="123"/>
         <source>Too many authentication failures, so the authentication mode is locked.</source>
-        <translation type="unfinished">错误次数过多，认证模式已被禁用。</translation>
+        <translation>错误次数过多，认证模式已被禁用。</translation>
     </message>
 </context>
 <context>
@@ -14,66 +14,71 @@
     <message>
         <location filename="../src/pam/authentication-terminal.cpp" line="69"/>
         <source>Select Authentication type (%1): </source>
-        <translation type="unfinished">请选择认证类型（%1）： </translation>
+        <translation>请选择认证类型（%1）： </translation>
     </message>
     <message>
         <location filename="../src/pam/authentication-terminal.cpp" line="89"/>
         <source>The authentication type is invalid. Please select a new one</source>
-        <translation type="unfinished">该认证类型无效，请重新选择</translation>
+        <translation>该认证类型无效，请重新选择</translation>
     </message>
 </context>
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../lib/utils.cpp" line="195"/>
+        <location filename="../lib/utils.cpp" line="203"/>
         <source>password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="196"/>
+        <location filename="../lib/utils.cpp" line="204"/>
         <source>fingerprint</source>
         <translation>指纹</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="197"/>
+        <location filename="../lib/utils.cpp" line="205"/>
         <source>face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="198"/>
+        <location filename="../lib/utils.cpp" line="206"/>
         <source>fingervein</source>
         <translation>指静脉</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="199"/>
+        <location filename="../lib/utils.cpp" line="207"/>
         <source>iris</source>
         <translation>虹膜</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="200"/>
+        <location filename="../lib/utils.cpp" line="208"/>
         <source>ukey</source>
         <translation>UKey</translation>
+    </message>
+    <message>
+        <location filename="../lib/utils.cpp" line="209"/>
+        <source>virtual face</source>
+        <translation>人脸</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../lib/utils.cpp" line="217"/>
+        <location filename="../lib/utils.cpp" line="226"/>
         <source>Feature not match.</source>
         <translation>特征不匹配。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="219"/>
+        <location filename="../lib/utils.cpp" line="228"/>
         <source>Feature matching successed.</source>
         <translation>特征匹配成功。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="221"/>
+        <location filename="../lib/utils.cpp" line="230"/>
         <source>Feature not match, please retry it.</source>
         <translation>特征不匹配，请重试。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="226"/>
+        <location filename="../lib/utils.cpp" line="235"/>
         <source>Unknown verfication error.</source>
         <translation>未知认证错误。</translation>
     </message>

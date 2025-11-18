@@ -18,7 +18,6 @@
 
 class UKeyDriver : public PhysicalDriver
 {
-    Q_OBJECT
 public:
     UKeyDriver(QObject *parent = nullptr) : PhysicalDriver(parent) {};
     virtual ~UKeyDriver() = default;

@@ -25,6 +25,13 @@
             <description>Stop an on-going fingerprint identification started with IdentifyStart.</description>
         </method>
 
+        <method name="IdentifySuccessedPostProcess">
+            <arg name="extraInfo" direction="in" type="s">
+                <description>Extra information.</description>
+            </arg>
+            <description>Perform post-processing after successful identification.</description>
+        </method>
+
         <method name="GetFeatureIDList">
             <arg name="feature_id_list" direction="out" type="as">
                 <description>Get the feature ID list of the current device </description>

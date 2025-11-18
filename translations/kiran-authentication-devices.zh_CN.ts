@@ -62,4 +62,17 @@
         <translation>无效的pin码长度</translation>
     </message>
 </context>
+<context>
+    <name>Kiran::VirtualFaceDevice</name>
+    <message>
+        <location filename="../src/device-manager/device/virtual-face-device.cpp" line="39"/>
+        <source>Device Busy</source>
+        <translation>设备忙</translation>
+    </message>
+    <message>
+        <location filename="../src/device-manager/device/virtual-face-device.cpp" line="55"/>
+        <source>identify success</source>
+        <translation>认证成功</translation>
+    </message>
+</context>
 </TS>

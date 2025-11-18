@@ -30,6 +30,9 @@
 #define IDENTIFY_TIMEOUT_MS 60000
 
 #define DEVICE_DEBUG() KLOG_DEBUG() << this->m_deviceID
+#define DEVICE_INFO() KLOG_INFO() << this->m_deviceID
+#define DEVICE_WARNING() KLOG_WARNING() << this->m_deviceID
+#define DEVICE_ERROR() KLOG_ERROR() << this->m_deviceID
 
 namespace Kiran
 {
@@ -65,6 +68,17 @@ void DeviceAdaptor::identify(DeviceRequestSource *source, const QString &extraIn
         .source = source,
         .start = std::bind(&DeviceAdaptor::identifyStart, this, extraInfo),
         .stop = std::bind(&DeviceAdaptor::identifyStop, this)});
+    this->pushRequest(deviceRequst);
+}
+
+void DeviceAdaptor::identifySuccessedPostProcess(DeviceRequestSource *source, const QString &extraInfo)
+{
+    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
+        .reqID = this->generateRequestID(),
+        .time = QTime::currentTime(),
+        .source = source,
+        .start = std::bind(&DeviceAdaptor::identifySuccessedPostProcessStart, this, extraInfo),
+        .stop = nullptr});
     this->pushRequest(deviceRequst);
 }
 
@@ -288,6 +302,16 @@ void DeviceAdaptor::identifyStop()
     }
 }
 
+void DeviceAdaptor::identifySuccessedPostProcessStart(const QString &extraInfo)
+{
+    if (this->m_dbusDeviceProxy)
+    {
+        this->m_dbusDeviceProxy->IdentifySuccessedPostProcess(extraInfo);
+    }
+
+    this->finishRequest();
+}
+
 bool DeviceAdaptor::isActiveSession(uint32_t pid)
 {
     auto sessionObjectPath = Login1ManagerProxy::getDefault()->getSessionByPID(pid);
@@ -331,7 +355,7 @@ void DeviceAdaptor::onEnrollStatus(const QString &data, int progress, int result
 
 void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const QString &message)
 {
-    DEVICE_DEBUG() << "identify status:" << featureID << result << message;
+    DEVICE_INFO() << "identify status:" << featureID << result << message;
 
     if (this->m_currentRequest)
     {

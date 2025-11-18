@@ -59,7 +59,7 @@ foreach(LANG ${LANGUAGES})
   # qt5_add_translation(QM_FILE ${TS_FILE})
   set(QM_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.${LANG}.qm")
   # 执行 lrelease 生成qm文件
-  execute_process(COMMAND lrelease ${TS_FILE} -qm ${QM_FILE})
+  execute_process(COMMAND lrelease-qt5 ${TS_FILE} -qm ${QM_FILE})
   list(APPEND QM_FILES ${QM_FILE})
   message(STATUS "QM_FILE: ${QM_FILE}")
 endforeach()
@@ -86,6 +86,9 @@ target_include_directories(
 target_link_libraries(
   ${TARGET_NAME} PRIVATE ${KLOG_QT5_LIBRARIES} ${KIRAN_CC_DAEMON_LIBRARIES}
                          Qt5::Core Qt5::DBus Qt5::Sql common)
+
+set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH
+                                                "${KAS_INSTALL_DEP_LIBDIR}")
 
 install(FILES ${QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
 install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})

@@ -78,7 +78,7 @@ void DriverLoader::init()
                 // }
             }
             break;
-            case DRIVER_TYPE_Virtual:
+            case DRIVER_TYPE_Virtual_Face:
             {
                 m_virtualDrivers.append(file);
             }

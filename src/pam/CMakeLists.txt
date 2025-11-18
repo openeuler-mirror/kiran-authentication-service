@@ -47,7 +47,7 @@ foreach(LANG ${LANGUAGES})
   # qt5_add_translation(QM_FILE ${TS_FILE})
   set(QM_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.${LANG}.qm")
   # 执行 lrelease 生成qm文件
-  execute_process(COMMAND lrelease ${TS_FILE} -qm ${QM_FILE})
+  execute_process(COMMAND lrelease-qt5 ${TS_FILE} -qm ${QM_FILE})
   list(APPEND QM_FILES ${QM_FILE})
   message(STATUS "QM_FILE: ${QM_FILE}")
 endforeach()
@@ -55,7 +55,7 @@ endforeach()
 add_library(
   ${TARGET_NAME} SHARED
   ${H_FILES} ${CPP_FILES} ${AUTH_MANAGER_INTERFACE_SRCS}
-  ${AUTH_SESSION_INTERFACE_SRCS} ${AUTH_USER_INTERFACE_SRCS} ${QM_FILE})
+  ${AUTH_SESSION_INTERFACE_SRCS} ${AUTH_USER_INTERFACE_SRCS} ${QM_FILES})
 
 target_include_directories(
   ${TARGET_NAME}
@@ -68,6 +68,8 @@ target_link_libraries(
                          Qt5::DBus common)
 
 set_target_properties(${TARGET_NAME} PROPERTIES PREFIX "")
+set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH
+                                                "${KAS_INSTALL_DEP_LIBDIR}")
 
 install(FILES ${QM_FILE} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
 install(TARGETS ${TARGET_NAME}

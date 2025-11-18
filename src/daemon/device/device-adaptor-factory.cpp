@@ -50,7 +50,7 @@ QSharedPointer<DeviceAdaptor> DeviceAdaptorFactory::getDeviceAdaptor(int32_t aut
     device = this->createDeviceAdaptor(authType);
     RETURN_VAL_IF_FALSE(device, QSharedPointer<DeviceAdaptor>());
 
-    KLOG_DEBUG() << "authtype:" << authType << "create device adaptor:" << device->getDeviceID();
+    KLOG_INFO() << "authtype:" << authType << "create device adaptor:" << device->getDeviceID();
 
     this->m_devices.insert(authType, device);
     return device;
@@ -132,7 +132,12 @@ QSharedPointer<DeviceAdaptor> DeviceAdaptorFactory::createDeviceAdaptor(int32_t 
     auto dbusDeviceProxy = this->getDBusDeviceProxy(authType, defaultDeviceID);
     if (dbusDeviceProxy)
     {
+        KLOG_INFO() << "Create device adaptor success, auth type: " << authType << ", device id: " << dbusDeviceProxy->deviceID();
         deviceAdaptor = QSharedPointer<DeviceAdaptor>::create(dbusDeviceProxy);
+    }
+    else
+    {
+        KLOG_INFO() << "Create device adaptor failed, auth type: " << authType;
     }
     return deviceAdaptor;
 }

@@ -58,6 +58,7 @@
 #define AUTH_TYPE_STR_FACE "face"
 #define AUTH_TYPE_STR_IRIS "iris"
 #define AUTH_TYPE_STR_UKEY "ukey"
+#define AUTH_TYPE_STR_VIRTUAL_FACE "virtual face"
 
 /* ------------ 认证场景定义 ----------------- */
 #define AUTH_APPLICATION_STR_LOGIN "login"
@@ -149,12 +150,14 @@ enum IdentifyProcess
 // 设备类型
 enum DeviceType
 {
-    DEVICE_TYPE_FingerPrint,  // 指纹
-    DEVICE_TYPE_Face,         // 人脸
-    DEVICE_TYPE_FingerVein,   // 指静脉
-    DEVICE_TYPE_Iris,         // 虹膜
-    DEVICE_TYPE_VoicePrint,   // 声纹
-    DEVICE_TYPE_UKey,         // ukey
+    DEVICE_TYPE_FingerPrint,          // 指纹
+    DEVICE_TYPE_Face,                 // 人脸
+    DEVICE_TYPE_FingerVein,           // 指静脉
+    DEVICE_TYPE_Iris,                 // 虹膜
+    DEVICE_TYPE_VoicePrint,           // 声纹
+    DEVICE_TYPE_UKey,                 // ukey
+                                      // ...预留，未来可能增加其他物理设备...
+    DEVICE_TYPE_Virtual_Face = 1000,  // 虚拟人脸
 };
 
 // 设备状态
@@ -208,8 +211,10 @@ enum KADAuthType
     KAD_AUTH_TYPE_FINGERVEIN = (1 << 4),
     // 虹膜
     KAD_AUTH_TYPE_IRIS = (1 << 5),
+    // 虚拟人脸
+    KAD_AUTH_TYPE_VIRTUAL_FACE = (1 << 6),
 
-    KAD_AUTH_TYPE_LAST = (1 << 6),
+    KAD_AUTH_TYPE_LAST = (1 << 7),
 };
 
 // 认证提示消息类型，接收方需要响应消息
