@@ -5,6 +5,10 @@ Description = Kiran Authentication Daemon Service
 Type=dbus
 BusName=com.kylinsec.Kiran.Authentication
 ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/kiran-authentication-daemon
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

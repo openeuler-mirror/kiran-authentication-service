@@ -229,7 +229,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 
         KLOG_INFO() << m_sessionID << "virtual device authentication successfully, authenticated user name:" << this->m_verifyInfo.m_authenticatedUserName;
         // 认证成功后处理，如开启人走监测等
-        this->m_verifyInfo.deviceAdaptor->identifySuccessedPostProcess(this, message);
+        this->m_verifyInfo.deviceAdaptor->identifySuccessedPostProcess(this, "");
     }
     else if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
              result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
@@ -308,15 +308,22 @@ void Session::startVirtualFaceAuth()
     // 传输用户名和机器码
     // dbus接口获取机器码：com.kylinsec.Kiran.LicenseHelper.GetMachineCode
     QString machineCode;
-    QDBusInterface iface("com.kylinsec.Kiran.LicenseHelper", "/com/kylinsec/Kiran/LicenseHelper", "com.kylinsec.Kiran.LicenseHelper", QDBusConnection::systemBus());
-    QDBusReply<QString> reply = iface.call("GetMachineCode");
-    if (reply.isValid())
+    if (QDBusConnection::systemBus().interface()->isServiceRegistered("com.kylinsec.Kiran.LicenseHelper"))
     {
-        machineCode = reply.value();
+        QDBusInterface iface("com.kylinsec.Kiran.LicenseHelper", "/com/kylinsec/Kiran/LicenseHelper", "com.kylinsec.Kiran.LicenseHelper", QDBusConnection::systemBus());
+        QDBusReply<QString> reply = iface.call("GetMachineCode");
+        if (reply.isValid())
+        {
+            machineCode = reply.value();
+        }
+        else
+        {
+            KLOG_WARNING() << "get machine code failed:" << reply.error().message();
+        }
     }
     else
     {
-        KLOG_WARNING() << "get machine code failed:" << reply.error().message();
+        KLOG_WARNING() << "com.kylinsec.Kiran.LicenseHelper service not registered," << "get machine code failed";
     }
 
     QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}});

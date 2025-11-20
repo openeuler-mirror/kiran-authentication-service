@@ -5,6 +5,10 @@ Description=Kiran Authentication Devices Service
 Type=dbus
 BusName=com.kylinsec.Kiran.AuthDevice
 ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/kiran-authentication-devices
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

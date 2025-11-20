@@ -41,13 +41,3 @@ add_subdirectory(src)
 
 install(FILES include/kas-authentication-i.h
         DESTINATION ${KAS_INSTALL_INCLUDE}/)
-
-# 用于适配旧系统升级了gcc的情况
-execute_process(
-  COMMAND sh -c "ldconfig -p | grep libstdc++ | awk '{print \$NF}' | head -1"
-  OUTPUT_VARIABLE DEP_PATH
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(DEP_PATH)
-  message(STATUS "DEP_PATH: ${DEP_PATH}")
-  install(FILES ${DEP_PATH} DESTINATION ${KAS_INSTALL_DEP_LIBDIR})
-endif()

@@ -17,6 +17,7 @@ endforeach()
 
 # install systemd service files
 install(FILES dbus/com.kylinsec.Kiran.Authentication.conf
+              dbus/com.kylinsec.Kiran.AuthDevice.conf
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/dbus-1/system.d)
 install(
   FILES

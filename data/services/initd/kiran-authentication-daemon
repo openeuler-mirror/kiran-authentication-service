@@ -16,9 +16,9 @@
 # Short-Description: Kiran Authentication Daemon
 ### END INIT INFO
 
-DAEMON=/usr/bin/kiran-authentication-daemon
-PIDFILE=/var/run/kiran-authentication-daemon.pid
 NAME=kiran-authentication-daemon
+DAEMON=/usr/bin/$NAME
+PIDFILE=/var/run/$NAME.pid
 DESC="Kiran Authentication Daemon"
 
 start() {

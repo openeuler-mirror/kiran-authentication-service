@@ -122,12 +122,9 @@ bool Manager::genDevice(const QString& driverName, const QString& vendorId, cons
 
 bool Manager::genVirtualDevices()
 {
-    KLOG_INFO() << "genVirtualDevices";
-
     QStringList virtualDrivers = m_driverLoader->getVirualDrivers();
     for (QString driverName : virtualDrivers)
     {
-        KLOG_INFO() << "gen Virtual Devices: " << driverName;
         DriverPtr driver = m_driverLoader->loadDriver(driverName);
         if (driver)
         {
@@ -138,6 +135,9 @@ bool Manager::genVirtualDevices()
             }
         }
     }
+    
+    KLOG_INFO() << "gen Virtual Devices: " << virtualDrivers;
+
     return true;
 }
 
