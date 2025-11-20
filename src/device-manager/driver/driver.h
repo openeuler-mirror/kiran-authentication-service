@@ -27,7 +27,7 @@ enum DriverType
     DRIVER_TYPE_Iris,         // 虹膜
     DRIVER_TYPE_VoicePrint,   // 声纹
     DRIVER_TYPE_UKey,         // ukey
-    DRIVER_TYPE_Virtual
+    DRIVER_TYPE_Virtual_Face
 };
 
 inline QString getDriverTypeStr(DriverType type)
@@ -39,7 +39,7 @@ inline QString getDriverTypeStr(DriverType type)
         {DRIVER_TYPE_Iris, "Iris"},
         {DRIVER_TYPE_VoicePrint, "VoicePrint"},
         {DRIVER_TYPE_UKey, "UKey"},
-        {DRIVER_TYPE_Virtual, "Virtual"}};
+        {DRIVER_TYPE_Virtual_Face, "VirtualFace"}};
 
     if (driverTypeMap.contains(type))
         return driverTypeMap.value(type);
@@ -52,7 +52,6 @@ inline QString getDriverTypeStr(DriverType type)
 
 class Driver : public QObject
 {
-    Q_OBJECT
 public:
     Driver(QObject* parent = nullptr) : QObject(parent) {};
     virtual ~Driver() = default;

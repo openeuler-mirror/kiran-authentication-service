@@ -18,7 +18,6 @@
 
 class PhysicalDriver : public Driver
 {
-    Q_OBJECT
 public:
     PhysicalDriver(QObject *parent = nullptr) : Driver(parent) {};
     virtual ~PhysicalDriver() = default;

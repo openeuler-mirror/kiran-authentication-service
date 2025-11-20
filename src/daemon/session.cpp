@@ -192,7 +192,8 @@ QString Session::getSpecifiedUser()
 void Session::queued(QSharedPointer<DeviceRequest> request)
 {
     this->m_verifyInfo.m_requestID = request->reqID;
-    KLOG_DEBUG() << m_sessionID << "session (request id:" << request->reqID << ") queued";
+    KLOG_INFO() << m_sessionID << "session (request id:" << request->reqID << ") queued";
+    KLOG_INFO() << "auth type:" << m_authType << "auth type locale:" << Utils::authTypeEnum2LocaleStr(m_authType);
     auto tips = QString(tr("Please wait while the %1 request is processed")).arg(Utils::authTypeEnum2LocaleStr(m_authType));
     Q_EMIT this->AuthMessage(tips, KAD_MESSAGE_TYPE_INFO);
 }
@@ -217,10 +218,21 @@ void Session::end()
 
 void Session::onIdentifyStatus(const QString &bid, int result, const QString &message)
 {
-    KLOG_INFO() << m_sessionID << "verify identify  status:" << bid << result << message;
+    KLOG_INFO() << m_sessionID << "verify identify status:" << bid << result << message;
 
-    if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
-        result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
+    if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE && result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
+    {
+        // TODO: 虚拟设备认证成功
+        // 由于特征信息保存在远程服务中，无法校验特征与用户绑定信息
+        // 但还需要进行用户匹配，需要人脸服务返回用户信息
+        this->m_verifyInfo.m_authenticatedUserName = this->getSpecifiedUser();
+
+        KLOG_INFO() << m_sessionID << "virtual device authentication successfully, authenticated user name:" << this->m_verifyInfo.m_authenticatedUserName;
+        // 认证成功后处理，如开启人走监测等
+        this->m_verifyInfo.deviceAdaptor->identifySuccessedPostProcess(this, "");
+    }
+    else if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
+             result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
     {
         KLOG_INFO() << m_sessionID << "feature match successfully, but it isn't a legal user.";
         result = IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH;
@@ -233,7 +245,14 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     }
     else if (result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
     {
-        Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE)
+        {
+            Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        }
+        else
+        {
+            Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        }
     }
     else
     {
@@ -262,6 +281,9 @@ void Session::startPhaseAuth()
     case KAD_AUTH_TYPE_PASSWORD:
         startPasswdAuth();
         break;
+    case KAD_AUTH_TYPE_VIRTUAL_FACE:
+        startVirtualFaceAuth();
+        break;
     default:
         startGeneralAuth();
         break;
@@ -281,6 +303,36 @@ void Session::startUkeyAuth()
     Q_EMIT this->AuthPrompt(tr("please input ukey code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);
 }
 
+void Session::startVirtualFaceAuth()
+{
+    // 传输用户名和机器码
+    // dbus接口获取机器码：com.kylinsec.Kiran.LicenseHelper.GetMachineCode
+    QString machineCode;
+    if (QDBusConnection::systemBus().interface()->isServiceRegistered("com.kylinsec.Kiran.LicenseHelper"))
+    {
+        QDBusInterface iface("com.kylinsec.Kiran.LicenseHelper", "/com/kylinsec/Kiran/LicenseHelper", "com.kylinsec.Kiran.LicenseHelper", QDBusConnection::systemBus());
+        QDBusReply<QString> reply = iface.call("GetMachineCode");
+        if (reply.isValid())
+        {
+            machineCode = reply.value();
+        }
+        else
+        {
+            KLOG_WARNING() << "get machine code failed:" << reply.error().message();
+        }
+    }
+    else
+    {
+        KLOG_WARNING() << "com.kylinsec.Kiran.LicenseHelper service not registered," << "get machine code failed";
+    }
+
+    QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}});
+    startGeneralAuth(jsonDoc.toJson());
+
+    KLOG_INFO() << m_sessionID << "start virtual face auth for user:" << m_userName << "machine code:" << machineCode;
+    Q_EMIT this->AuthMessage(tr("Please look at the camera"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+}
+
 void Session::startPasswdAuth()
 {
     KLOG_DEBUG() << "The authentication service does not take over password authentication,ignore!";
@@ -296,6 +348,7 @@ void Session::startPasswdAuth()
 
 void Session::startGeneralAuth(const QString &extraInfo)
 {
+    KLOG_INFO() << m_sessionID << "start phase auth for auth type:" << m_authType;
     auto deviceType = Utils::authType2DeviceType(this->m_authType);
     if (deviceType == -1)
     {
@@ -335,7 +388,7 @@ void Session::startGeneralAuth(const QString &extraInfo)
         }
     }
 
-    KLOG_DEBUG() << m_sessionID << "start phase auth for auth type:" << m_authType;
+    KLOG_INFO() << m_sessionID << "start phase auth for auth type:" << m_authType;
     rootObject["feature_ids"] = QJsonArray::fromStringList(bids);
 
     this->m_verifyInfo.deviceAdaptor = device;

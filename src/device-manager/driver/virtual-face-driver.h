@@ -11,3 +11,18 @@
  *
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
+
+#pragma once
+
+#include "driver.h"
+
+class VirtualFaceDriver : public Driver
+{
+public:
+    VirtualFaceDriver(QObject* parent = nullptr) : Driver(parent){};
+    virtual ~VirtualFaceDriver() = default;
+    virtual int identify(const QString& extraInfo) = 0;
+    // 认证成功后处理
+    virtual void identifySuccessedPostProcess(const QString& extraInfo) = 0;
+};
+typedef QSharedPointer<VirtualFaceDriver> VirtualFaceDriverPtr;

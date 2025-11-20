@@ -16,7 +16,7 @@
 # Short-Description: Kiran Authentication Devices
 ### END INIT INFO
 
-DAEMON=/usr/bin/kiran-authentication-devices
+DAEMON=/usr/libexec/kiran-authentication-devices
 PIDFILE=/var/run/kiran-authentication-devices.pid
 NAME=kiran-authentication-devices
 DESC="Kiran Authentication Devices"

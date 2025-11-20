@@ -53,6 +53,8 @@ public:
     virtual QStringList GetFeatureIDList() = 0;
     int deviceStatus() { return m_status; };
 
+    virtual void IdentifySuccessedPostProcess(const QString &extraInfo){};
+
     // signals:
     //     void identifyStatus(IdentifyStatus status, QString msg);
     //     void enrollStatus(EnrollStatus status, QString msg);

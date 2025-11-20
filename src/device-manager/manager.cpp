@@ -17,6 +17,7 @@
 #include "auth_device_manager_adaptor.h"
 #include "device/device.h"
 #include "device/ukey-device.h"
+#include "device/virtual-face-device.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
 #include "manager.h"
@@ -77,6 +78,9 @@ void Manager::init()
     m_udevMonitor = QSharedPointer<UdevMonitor>(new UdevMonitor());
     connect(m_udevMonitor.data(), &UdevMonitor::deviceAdded, this, &Manager::udevAdded);
     connect(m_udevMonitor.data(), &UdevMonitor::deviceDeleted, this, &Manager::udevDeleted);
+
+    // 虚拟驱动，在程序启动时载入
+    genVirtualDevices();
 }
 
 bool Manager::genDevice(const QString& driverName, const QString& vendorId, const QString& productId, const QString& devNode)
@@ -105,13 +109,34 @@ bool Manager::genDevice(const QString& driverName, const QString& vendorId, cons
         case DRIVER_TYPE_FingerVein:   // 指静脉
         case DRIVER_TYPE_Iris:         // 虹膜
         case DRIVER_TYPE_VoicePrint:   // 声纹
-        case DRIVER_TYPE_Virtual:      // 虚拟
+        case DRIVER_TYPE_Virtual_Face: // 虚拟人脸
         default:
         {
             break;
         }
         }
     }
+
+    return true;
+}
+
+bool Manager::genVirtualDevices()
+{
+    QStringList virtualDrivers = m_driverLoader->getVirualDrivers();
+    for (QString driverName : virtualDrivers)
+    {
+        DriverPtr driver = m_driverLoader->loadDriver(driverName);
+        if (driver)
+        {
+            VirtualFaceDevicePtr device = VirtualFaceDevicePtr(new VirtualFaceDevice(driver));
+            if (device)
+            {
+                m_devices.insert(device->deviceID(), device);
+            }
+        }
+    }
+    
+    KLOG_INFO() << "gen Virtual Devices: " << virtualDrivers;
 
     return true;
 }

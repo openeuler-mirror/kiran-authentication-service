@@ -112,6 +112,7 @@ private:
 private:
     void startPhaseAuth();
     void startUkeyAuth();
+    void startVirtualFaceAuth();
     void startPasswdAuth();
     void startGeneralAuth(const QString &extraInfo = QString());
 

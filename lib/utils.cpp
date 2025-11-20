@@ -101,6 +101,8 @@ QString Utils::authTypeEnum2Str(int authType)
         return QStringLiteral(AUTH_TYPE_STR_FINGERVEIN);
     case KADAuthType::KAD_AUTH_TYPE_IRIS:
         return QStringLiteral(AUTH_TYPE_STR_IRIS);
+    case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE:
+        return QStringLiteral(AUTH_TYPE_STR_VIRTUAL_FACE);
     default:
         KLOG_WARNING() << "Unknown authType: " << authType;
     }
@@ -123,6 +125,8 @@ int Utils::authTypeStr2Enum(const QString& authType)
         return KADAuthType::KAD_AUTH_TYPE_FINGERVEIN;
     case CONNECT(AUTH_TYPE_STR_IRIS, _hash):
         return KADAuthType::KAD_AUTH_TYPE_IRIS;
+    case CONNECT(AUTH_TYPE_STR_VIRTUAL_FACE, _hash):
+        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE;
     default:
         KLOG_WARNING() << "Unknown authType: " << authType;
     }
@@ -143,6 +147,8 @@ int32_t Utils::authType2DeviceType(int32_t authType)
         return DeviceType::DEVICE_TYPE_UKey;
     case KAD_AUTH_TYPE_IRIS:
         return DeviceType::DEVICE_TYPE_Iris;
+    case KAD_AUTH_TYPE_VIRTUAL_FACE:
+        return DeviceType::DEVICE_TYPE_Virtual_Face;
     default:
         KLOG_WARNING() << "Unsupported authType: " << authType;
     }
@@ -163,6 +169,8 @@ int32_t Utils::deviceType2AuthType(int32_t deviceType)
         return KADAuthType::KAD_AUTH_TYPE_UKEY;
     case DeviceType::DEVICE_TYPE_Iris:
         return KADAuthType::KAD_AUTH_TYPE_IRIS;
+    case DeviceType::DEVICE_TYPE_Virtual_Face:
+        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE;
     default:
         KLOG_WARNING() << "Unsupported deviceType: " << deviceType;
     }
@@ -197,7 +205,8 @@ QString Utils::authTypeEnum2LocaleStr(int authType)
         {KAD_AUTH_TYPE_FACE, QCoreApplication::tr("face")},
         {KAD_AUTH_TYPE_FINGERVEIN, QCoreApplication::tr("fingervein")},
         {KAD_AUTH_TYPE_IRIS, QCoreApplication::tr("iris")},
-        {KAD_AUTH_TYPE_UKEY, QCoreApplication::tr("ukey")}};
+        {KAD_AUTH_TYPE_UKEY, QCoreApplication::tr("ukey")},
+        {KAD_AUTH_TYPE_VIRTUAL_FACE, QCoreApplication::tr("virtual face")}};
 
     auto iter = localeAuthTypeMap.find(authType);
     if (iter == localeAuthTypeMap.end())

@@ -49,7 +49,9 @@ static const QMap<KADAuthType, QString> AuthTypeGroupMap = {
     {KAD_AUTH_TYPE_FINGERVEIN,
      "FingerVein"},
     {KAD_AUTH_TYPE_IRIS,
-     "Iris"}};
+     "Iris"},
+    {KAD_AUTH_TYPE_VIRTUAL_FACE,
+     "VirtualFace"}};
 
 static const QMap<KADAuthApplication, QString> AuthAppKeyMap = {
     {KAD_AUTH_APPLICATION_LOGIN,
