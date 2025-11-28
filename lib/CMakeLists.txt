@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.0)
-
 set(TARGET_NAME common)
 
 file(GLOB_RECURSE COMMON_H_FILES *.h)
