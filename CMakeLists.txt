@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.0...${CMAKE_VERSION})
 
 project(kiran-authentication-service VERSION 2.6)
 
