@@ -59,6 +59,7 @@
 #define AUTH_TYPE_STR_IRIS "iris"
 #define AUTH_TYPE_STR_UKEY "ukey"
 #define AUTH_TYPE_STR_VIRTUAL_FACE "virtual face"
+#define AUTH_TYPE_STR_VIRTUAL_CODE "virtual code"
 
 /* ------------ 认证场景定义 ----------------- */
 #define AUTH_APPLICATION_STR_LOGIN "login"
@@ -158,6 +159,7 @@ enum DeviceType
     DEVICE_TYPE_UKey,                 // ukey
                                       // ...预留，未来可能增加其他物理设备...
     DEVICE_TYPE_Virtual_Face = 1000,  // 虚拟人脸
+    DEVICE_TYPE_Virtual_Code,         // 验证码
 };
 
 // 设备状态
@@ -214,7 +216,8 @@ enum KADAuthType
     // 虚拟人脸
     KAD_AUTH_TYPE_VIRTUAL_FACE = (1 << 6),
 
-    KAD_AUTH_TYPE_LAST = (1 << 7),
+    KAD_AUTH_TYPE_VIRTUAL_CODE = (1 << 7),
+    KAD_AUTH_TYPE_LAST = (1 << 8),
 };
 
 // 认证提示消息类型，接收方需要响应消息

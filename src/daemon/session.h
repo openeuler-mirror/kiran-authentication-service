@@ -106,13 +106,15 @@ private:
     virtual void interrupt();
     virtual void cancel();
     virtual void end();
-    virtual void onEnrollStatus(const QString &data, int progress, int result, const QString &message) {};
+    virtual void onEnrollStatus(const QString &data, int progress, int result, const QString &message){};
     virtual void onIdentifyStatus(const QString &bid, int result, const QString &message);
 
 private:
     void startPhaseAuth();
     void startUkeyAuth();
+    QString getMachineCode();
     void startVirtualFaceAuth();
+    void startVirtualCodeAuth();
     void startPasswdAuth();
     void startGeneralAuth(const QString &extraInfo = QString());
 

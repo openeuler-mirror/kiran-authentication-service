@@ -76,9 +76,6 @@ int32_t AuthenticationTerminal::requestAuthType()
         {
             this->m_pamHandle->syslog(LOG_WARNING, "Request auth type failed.");
             return KADAuthType::KAD_AUTH_TYPE_PASSWORD;
-#include <pam_modules.h>
-#include <qt5-log-i.h>
-#include <syslog.h>
         }
 
         // 校验输入正确
@@ -98,7 +95,8 @@ int32_t AuthenticationTerminal::requestAuthType()
             authType == KADAuthType::KAD_AUTH_TYPE_UKEY ||
             authType == KADAuthType::KAD_AUTH_TYPE_FACE ||
             authType == KADAuthType::KAD_AUTH_TYPE_IRIS ||
-            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE)
+            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE ||
+            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE)
         {
             return authType;
         }

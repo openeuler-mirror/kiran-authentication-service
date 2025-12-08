@@ -79,9 +79,11 @@ void DriverLoader::init()
             }
             break;
             case DRIVER_TYPE_Virtual_Face:
+            case DRIVER_TYPE_Virtual_Code:
             {
                 m_virtualDrivers.append(file);
             }
+
             break;
             default:
                 break;
@@ -121,7 +123,8 @@ DriverPtr DriverLoader::loadDriver(const QString &driverName)
                                 {
                                     libPtr->unload();
                                     delete libPtr;
-                                } });
+                                }
+                            });
     if (!driver)
     {
         libPtr->unload();

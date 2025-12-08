@@ -1,37 +1,37 @@
 #include <qt5-log-i.h>
 
 #include "auth_device_adaptor.h"
-#include "virtual-face-device.h"
+#include "virtual-code-device.h"
 
 namespace Kiran
 {
-VirtualFaceDevice::VirtualFaceDevice(DriverPtr driver, QObject* parent) : Device(driver, parent)
+VirtualCodeDevice::VirtualCodeDevice(DriverPtr driver, QObject* parent) : Device(driver, parent)
 {
-    m_driver = driver.staticCast<VirtualFaceDriver>();
+    m_driver = driver.staticCast<VirtualCodeDriver>();
 }
 
-VirtualFaceDevice::~VirtualFaceDevice()
+VirtualCodeDevice::~VirtualCodeDevice()
 {
 }
 
-DeviceType VirtualFaceDevice::deviceType()
+DeviceType VirtualCodeDevice::deviceType()
 {
-    return DEVICE_TYPE_Virtual_Face;
+    return DEVICE_TYPE_Virtual_Code;
 }
 
-void VirtualFaceDevice::EnrollStart(const QString& extraInfo)
+void VirtualCodeDevice::EnrollStart(const QString& extraInfo)
 {
     return;  // 虚拟设备在管理后台注册
 }
 
-void VirtualFaceDevice::EnrollStop()
+void VirtualCodeDevice::EnrollStop()
 {
     return;  // 虚拟设备在管理后台注册
 }
 
-void VirtualFaceDevice::IdentifyStart(const QString& extraInfo)
+void VirtualCodeDevice::IdentifyStart(const QString& extraInfo)
 {
-    KLOG_INFO() << "VirtualFaceDevice IdentifyStart, " << m_driver->getDriverName();
+    KLOG_INFO() << "VirtualCodeDevice IdentifyStart" << m_driver->getDriverName();
     KLOG_INFO() << "extraInfo:" << extraInfo;
 
     if (DEVICE_STATUS_IDLE != deviceStatus())
@@ -56,7 +56,7 @@ void VirtualFaceDevice::IdentifyStart(const QString& extraInfo)
     }
 }
 
-void VirtualFaceDevice::IdentifyStop()
+void VirtualCodeDevice::IdentifyStop()
 {
     if (DEVICE_STATUS_DOING_IDENTIFY == deviceStatus())
     {
@@ -64,14 +64,14 @@ void VirtualFaceDevice::IdentifyStop()
     }
 }
 
-QStringList VirtualFaceDevice::GetFeatureIDList()
+QStringList VirtualCodeDevice::GetFeatureIDList()
 {
     return QStringList();
 }
 
-void VirtualFaceDevice::IdentifySuccessedPostProcess(const QString& extraInfo)
+void VirtualCodeDevice::IdentifySuccessedPostProcess(const QString& extraInfo)
 {
-    KLOG_INFO() << "VirtualFaceDevice onIdentifySuccessed, extraInfo:" << extraInfo;
+    KLOG_INFO() << "VirtualCodeDevice onIdentifySuccessed, extraInfo:" << extraInfo;
     // 认证成功后处理（如开启人走监测等）
     m_driver->identifySuccessedPostProcess(extraInfo);
 }

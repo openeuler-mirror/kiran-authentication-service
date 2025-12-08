@@ -21,25 +21,26 @@
 // 设备类型
 enum DriverType
 {
-    DRIVER_TYPE_FingerPrint,  // 指纹
-    DRIVER_TYPE_Face,         // 人脸
-    DRIVER_TYPE_FingerVein,   // 指静脉
-    DRIVER_TYPE_Iris,         // 虹膜
-    DRIVER_TYPE_VoicePrint,   // 声纹
-    DRIVER_TYPE_UKey,         // ukey
-    DRIVER_TYPE_Virtual_Face
+    DRIVER_TYPE_FingerPrint,   // 指纹
+    DRIVER_TYPE_Face,          // 人脸
+    DRIVER_TYPE_FingerVein,    // 指静脉
+    DRIVER_TYPE_Iris,          // 虹膜
+    DRIVER_TYPE_VoicePrint,    // 声纹
+    DRIVER_TYPE_UKey,          // ukey
+    DRIVER_TYPE_Virtual_Face,  // 虚拟人脸
+    DRIVER_TYPE_Virtual_Code,  // 虚拟验证码
 };
 
 inline QString getDriverTypeStr(DriverType type)
 {
-    static const QMap<DriverType, QString> driverTypeMap = {
-        {DRIVER_TYPE_FingerPrint, "FingerPrint"},
-        {DRIVER_TYPE_Face, "Face"},
-        {DRIVER_TYPE_FingerVein, "FingerVein"},
-        {DRIVER_TYPE_Iris, "Iris"},
-        {DRIVER_TYPE_VoicePrint, "VoicePrint"},
-        {DRIVER_TYPE_UKey, "UKey"},
-        {DRIVER_TYPE_Virtual_Face, "VirtualFace"}};
+    static const QMap<DriverType, QString> driverTypeMap = {{DRIVER_TYPE_FingerPrint, "FingerPrint"},
+                                                            {DRIVER_TYPE_Face, "Face"},
+                                                            {DRIVER_TYPE_FingerVein, "FingerVein"},
+                                                            {DRIVER_TYPE_Iris, "Iris"},
+                                                            {DRIVER_TYPE_VoicePrint, "VoicePrint"},
+                                                            {DRIVER_TYPE_UKey, "UKey"},
+                                                            {DRIVER_TYPE_Virtual_Face, "VirtualFace"},
+                                                            {DRIVER_TYPE_Virtual_Code, "VirtualCode"}};
 
     if (driverTypeMap.contains(type))
         return driverTypeMap.value(type);
@@ -53,7 +54,7 @@ inline QString getDriverTypeStr(DriverType type)
 class Driver : public QObject
 {
 public:
-    Driver(QObject* parent = nullptr) : QObject(parent) {};
+    Driver(QObject* parent = nullptr) : QObject(parent){};
     virtual ~Driver() = default;
 
     virtual QString getDriverName() = 0;

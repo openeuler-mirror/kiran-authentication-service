@@ -10,6 +10,19 @@
     </message>
 </context>
 <context>
+    <name>Kiran::AuthenticationGraphicalSimple</name>
+    <message>
+        <location filename="../src/pam/authentication-graphical-simple.cpp" line="62"/>
+        <source>Select Authentication type (%1): </source>
+        <translation>请选择认证类型（%1）： </translation>
+    </message>
+    <message>
+        <location filename="../src/pam/authentication-graphical-simple.cpp" line="79"/>
+        <source>The authentication type is invalid. Please select a new one</source>
+        <translation>该认证类型无效，请重新选择</translation>
+    </message>
+</context>
+<context>
     <name>Kiran::AuthenticationTerminal</name>
     <message>
         <location filename="../src/pam/authentication-terminal.cpp" line="69"/>
@@ -17,7 +30,7 @@
         <translation>请选择认证类型（%1）： </translation>
     </message>
     <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="89"/>
+        <location filename="../src/pam/authentication-terminal.cpp" line="86"/>
         <source>The authentication type is invalid. Please select a new one</source>
         <translation>该认证类型无效，请重新选择</translation>
     </message>
@@ -25,60 +38,65 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../lib/utils.cpp" line="203"/>
+        <location filename="../lib/utils.cpp" line="210"/>
         <source>password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="204"/>
+        <location filename="../lib/utils.cpp" line="211"/>
         <source>fingerprint</source>
         <translation>指纹</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="205"/>
+        <location filename="../lib/utils.cpp" line="212"/>
         <source>face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="206"/>
+        <location filename="../lib/utils.cpp" line="213"/>
         <source>fingervein</source>
         <translation>指静脉</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="207"/>
+        <location filename="../lib/utils.cpp" line="214"/>
         <source>iris</source>
         <translation>虹膜</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="208"/>
+        <location filename="../lib/utils.cpp" line="215"/>
         <source>ukey</source>
         <translation>UKey</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="209"/>
+        <location filename="../lib/utils.cpp" line="216"/>
         <source>virtual face</source>
         <translation>人脸</translation>
+    </message>
+    <message>
+        <location filename="../lib/utils.cpp" line="217"/>
+        <source>virtual code</source>
+        <translation>授权码</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../lib/utils.cpp" line="226"/>
+        <location filename="../lib/utils.cpp" line="234"/>
         <source>Feature not match.</source>
         <translation>特征不匹配。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="228"/>
+        <location filename="../lib/utils.cpp" line="236"/>
         <source>Feature matching successed.</source>
         <translation>特征匹配成功。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="230"/>
+        <location filename="../lib/utils.cpp" line="238"/>
         <source>Feature not match, please retry it.</source>
         <translation>特征不匹配，请重试。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="235"/>
+        <location filename="../lib/utils.cpp" line="243"/>
         <source>Unknown verfication error.</source>
         <translation>未知认证错误。</translation>
     </message>

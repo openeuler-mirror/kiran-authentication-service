@@ -17,6 +17,7 @@
 #include "auth_device_manager_adaptor.h"
 #include "device/device.h"
 #include "device/ukey-device.h"
+#include "device/virtual-code-device.h"
 #include "device/virtual-face-device.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
@@ -104,12 +105,12 @@ bool Manager::genDevice(const QString& driverName, const QString& vendorId, cons
             break;
         }
 
-        case DRIVER_TYPE_FingerPrint:  // 指纹
-        case DRIVER_TYPE_Face:         // 人脸
-        case DRIVER_TYPE_FingerVein:   // 指静脉
-        case DRIVER_TYPE_Iris:         // 虹膜
-        case DRIVER_TYPE_VoicePrint:   // 声纹
-        case DRIVER_TYPE_Virtual_Face: // 虚拟人脸
+        case DRIVER_TYPE_FingerPrint:   // 指纹
+        case DRIVER_TYPE_Face:          // 人脸
+        case DRIVER_TYPE_FingerVein:    // 指静脉
+        case DRIVER_TYPE_Iris:          // 虹膜
+        case DRIVER_TYPE_VoicePrint:    // 声纹
+        case DRIVER_TYPE_Virtual_Face:  // 虚拟人脸
         default:
         {
             break;
@@ -128,14 +129,22 @@ bool Manager::genVirtualDevices()
         DriverPtr driver = m_driverLoader->loadDriver(driverName);
         if (driver)
         {
-            VirtualFaceDevicePtr device = VirtualFaceDevicePtr(new VirtualFaceDevice(driver));
+            DevicePtr device;
+            switch (driver->getType())
+            {
+            case DRIVER_TYPE_Virtual_Face:  // 虚拟人脸
+                device = VirtualFaceDevicePtr(new VirtualFaceDevice(driver));
+                break;
+            case DRIVER_TYPE_Virtual_Code:  // 虚拟验证码
+                device = VirtualCodeDevicePtr(new VirtualCodeDevice(driver));
+                break;
+            }
             if (device)
             {
                 m_devices.insert(device->deviceID(), device);
             }
         }
     }
-    
     KLOG_INFO() << "gen Virtual Devices: " << virtualDrivers;
 
     return true;

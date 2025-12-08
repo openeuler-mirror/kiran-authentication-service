@@ -121,8 +121,12 @@ bool AuthenticationController::isGraphical()
     {
         isGraphcal = true;
     }
+    else if (pamService == "gdm-password")
+    {
+        isGraphcal = true;
+    }
 
-    this->m_pamHandle->syslogDirect(LOG_DEBUG, QString("is graphical: service(%1) result=%2").arg(pamService).arg(isGraphcal));
+    this->m_pamHandle->syslogDirect(LOG_INFO, QString("is graphical: service(%1) result=%2").arg(pamService).arg(isGraphcal));
     return isGraphcal;
 }
 
