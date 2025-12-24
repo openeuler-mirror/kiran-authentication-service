@@ -17,22 +17,32 @@
         <translation>请等待,%1录入请求正在处理</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="302"/>
+        <location filename="../src/daemon/session.cpp" line="306"/>
         <source>Insert the UKey and enter the PIN code</source>
         <translation>请插入UKey并输入PIN码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="303"/>
+        <location filename="../src/daemon/session.cpp" line="307"/>
         <source>please input ukey code.</source>
         <translation>请输入PIN码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="326"/>
+        <location filename="../src/daemon/session.cpp" line="344"/>
         <source>Please look at the camera</source>
         <translation>请直视摄像头</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="360"/>
+        <location filename="../src/daemon/session.cpp" line="357"/>
+        <source>Please request for an authorization code and then enter it</source>
+        <translation>请申请授权码然后输入授权码</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="358"/>
+        <source>please input authorization code.</source>
+        <translation>请输入授权码。</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="392"/>
         <source>can not find %1 device</source>
         <translation>未能检测到%1设备</translation>
     </message>
@@ -58,39 +68,44 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../lib/utils.cpp" line="203"/>
+        <location filename="../lib/utils.cpp" line="210"/>
         <source>password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="204"/>
+        <location filename="../lib/utils.cpp" line="211"/>
         <source>fingerprint</source>
         <translation>指纹</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="205"/>
+        <location filename="../lib/utils.cpp" line="212"/>
         <source>face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="206"/>
+        <location filename="../lib/utils.cpp" line="213"/>
         <source>fingervein</source>
         <translation>指静脉</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="207"/>
+        <location filename="../lib/utils.cpp" line="214"/>
         <source>iris</source>
         <translation>虹膜</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="208"/>
+        <location filename="../lib/utils.cpp" line="215"/>
         <source>ukey</source>
         <translation>UKey</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="209"/>
+        <location filename="../lib/utils.cpp" line="216"/>
         <source>virtual face</source>
         <translation>人脸</translation>
+    </message>
+    <message>
+        <location filename="../lib/utils.cpp" line="217"/>
+        <source>virtual code</source>
+        <translation>授权码</translation>
     </message>
 </context>
 <context>
@@ -141,22 +156,22 @@
         <translation> (错误码:0x%x)</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="226"/>
+        <location filename="../lib/utils.cpp" line="234"/>
         <source>Feature not match.</source>
         <translation>特征不匹配。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="228"/>
+        <location filename="../lib/utils.cpp" line="236"/>
         <source>Feature matching successed.</source>
         <translation>特征匹配成功。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="230"/>
+        <location filename="../lib/utils.cpp" line="238"/>
         <source>Feature not match, please retry it.</source>
         <translation>特征不匹配，请重试。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="235"/>
+        <location filename="../lib/utils.cpp" line="243"/>
         <source>Unknown verfication error.</source>
         <translation>未知认证错误。</translation>
     </message>

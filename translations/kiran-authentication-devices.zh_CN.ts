@@ -63,6 +63,19 @@
     </message>
 </context>
 <context>
+    <name>Kiran::VirtualCodeDevice</name>
+    <message>
+        <location filename="../src/device-manager/device/virtual-code-device.cpp" line="38"/>
+        <source>Device Busy</source>
+        <translation>设备忙</translation>
+    </message>
+    <message>
+        <location filename="../src/device-manager/device/virtual-code-device.cpp" line="54"/>
+        <source>identify success</source>
+        <translation>认证成功</translation>
+    </message>
+</context>
+<context>
     <name>Kiran::VirtualFaceDevice</name>
     <message>
         <location filename="../src/device-manager/device/virtual-face-device.cpp" line="39"/>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="10" height="8" viewBox="0 0 10 8">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+        fill-rule: evenodd;
+      }
+    </style>
+  </defs>
+  <path id="下箭头icon_拷贝_2" data-name="下箭头icon 拷贝 2" class="cls-1" d="M4340,700l5,4.873,5-4.873v2.133L4345,707l-5-4.873V700Z" transform="translate(-4340 -699.5)"/>
+</svg>

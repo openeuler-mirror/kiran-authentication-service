@@ -29,7 +29,9 @@ static const QSet<QString> supportedServiceName = {
     "lightdm",
     "kiran-screensaver",
     "polkit-1",
-    "sudo"};
+    "sudo",
+    "gdm-password",
+    "gnome-screensaver"};
 
 // 通过PAM句柄获取生物认证是否支持该PAM服务
 bool pam_service_is_support(pam_handle_t *pamh)
@@ -41,6 +43,7 @@ bool pam_service_is_support(pam_handle_t *pamh)
         pam_syslog(pamh, LOG_ERR, "%s failed.", __FUNCTION__);
         return false;
     }
+    pam_syslog(pamh, LOG_INFO, "pam service: %s", value);
 
     return supportedServiceName.contains(value);
 }

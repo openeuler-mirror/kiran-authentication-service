@@ -220,7 +220,8 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 {
     KLOG_INFO() << m_sessionID << "verify identify status:" << bid << result << message;
 
-    if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE && result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
+    if ((this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE && result == IdentifyStatus::IDENTIFY_STATUS_MATCH) ||
+        (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE && result == IdentifyStatus::IDENTIFY_STATUS_MATCH))
     {
         // TODO: 虚拟设备认证成功
         // 由于特征信息保存在远程服务中，无法校验特征与用户绑定信息
@@ -229,7 +230,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 
         KLOG_INFO() << m_sessionID << "virtual device authentication successfully, authenticated user name:" << this->m_verifyInfo.m_authenticatedUserName;
         // 认证成功后处理，如开启人走监测等
-        this->m_verifyInfo.deviceAdaptor->identifySuccessedPostProcess(this, "");
+        this->m_verifyInfo.deviceAdaptor->identifySuccessedPostProcess(this, this->m_verifyInfo.m_authenticatedUserName);
     }
     else if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
              result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
@@ -245,7 +246,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     }
     else if (result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
     {
-        if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE)
+        if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE)
         {
             Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
         }
@@ -284,6 +285,9 @@ void Session::startPhaseAuth()
     case KAD_AUTH_TYPE_VIRTUAL_FACE:
         startVirtualFaceAuth();
         break;
+    case KAD_AUTH_TYPE_VIRTUAL_CODE:
+        startVirtualCodeAuth();
+        break;
     default:
         startGeneralAuth();
         break;
@@ -303,9 +307,8 @@ void Session::startUkeyAuth()
     Q_EMIT this->AuthPrompt(tr("please input ukey code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);
 }
 
-void Session::startVirtualFaceAuth()
+QString Session::getMachineCode()
 {
-    // 传输用户名和机器码
     // dbus接口获取机器码：com.kylinsec.Kiran.LicenseHelper.GetMachineCode
     QString machineCode;
     if (QDBusConnection::systemBus().interface()->isServiceRegistered("com.kylinsec.Kiran.LicenseHelper"))
@@ -323,14 +326,36 @@ void Session::startVirtualFaceAuth()
     }
     else
     {
-        KLOG_WARNING() << "com.kylinsec.Kiran.LicenseHelper service not registered," << "get machine code failed";
+        KLOG_WARNING() << "com.kylinsec.Kiran.LicenseHelper service not registered,"
+                       << "get machine code failed";
     }
 
+    return machineCode;
+}
+
+void Session::startVirtualFaceAuth()
+{
+    // 传输用户名和机器码
+    QString machineCode = getMachineCode();
     QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}});
     startGeneralAuth(jsonDoc.toJson());
 
     KLOG_INFO() << m_sessionID << "start virtual face auth for user:" << m_userName << "machine code:" << machineCode;
     Q_EMIT this->AuthMessage(tr("Please look at the camera"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+}
+
+void Session::startVirtualCodeAuth()
+{
+    m_waitForResponseFunc = [this](const QString &response)
+    {
+        QString machineCode = getMachineCode();
+        QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}, {"code", response}});
+        startGeneralAuth(jsonDoc.toJson());
+    };
+
+    KLOG_DEBUG() << "auth prompt: input authorization code";
+    Q_EMIT this->AuthMessage(tr("Please request for an authorization code and then enter it"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+    Q_EMIT this->AuthPrompt(tr("please input authorization code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);
 }
 
 void Session::startPasswdAuth()
