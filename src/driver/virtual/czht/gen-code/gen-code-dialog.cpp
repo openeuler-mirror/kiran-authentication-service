@@ -1,30 +1,43 @@
+/**
+ * Copyright (c) 2025 ~ 2026 KylinSec Co., Ltd.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
+ * Author:     yangfeng <yangfeng@kylinsec.com.cn>
+ */
+ 
 #include <QComboBox>
 #include <QDBusInterface>
 #include <QDBusReply>
 #include <QDebug>
+#include <QFile>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QListView>
 #include <QPushButton>
 #include <QSpacerItem>
 #include <QSpinBox>
+#include <QStyledItemDelegate>
 #include <QVBoxLayout>
 
-#include "../../czht-error.h"
 #include "config.h"
+#include "czht-define.h"
 #include "gen-code-dialog.h"
-
-static const QString DBUS_INTERFACE = "com.czht.face.daemon";
-static const QString DBUS_PATH = "/com/czht/face/daemon";
 
 GenCodeDialog::GenCodeDialog(QWidget *parent)
     : QDialog(parent), m_applyPage(nullptr), m_resultPage(nullptr), m_resultLabel(nullptr), m_confirmBtn(nullptr), m_closeBtn(nullptr), m_spin(nullptr), m_combo(nullptr)
 {
     setWindowTitle(tr("Request Authorization Code"));
-    // setWindowFlags((windowFlags() & ~Qt::WindowContextHelpButtonHint) | Qt::WindowStaysOnTopHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
-    setWindowFlags(Qt::FramelessWindowHint);
-    setAttribute(Qt::WA_TranslucentBackground);
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
     init();
 }
 
@@ -92,23 +105,11 @@ void GenCodeDialog::init()
     auto *titleLayout = new QHBoxLayout(titleBar);
     titleLayout->setContentsMargins(0, 0, 0, 0);
     titleLayout->addStretch();  // 左侧弹性空间
-    m_closeBtn = new QPushButton("×", titleBar);
+    m_closeBtn = new QPushButton(titleBar);
+    m_closeBtn->setObjectName("closeButton");
     m_closeBtn->setFixedSize(30, 30);
-    m_closeBtn->setStyleSheet(
-        "QPushButton {"
-        "    background-color: transparent;"
-        "    color: #333;"
-        "    border: none;"
-        "    font-size: 20px;"
-        "    font-weight: bold;"
-        "}"
-        "QPushButton:hover {"
-        "    background-color: #f0f0f0;"
-        "    border-radius: 3px;"
-        "}"
-        "QPushButton:pressed {"
-        "    background-color: #e0e0e0;"
-        "}");
+    m_closeBtn->setIcon(QIcon(":/icons/window-close-symbolic.svg"));
+    m_closeBtn->setIconSize(QSize(16, 16));
     titleLayout->addWidget(m_closeBtn);
     connect(m_closeBtn, &QPushButton::clicked, this, &GenCodeDialog::close);
 
@@ -132,8 +133,13 @@ void GenCodeDialog::createApplyPage()
     auto *label = new QLabel(tr("Authorization code request duration"), m_applyPage);
     m_spin = new QSpinBox(m_applyPage);
     m_spin->setRange(1, 9999);
+    m_spin->setFixedHeight(30);
     m_combo = new QComboBox(m_applyPage);
     m_combo->addItems({tr("hour"), tr("day"), tr("week"), tr("month")});
+    m_combo->setFixedHeight(30);
+    auto delegate = new QStyledItemDelegate(this);
+    m_combo->setItemDelegate(delegate);
+
     auto *btn = new QPushButton(tr("request"), m_applyPage);
     auto *labelTooltip = new QLabel(tr("please look at camera when click \"request\" button"), m_applyPage);
 
@@ -174,61 +180,17 @@ void GenCodeDialog::showResultPage(const QString &message)
 
 void GenCodeDialog::applyQss()
 {
-    // 按钮、下拉框、输入框、标签等控件的样式
-    QString qss = QString(
-        "QPushButton {"
-        "    background-color: #4CAF50;"
-        "    color: white;"
-        "    border: none;"
-        "    padding: 10px 20px;"
-        "    border-radius: 5px;"
-        "}"
-        "QPushButton:hover {"
-        "    background-color: #45a049;"
-        "}"
-        "QPushButton:pressed {"
-        "    background-color: #388e3c;"
-        "}"
-        "QComboBox {"
-        "    background-color: #ffffff;"
-        "    border: 1px solid #ccc;"
-        "    padding: 5px;"
-        "    border-radius: 5px;"
-        "}"
-        "QComboBox:hover {"
-        "    background-color: #45a049;"
-        "}"
-        "QComboBox:pressed {"
-        "    background-color: #388e3c;"
-        "}"
-        "QComboBox:focus {"
-        "    background-color: #4CAF50;"
-        "}"
-        "QSpinBox {"
-        "    background-color: #ffffff;"
-        "    border: 1px solid #ccc;"
-        "    padding: 5px;"
-        "    border-radius: 5px;"
-        "}"
-        "QSpinBox:hover {"
-        "    background-color: #45a049;"
-        "}"
-        "QSpinBox:pressed {"
-        "    background-color: #388e3c;"
-        "}"
-        "QSpinBox:focus {"
-        "    background-color: #4CAF50;"
-        "}"
-        "QLabel {"
-        "    color: #333;"
-        "    font-size: 14px;"
-        "    font-weight: bold;"
-        "}"
-        "QDialog {"
-        "    background-color: #ffffff;"
-        "    border: 1px solid #ccc;"
-        "    padding: 10px;"
-        "    border-radius: 5px;"
-        "}");
-    setStyleSheet(qss);
+    // 从资源文件加载 QSS 样式
+    QFile qssFile(":/styles/gen-code-dialog.qss");
+    if (qssFile.open(QFile::ReadOnly | QFile::Text))
+    {
+        QString qss = QString::fromUtf8(qssFile.readAll());
+        setStyleSheet(qss);
+        qssFile.close();
+    }
+    else
+    {
+        // 如果资源文件加载失败，使用默认样式
+        qWarning() << "Failed to load QSS file from resources";
+    }
 }

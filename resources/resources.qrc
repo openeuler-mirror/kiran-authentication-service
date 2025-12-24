@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="window-close-symbolic.svg">window-close-symbolic.svg</file>
+        <file alias="combobox-arrow.svg">combobox-arrow.svg</file>
+        <file alias="arrow-up.svg">arrow-up.svg</file>
+        <file alias="arrow-down.svg">arrow-down.svg</file>
+    </qresource>
+    <qresource prefix="/styles">
+        <file alias="gen-code-dialog.qss">gen-code-dialog.qss</file>
+    </qresource>
+</RCC>

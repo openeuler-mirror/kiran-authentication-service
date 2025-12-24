@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.0)
 project(kiran-authentication-service VERSION 2.6)
 
 include(GNUInstallDirs)
+
+option(ENABLE_CZHT_VIRTUAL_DRIVER "Enable czht virtual driver" OFF)
+
 set(KAS_INSTALL_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME})
 set(KAS_INSTALL_INCLUDE ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${PROJECT_NAME})
 set(KAS_INSTALL_TRANSLATIONDIR ${KAS_INSTALL_DATADIR}/translations)

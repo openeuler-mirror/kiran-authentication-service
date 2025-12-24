@@ -1,4 +1,19 @@
+/**
+ * Copyright (c) 2025 ~ 2026 KylinSec Co., Ltd.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
+ * Author:     yangfeng <yangfeng@kylinsec.com.cn>
+ */
+ 
 #include <qt5-log-i.h>
+#include <QCoreApplication>
 #include <QDBusInterface>
 #include <QDBusReply>
 #include <QJsonArray>
@@ -6,70 +21,32 @@
 #include <QJsonObject>
 #include <QProcess>
 #include <QSettings>
+#include <QTranslator>
 
 #include "config.h"
-#include "czht-driver.h"
+#include "czht-define.h"
+#include "czht-face-driver.h"
 
-static const QString DBUS_INTERFACE = "com.czht.face.daemon";
-static const QString DBUS_PATH = "/com/czht/face/daemon";
-
-// TODO: 需要诚志海图提供一份错误码信息
-/*
-1 JSON格式错误
-2 缺少必需的JSON字段
-3 参数范围超过限制
-4 生成授权失败
-5 授权验证失败
-6 后端处理超时
-7 正在执行其他任务
-8 任务未执行
-9 无法连接USB摄像头
-10 主机通信异常
-*/
-enum CZHT_ERROR_NUM
+CZHTFaceDriver::CZHTFaceDriver(QObject *parent) : VirtualFaceDriver(parent)
 {
-    CZHT_SUCCESS = 0,
-    CZHT_ERROR_JSON_FORMAT_ERROR = 1,
-    CZHT_ERROR_MISSING_REQUIRED_FIELD = 2,
-    CZHT_ERROR_PARAMETER_OUT_OF_RANGE = 3,
-    CZHT_ERROR_GENERATE_AUTHORIZATION_FAILED = 4,
-    CZHT_ERROR_AUTHORIZATION_VERIFICATION_FAILED = 5,
-    CZHT_ERROR_BACKEND_PROCESS_TIMEOUT = 6,
-    CZHT_ERROR_OTHER_TASK_EXECUTING = 7,
-    CZHT_ERROR_TASK_NOT_EXECUTED = 8,
-    CZHT_ERROR_CANNOT_CONNECT_USB_CAMERA = 9,
-    CZHT_ERROR_HOST_COMMUNICATION_EXCEPTION = 10,
-    CZHT_ERROR_USER_NOT_MATCH = 11,
+    static QTranslator translator;
+    if (!translator.load(QLocale(), "czht-face", ".", KAS_INSTALL_TRANSLATIONDIR,
+                         ".qm"))
+    {
+        KLOG_INFO() << "Load translator failed!";
+    }
+    else
+    {
+        QCoreApplication::installTranslator(&translator);
+    }
 
-    CZHT_ERROR_DAEMON_NOT_RUNNING = 100,
-};
-
-// 错误码对应的错误信息
-static const QMap<int, QString> CZHT_ERROR_MSG = {
-    {CZHT_SUCCESS, "成功"},
-    {CZHT_ERROR_JSON_FORMAT_ERROR, "JSON格式错误"},
-    {CZHT_ERROR_MISSING_REQUIRED_FIELD, "缺少必需的JSON字段"},
-    {CZHT_ERROR_PARAMETER_OUT_OF_RANGE, "参数范围超过限制"},
-    {CZHT_ERROR_GENERATE_AUTHORIZATION_FAILED, "生成授权失败"},
-    {CZHT_ERROR_AUTHORIZATION_VERIFICATION_FAILED, "授权验证失败"},
-    {CZHT_ERROR_BACKEND_PROCESS_TIMEOUT, "后端处理超时"},
-    {CZHT_ERROR_OTHER_TASK_EXECUTING, "正在执行其他任务"},
-    {CZHT_ERROR_TASK_NOT_EXECUTED, "任务未执行"},
-    {CZHT_ERROR_CANNOT_CONNECT_USB_CAMERA, "无法连接USB摄像头"},
-    {CZHT_ERROR_HOST_COMMUNICATION_EXCEPTION, "主机通信异常"},
-    {CZHT_ERROR_USER_NOT_MATCH, "用户不匹配"},
-    {CZHT_ERROR_DAEMON_NOT_RUNNING, "人脸服务未运行"},
-};
-
-CZHTDriver::CZHTDriver(QObject *parent) : VirtualFaceDriver(parent)
-{
     m_businessID = "KylinsecOS";
 
-    KLOG_INFO() << "CZHTDriver config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
+    KLOG_INFO() << "CZHTFaceDriver config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
     QSettings settings(QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini", QSettings::IniFormat);
     m_searchTimeOut = settings.value("search_time_out").toInt();
     m_detectTimeOut = settings.value("detect_time_out").toInt();
-    KLOG_INFO() << "CZHTDriver config: business_id:" << m_businessID << "search_time_out:" << m_searchTimeOut << "detect_time_out:" << m_detectTimeOut;
+    KLOG_INFO() << "CZHTFaceDriver config: business_id:" << m_businessID << "search_time_out:" << m_searchTimeOut << "detect_time_out:" << m_detectTimeOut;
 
     m_iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE,
                                  QDBusConnection::systemBus(), this);
@@ -86,7 +63,7 @@ CZHTDriver::CZHTDriver(QObject *parent) : VirtualFaceDriver(parent)
     // KLOG_INFO() << "connect to dbus signal com.czht.face.daemon.LeaveDetected:" << ret;
 }
 
-CZHTDriver::~CZHTDriver()
+CZHTFaceDriver::~CZHTFaceDriver()
 {
     // 断开 systemBus 上的信号连接
     QDBusConnection::systemBus().disconnect(
@@ -97,30 +74,31 @@ CZHTDriver::~CZHTDriver()
     handleScreenLockSignal(false);
 }
 
-QString CZHTDriver::getDriverName() { return tr("virtual-face-czht"); }
+QString CZHTFaceDriver::getDriverName() { return tr("virtual-face-czht"); }
 
-QString CZHTDriver::getErrorMsg(int errorNum)
+QString CZHTFaceDriver::getErrorMsg(int errorNum)
 {
-    return CZHT_ERROR_MSG.value(errorNum);
+    return getCZHTErrorMsg(errorNum);
 }
 
-DriverType CZHTDriver::getType() { return DRIVER_TYPE_Virtual_Face; }
+DriverType CZHTFaceDriver::getType() { return DRIVER_TYPE_Virtual_Face; }
 
-int CZHTDriver::identify(const QString &extraInfo)
+int CZHTFaceDriver::identify(const QString &extraInfo)
 {
     return startSearch(extraInfo);
 }
 
-void CZHTDriver::identifySuccessedPostProcess(const QString &extraInfo)
+void CZHTFaceDriver::identifySuccessedPostProcess(const QString &extraInfo)
 {
     // 监听锁屏信号
     // handleScreenLockSignal();
 
     // 启动人走监测
     startLeaveDetect(extraInfo);
+
 }
 
-QDBusInterface *CZHTDriver::getBusInterface()
+QDBusInterface *CZHTFaceDriver::getBusInterface()
 {
     if (!m_iface->isValid())
     {
@@ -130,7 +108,7 @@ QDBusInterface *CZHTDriver::getBusInterface()
     return m_iface;
 }
 
-QString CZHTDriver::dbusCall(QString method, QString args)
+QString CZHTFaceDriver::dbusCall(QString method, QString args)
 {
     QDBusInterface *iface = getBusInterface();
     if (!iface->isValid())
@@ -155,9 +133,9 @@ QString CZHTDriver::dbusCall(QString method, QString args)
     }
 }
 
-int CZHTDriver::startSearch(const QString &extraInfo)
+int CZHTFaceDriver::startSearch(const QString &extraInfo)
 {
-    KLOG_INFO() << "CZHTDriver startSearch";
+    KLOG_INFO() << "CZHTFaceDriver startSearch";
     QJsonDocument extraInfoJsonDoc = QJsonDocument::fromJson(extraInfo.toUtf8());
     QJsonObject extraInfoJsonObj = extraInfoJsonDoc.object();
     QString searchUserName = extraInfoJsonObj.value("user_name").toString();
@@ -173,7 +151,6 @@ int CZHTDriver::startSearch(const QString &extraInfo)
     jsonObj = jsonDoc.object();
     int error_code = jsonObj.value("code").toInt();
     KLOG_INFO() << "StartSearch reply:" << jsonObj;
-    //StartSearch reply: QJsonObject({"business_id":"KylinsecOS","code":0,"users":[{"device_code":["0D8A-2D34-923E-180F"],"person_id":1,"person_name":"y","user_id":"root"},{"device_code":["0D8A-2D34-923E-180F"],"person_id":1,"person_name":"y","user_id":"root"}]})
     if (error_code != CZHT_SUCCESS)
     {
         KLOG_ERROR() << "StartSearch failed:" << error_code << jsonObj;
@@ -185,15 +162,22 @@ int CZHTDriver::startSearch(const QString &extraInfo)
     for (const QJsonValue &user : users)
     {
         QJsonObject userObj = user.toObject();
-        QString person_id = userObj.value("person_id").toString();
+        int personID = userObj.value("person_id").toInt();
         QString personName = userObj.value("person_name").toString();
         QString user_id = userObj.value("user_id").toString();
         QJsonArray device_code = userObj.value("device_code").toArray();
-        KLOG_INFO() << "person_id:" << person_id << "personName:" << personName << "user_id:" << user_id << "device_code:" << device_code;
+        bool expired = userObj.value("expired").toBool();
+        KLOG_INFO() << "person_id:" << personID << "personName:" << personName << "user_id:" << user_id << "device_code:" << device_code << "expired:" << expired;
         if (user_id == searchUserName && device_code.contains(searchMachineCode))
         {
+            if (expired)
+            {
+                KLOG_ERROR() << "StartSearch user expired:" << searchUserName << searchMachineCode;
+                return CZHT_ERROR_USER_EXPIRED;
+            }
+
             // 人脸服务的用户，用于启动人走监测
-            m_personNameLast = personName;
+            m_personIDLast = personID;
             found = true;
             break;
         }
@@ -202,17 +186,17 @@ int CZHTDriver::startSearch(const QString &extraInfo)
     if (!found)
     {
         KLOG_ERROR() << "StartSearch user not match:" << searchUserName << searchMachineCode;
-        return CZHT_ERROR_USER_NOT_MATCH;
+        return CZHT_ERROR_MATCH_PERSON_NOT_FOUND;
     }
 
     return CZHT_SUCCESS;
 }
 
-int CZHTDriver::startLeaveDetect(const QString &extraInfo)
+int CZHTFaceDriver::startLeaveDetect(const QString &extraInfo)
 {
     QJsonObject jsonObj;
     jsonObj.insert("business_id", m_businessID);
-    jsonObj.insert("user_id", m_personNameLast);
+    jsonObj.insert("person_id", m_personIDLast);
     jsonObj.insert("os_user", extraInfo);
     jsonObj.insert("detect_time_out", m_detectTimeOut);
     QJsonDocument jsonDoc(jsonObj);
@@ -234,7 +218,7 @@ int CZHTDriver::startLeaveDetect(const QString &extraInfo)
     }
 }
 
-int CZHTDriver::stopLeaveDetect()
+int CZHTFaceDriver::stopLeaveDetect()
 {
     QJsonObject jsonObj;
     jsonObj.insert("business_id", m_businessID);
@@ -257,7 +241,7 @@ int CZHTDriver::stopLeaveDetect()
     }
 }
 
-void CZHTDriver::leaveDetected(QString info)
+void CZHTFaceDriver::leaveDetected(QString info)
 {
     // 锁屏
     KLOG_INFO() << "czht leave detected, Lock screen. info:" << info;
@@ -281,7 +265,7 @@ void CZHTDriver::leaveDetected(QString info)
     // handleScreenLockSignal(false);
 }
 
-void CZHTDriver::screenLockChanged(bool locked)
+void CZHTFaceDriver::screenLockChanged(bool locked)
 {
     KLOG_INFO() << "Screen lock changed, active:" << locked;
     if (!locked)
@@ -295,7 +279,7 @@ void CZHTDriver::screenLockChanged(bool locked)
     handleScreenLockSignal(false);
 }
 
-void CZHTDriver::handleScreenLockSignal(bool connect)
+void CZHTFaceDriver::handleScreenLockSignal(bool connect)
 {
     // NOTE: 需要适配底版本系统的锁屏命令
     // NOTE: 在随系统启动的程序中连接sessionBus会失败，应该另起一个程序，以当前认证用户连接sessionBus
@@ -319,4 +303,4 @@ void CZHTDriver::handleScreenLockSignal(bool connect)
     // }
 }
 
-extern "C" Driver *createDriver() { return new CZHTDriver(); }
+extern "C" Driver *createDriver() { return new CZHTFaceDriver(); }

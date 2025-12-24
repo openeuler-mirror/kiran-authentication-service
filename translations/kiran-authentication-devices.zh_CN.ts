@@ -65,14 +65,14 @@
 <context>
     <name>Kiran::VirtualCodeDevice</name>
     <message>
-        <location filename="../src/device-manager/device/virtual-code-device.cpp" line="39"/>
+        <location filename="../src/device-manager/device/virtual-code-device.cpp" line="38"/>
         <source>Device Busy</source>
-        <translation type="unfinished">设备忙</translation>
+        <translation>设备忙</translation>
     </message>
     <message>
-        <location filename="../src/device-manager/device/virtual-code-device.cpp" line="55"/>
+        <location filename="../src/device-manager/device/virtual-code-device.cpp" line="54"/>
         <source>identify success</source>
-        <translation type="unfinished">认证成功</translation>
+        <translation>认证成功</translation>
     </message>
 </context>
 <context>

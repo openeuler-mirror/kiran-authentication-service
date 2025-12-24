@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2025 ~ 2026 KylinSec Co., Ltd.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
+ * Author:     yangfeng <yangfeng@kylinsec.com.cn>
+ */
+ 
 #pragma once
 
 #include <QObject>
@@ -6,12 +20,12 @@
 #include "src/device-manager/driver/virtual-face-driver.h"
 
 class QDBusInterface;
-class CZHTDriver : public VirtualFaceDriver
+class CZHTFaceDriver : public VirtualFaceDriver
 {
     Q_OBJECT
 public:
-    explicit CZHTDriver(QObject *parent = nullptr);
-    ~CZHTDriver();
+    explicit CZHTFaceDriver(QObject *parent = nullptr);
+    ~CZHTFaceDriver();
 
     QString getDriverName() override;
     QString getErrorMsg(int errorNum) override;
@@ -46,8 +60,8 @@ private:
     // 人走监测超时时间
     int m_detectTimeOut;
     // 记录上一次识别的人名
-    QString m_personNameLast;
+    int m_personIDLast;
 };
-typedef QSharedPointer<CZHTDriver> CZHTDriverPtr;
+typedef QSharedPointer<CZHTFaceDriver> CZHTFaceDriverPtr;
 extern "C" Driver *
 createDriver();

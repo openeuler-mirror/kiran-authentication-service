@@ -2,71 +2,11 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
-    <name>GenCodeDialog</name>
+    <name>CZHTFaceDriver</name>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="39"/>
-        <source>Request Authorization Code</source>
-        <translation>申请授权码</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="49"/>
-        <source>Failed to request authorization code, please check if the face service (com.czht.face.daemon) is running</source>
-        <translation>申请授权码失败，请确认人脸服务(com.czht.face.daemon)是否正常运行</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="82"/>
-        <source>Failed to request authorization code: %1</source>
-        <translation>申请授权码失败：%1</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="86"/>
-        <source>Request authorization code successfully, please wait for the SMS notification</source>
-        <translation>申请授权码成功，请等待短信通知</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="91"/>
-        <source>Failed to request authorization code, please try again, %1</source>
-        <translation>申请授权码失败，请重试，%1</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="133"/>
-        <source>Authorization code request duration</source>
-        <translation>请选择合适的申请时长</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="138"/>
-        <source>day</source>
-        <translation>天</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="138"/>
-        <source>week</source>
-        <translation>周</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="138"/>
-        <source>month</source>
-        <translation>月</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="138"/>
-        <source>hour</source>
-        <translation>小时</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="143"/>
-        <source>request</source>
-        <translation>申请</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="144"/>
-        <source>please look at camera when click &quot;request&quot; button</source>
-        <translation>点击&quot;申请&quot;时，请正视摄像头</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="165"/>
-        <source>Confirm</source>
-        <translation>确认</translation>
+        <location filename="../src/driver/virtual/czht/face/czht-face-driver.cpp" line="77"/>
+        <source>virtual-face-czht</source>
+        <translation>诚志海图人脸</translation>
     </message>
 </context>
 <context>
@@ -100,26 +40,6 @@
         <location filename="../src/driver/virtual/czht/include/czht-define.h" line="95"/>
         <source>operation timeout</source>
         <translation>操作超时</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/include/czht-define.h" line="96"/>
-        <source>other task executing</source>
-        <translation>正在执行其他任务</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/include/czht-define.h" line="97"/>
-        <source>task not executed</source>
-        <translation>任务未执行</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/include/czht-define.h" line="98"/>
-        <source>cannot connect USB camera</source>
-        <translation>无法连接USB摄像头</translation>
-    </message>
-    <message>
-        <location filename="../src/driver/virtual/czht/include/czht-define.h" line="99"/>
-        <source>host communication exception</source>
-        <translation>源主机通信异常</translation>
     </message>
     <message>
         <location filename="../src/driver/virtual/czht/include/czht-define.h" line="100"/>
@@ -204,7 +124,27 @@
     <message>
         <location filename="../src/driver/virtual/czht/include/czht-define.h" line="116"/>
         <source>CZHT daemon not running</source>
-        <translation>CZHT人脸服务后台没有启动</translation>
+        <translation>CZHT人脸服务没有启动</translation>
+    </message>
+    <message>
+        <location filename="../src/driver/virtual/czht/include/czht-define.h" line="96"/>
+        <source>other task executing</source>
+        <translation>正在执行其他任务</translation>
+    </message>
+    <message>
+        <location filename="../src/driver/virtual/czht/include/czht-define.h" line="97"/>
+        <source>task not executed</source>
+        <translation>任务未执行</translation>
+    </message>
+    <message>
+        <location filename="../src/driver/virtual/czht/include/czht-define.h" line="98"/>
+        <source>cannot connect USB camera</source>
+        <translation>无法连接USB摄像头</translation>
+    </message>
+    <message>
+        <location filename="../src/driver/virtual/czht/include/czht-define.h" line="99"/>
+        <source>host communication exception</source>
+        <translation>源主机通信异常</translation>
     </message>
 </context>
 </TS>

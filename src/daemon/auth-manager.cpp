@@ -197,18 +197,18 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
     }
 
     sortedAuthTypes << KAD_AUTH_TYPE_PASSWORD;
-    KLOG_DEBUG() << "get auth types by app:" << authApp << "result:" << sortedAuthTypes;
+    KLOG_INFO() << "get auth types by app:" << authApp << "result:" << sortedAuthTypes;
     return sortedAuthTypes;
 }
 
 int AuthManager::QueryAuthApp(const QString &pamServiceName)
 {
-    static QMap<QString, int> pamAuthAppMap = {
-        {"lightdm", KAD_AUTH_APPLICATION_LOGIN},
-        {"kiran-screensaver", KAD_AUTH_APPLICATION_UNLOCK},
-        {"polkit-1", KAD_AUTH_APPLICATION_EMPOWERMENT},
-
-        {"sudo", KAD_AUTH_APPLICATION_EMPOWERMENT}};
+    static QMap<QString, int> pamAuthAppMap = {{"lightdm", KAD_AUTH_APPLICATION_LOGIN},
+                                               {"kiran-screensaver", KAD_AUTH_APPLICATION_UNLOCK},
+                                               {"polkit-1", KAD_AUTH_APPLICATION_EMPOWERMENT},
+                                               {"sudo", KAD_AUTH_APPLICATION_EMPOWERMENT},
+                                               {"gdm-password", KAD_AUTH_APPLICATION_LOGIN},
+                                               {"gnome-screensaver", KAD_AUTH_APPLICATION_UNLOCK}};
 
     int authApp = KAD_AUTH_APPLICATION_NONE;
 

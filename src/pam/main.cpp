@@ -30,7 +30,8 @@ static const QSet<QString> supportedServiceName = {
     "kiran-screensaver",
     "polkit-1",
     "sudo",
-    "gdm-password"};
+    "gdm-password",
+    "gnome-screensaver"};
 
 // 通过PAM句柄获取生物认证是否支持该PAM服务
 bool pam_service_is_support(pam_handle_t *pamh)

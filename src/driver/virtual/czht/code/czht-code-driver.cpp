@@ -1,4 +1,19 @@
+/**
+ * Copyright (c) 2025 ~ 2026 KylinSec Co., Ltd.
+ * kiran-authentication-service is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ *
+ * Author:     yangfeng <yangfeng@kylinsec.com.cn>
+ */
+ 
 #include <qt5-log-i.h>
+#include <QCoreApplication>
 #include <QDBusInterface>
 #include <QDBusReply>
 #include <QDateTime>
@@ -7,19 +22,28 @@
 #include <QJsonObject>
 #include <QProcess>
 #include <QSettings>
+#include <QTranslator>
 
 #include "config.h"
 #include "czht-code-driver.h"
-#include "czht-error.h"
+#include "czht-define.h"
 
-static const QString DBUS_INTERFACE = "com.czht.face.daemon";
-static const QString DBUS_PATH = "/com/czht/face/daemon";
-
-CZHTDriverCode::CZHTDriverCode(QObject *parent) : VirtualCodeDriver(parent)
+CZHTCodeDriver::CZHTCodeDriver(QObject *parent) : VirtualCodeDriver(parent)
 {
+    static QTranslator translator;
+    if (!translator.load(QLocale(), "czht-code", ".", KAS_INSTALL_TRANSLATIONDIR,
+                         ".qm"))
+    {
+        KLOG_INFO() << "Load translator failed!";
+    }
+    else
+    {
+        QCoreApplication::installTranslator(&translator);
+    }
+
     m_businessID = "KylinsecOS";
 
-    KLOG_INFO() << "CZHTDriverCode config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
+    KLOG_INFO() << "CZHTCodeDriver config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
     QSettings settings(QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini", QSettings::IniFormat);
     m_detectTimeOut = settings.value("detect_time_out").toInt();
 
@@ -37,7 +61,7 @@ CZHTDriverCode::CZHTDriverCode(QObject *parent) : VirtualCodeDriver(parent)
     KLOG_INFO() << "connect to dbus signal com.czht.face.daemon.LeaveDetected:" << ret;
 }
 
-CZHTDriverCode::~CZHTDriverCode()
+CZHTCodeDriver::~CZHTCodeDriver()
 {
     // 断开 systemBus 上的信号连接
     QDBusConnection::systemBus().disconnect(
@@ -45,21 +69,21 @@ CZHTDriverCode::~CZHTDriverCode()
         SLOT(leaveDetected(QString)));
 }
 
-QString CZHTDriverCode::getDriverName() { return tr("virtual-code-czht"); }
+QString CZHTCodeDriver::getDriverName() { return tr("virtual-code-czht"); }
 
-QString CZHTDriverCode::getErrorMsg(int errorNum)
+QString CZHTCodeDriver::getErrorMsg(int errorNum)
 {
     return getCZHTErrorMsg(errorNum);
 }
 
-DriverType CZHTDriverCode::getType() { return DRIVER_TYPE_Virtual_Code; }
+DriverType CZHTCodeDriver::getType() { return DRIVER_TYPE_Virtual_Code; }
 
-int CZHTDriverCode::identify(const QString &extraInfo)
+int CZHTCodeDriver::identify(const QString &extraInfo)
 {
     return verifyAuthorizationCode(extraInfo);
 }
 
-int CZHTDriverCode::verifyAuthorizationCode(const QString &extraInfo)
+int CZHTCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
 {
     QJsonDocument extraInfoJsonDoc = QJsonDocument::fromJson(extraInfo.toUtf8());
     QJsonObject extraInfoJsonObj = extraInfoJsonDoc.object();
@@ -88,52 +112,64 @@ int CZHTDriverCode::verifyAuthorizationCode(const QString &extraInfo)
     }
 
     bool found = false;
+    bool expired = false;
     QJsonArray users = jsonObj.value("users").toArray();
     for (const QJsonValue &user : users)
     {
         QJsonObject userObj = user.toObject();
-        QString person_id = userObj.value("person_id").toString();
+        int personID = userObj.value("person_id").toInt();
         QString personName = userObj.value("person_name").toString();
-        QString user_id = userObj.value("user_id").toString();
+        QString userID = userObj.value("user_id").toString();
         QJsonArray device_code = userObj.value("device_code").toArray();
-        KLOG_INFO() << "person_id:" << person_id << "personName:" << personName << "user_id:" << user_id << "device_code:" << device_code;
+        KLOG_INFO() << "person_id:" << personID << "personName:" << personName << "user_id:" << userID << "device_code:" << device_code << "expired:" << expired;
         if (device_code.contains(searchMachineCode))
         {
+            expired = userObj.value("expired").toBool();
+            if (expired)
+            {
+                continue;
+            }
             // 人脸服务的用户，用于启动人走监测
-            m_personNameLast = personName;
+            m_personIDLast = personID;
             found = true;
             break;
         }
     }
 
+    if (expired)
+    {
+        KLOG_ERROR() << "CodeCheck user expired:" << searchUserName << searchMachineCode;
+        return CZHT_ERROR_USER_EXPIRED;
+    }
+    
     if (!found)
     {
         KLOG_ERROR() << "StartSearch user not match:" << searchUserName << searchMachineCode;
-        return CZHT_ERROR_USER_NOT_MATCH;
+        return CZHT_ERROR_MATCH_PERSON_NOT_FOUND;
     }
 
     return CZHT_SUCCESS;
 }
 
-void CZHTDriverCode::identifySuccessedPostProcess(const QString &extraInfo)
+void CZHTCodeDriver::identifySuccessedPostProcess(const QString &extraInfo)
 {
     // 启动人走监测
     startLeaveDetect(extraInfo);
 
     // 授权码登录需要录屏
-    QString osUser = extraInfo.split(" ")[0];
-    QString fileName = QString("%1_%2_3.mp4").arg(m_personNameLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
+    QString osUser = extraInfo;
+    QString fileName = QString("%1_%2_%3.mp4").arg(m_personIDLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
     QProcess::startDetached("sudo", QStringList() << "-u"
-                                                  << osUser
-                                                  << "kiran-screen-recorder"
-                                                  << fileName);
+                                                    << osUser
+                                                    << "kiran-screen-recorder"
+                                                    << fileName);
 }
 
-int CZHTDriverCode::startLeaveDetect(const QString &extraInfo)
+int CZHTCodeDriver::startLeaveDetect(const QString &extraInfo)
 {
     QJsonObject jsonObj;
     jsonObj.insert("business_id", m_businessID);
-    jsonObj.insert("user_id", m_personNameLast);
+    jsonObj.insert("person_id", m_personIDLast);
     jsonObj.insert("os_user", extraInfo);
     jsonObj.insert("detect_time_out", m_detectTimeOut);
     QJsonDocument jsonDoc(jsonObj);
@@ -155,7 +191,7 @@ int CZHTDriverCode::startLeaveDetect(const QString &extraInfo)
     }
 }
 
-QString CZHTDriverCode::dbusCall(QString method, QString args)
+QString CZHTCodeDriver::dbusCall(QString method, QString args)
 {
     KLOG_INFO() << "DBus call:" << method << args;
     QDBusReply<QString> reply = m_iface->call(method, args);
@@ -170,9 +206,9 @@ QString CZHTDriverCode::dbusCall(QString method, QString args)
     }
 }
 
-void CZHTDriverCode::leaveDetected(QString info)
+void CZHTCodeDriver::leaveDetected(QString info)
 {
     KLOG_INFO() << "czht leave detected, Lock screen. info:" << info;
 }
 
-extern "C" Driver *createDriver() { return new CZHTDriverCode(); }
+extern "C" Driver *createDriver() { return new CZHTCodeDriver(); }

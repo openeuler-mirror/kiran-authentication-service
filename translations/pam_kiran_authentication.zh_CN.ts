@@ -10,19 +10,6 @@
     </message>
 </context>
 <context>
-    <name>Kiran::AuthenticationGraphicalSimple</name>
-    <message>
-        <location filename="../src/pam/authentication-graphical-simple.cpp" line="62"/>
-        <source>Select Authentication type (%1): </source>
-        <translation>请选择认证类型（%1）： </translation>
-    </message>
-    <message>
-        <location filename="../src/pam/authentication-graphical-simple.cpp" line="79"/>
-        <source>The authentication type is invalid. Please select a new one</source>
-        <translation>该认证类型无效，请重新选择</translation>
-    </message>
-</context>
-<context>
     <name>Kiran::AuthenticationTerminal</name>
     <message>
         <location filename="../src/pam/authentication-terminal.cpp" line="69"/>

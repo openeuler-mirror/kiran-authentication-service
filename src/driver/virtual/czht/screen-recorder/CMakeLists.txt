@@ -14,5 +14,3 @@ target_link_libraries(${TARGET_NAME} PRIVATE Qt5::Core Qt5::DBus
                                              ${KLOG_QT5_LIBRARIES})
 
 install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/screen-recorder.sh
-        DESTINATION ${VIRTUAL_CZHT_DRIVER_INSTALL_DIR})
