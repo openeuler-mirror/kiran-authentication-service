@@ -145,7 +145,11 @@ bool Manager::genVirtualDevices()
             }
         }
     }
-    KLOG_INFO() << "gen Virtual Devices: " << virtualDrivers;
+    KLOG_INFO() << "gen Virtual Devices result: ";
+    for (auto device : m_devices)
+    {
+        KLOG_INFO() << device->driverName() << device->deviceType() << device->deviceID();
+    }
 
     return true;
 }

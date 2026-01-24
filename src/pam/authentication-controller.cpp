@@ -119,11 +119,13 @@ bool AuthenticationController::isGraphical()
     }
     else if (pamService == "kiran-screensaver")
     {
-        isGraphcal = true;
+        isGraphcal = false;
     }
-    else if (pamService == "gdm-password")
+    else if (pamService == "gdm-password" || pamService == "gnome-screensaver")
     {
-        isGraphcal = true;
+        isGraphcal = false;
+        // 兼容gnome程序，在gnome程序下会存在事件冲突
+        qputenv("QT_NO_GLIB", "1");
     }
 
     this->m_pamHandle->syslogDirect(LOG_INFO, QString("is graphical: service(%1) result=%2").arg(pamService).arg(isGraphcal));

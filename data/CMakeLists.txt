@@ -60,3 +60,9 @@ install(FILES kad.ini DESTINATION ${KAS_INSTALL_SYSCONFDIR})
 # install pam config files
 install(FILES kiran-authentication-service
         DESTINATION /${CMAKE_INSTALL_SYSCONFDIR}/pam.d/)
+
+install(
+  FILES ${PROJECT_SOURCE_DIR}/data/zlog.conf
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE WORLD_READ
+              WORLD_WRITE
+  DESTINATION ${KAS_INSTALL_DATADIR})

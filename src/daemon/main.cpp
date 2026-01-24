@@ -27,13 +27,14 @@
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
 #include "user-manager.h"
+#include "config.h"
 
 int main(int argc, char *argv[])
 {
     auto argv0 = QFileInfo(argv[0]);
     auto programName = argv0.baseName();
 
-    if (klog_qt5_init(QString(), "kylinsec-system", PROJECT_NAME, programName) < 0)
+    if (klog_qt5_init(KAS_ZLOG_CONFIG_FILE, "kylinsec-system", PROJECT_NAME, programName) < 0)
     {
         fprintf(stderr, "Failed to init kiran-log.");
     }

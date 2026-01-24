@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName(programName);
     QCoreApplication::setApplicationVersion(PROJECT_VERSION);
 
-    if (klog_qt5_init(QString(), "kylinsec-system", PROJECT_NAME, programName) < 0)
+    if (klog_qt5_init(KAS_ZLOG_CONFIG_FILE, "kylinsec-system", PROJECT_NAME, programName) < 0)
     {
         fprintf(stderr, "Failed to init kiran-log.");
     }
