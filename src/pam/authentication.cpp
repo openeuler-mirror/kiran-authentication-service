@@ -327,7 +327,9 @@ void Authentication::onAuthMessage(const QString &text, int type)
 
     if (retval != PAM_SUCCESS)
     {
-        this->finishAuth(retval);
+        this->m_pamHandle->syslog(LOG_WARNING, QString("Authentication message failed(info or msg may not supported by application),result:%1,session ID:%2,text:%3,type:%4").arg(retval).arg(m_sessionID).arg(text).arg(type));
+        // 显示消息，失败了只记录日志，不退出认证。gnome程序显示消息的返回是PAM_AUTH_ERR（gnome bug）。
+        // this->finishAuth(retval);
     }
 }
 

@@ -21,7 +21,7 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-    if (klog_qt5_init("", "kylinsec-system", PROJECT_NAME, "kiran-screen-recorder") != 0)
+    if (klog_qt5_init(KAS_ZLOG_CONFIG_FILE, "kylinsec-system", PROJECT_NAME, "kiran-screen-recorder") != 0)
     {
         fprintf(stderr, "Failed to init kiran-log.");
     }
