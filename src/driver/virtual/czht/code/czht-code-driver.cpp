@@ -11,7 +11,7 @@
  *
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
- 
+
 #include <qt5-log-i.h>
 #include <QCoreApplication>
 #include <QDBusInterface>
@@ -40,8 +40,6 @@ CZHTCodeDriver::CZHTCodeDriver(QObject *parent) : VirtualCodeDriver(parent)
     {
         QCoreApplication::installTranslator(&translator);
     }
-
-    m_businessID = "KylinsecOS";
 
     KLOG_INFO() << "CZHTCodeDriver config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
     QSettings settings(QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini", QSettings::IniFormat);
@@ -92,7 +90,7 @@ int CZHTCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
     QString authorizationCode = extraInfoJsonObj.value("code").toString();
 
     QJsonObject jsonObj;
-    jsonObj.insert("business_id", m_businessID);
+    jsonObj.insert("business_id", BUSINESS_ID);
     jsonObj.insert("user_id", searchUserName);
     jsonObj.insert("code", authorizationCode);
     jsonObj.insert("device_code", searchMachineCode);
@@ -141,7 +139,7 @@ int CZHTCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
         KLOG_ERROR() << "CodeCheck user expired:" << searchUserName << searchMachineCode;
         return CZHT_ERROR_USER_EXPIRED;
     }
-    
+
     if (!found)
     {
         KLOG_ERROR() << "StartSearch user not match:" << searchUserName << searchMachineCode;
@@ -160,15 +158,15 @@ void CZHTCodeDriver::identifySuccessedPostProcess(const QString &extraInfo)
     QString osUser = extraInfo;
     QString fileName = QString("%1_%2_%3.mp4").arg(m_personIDLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
     QProcess::startDetached("sudo", QStringList() << "-u"
-                                                    << osUser
-                                                    << "kiran-screen-recorder"
-                                                    << fileName);
+                                                  << osUser
+                                                  << "kiran-screen-recorder"
+                                                  << fileName);
 }
 
 int CZHTCodeDriver::startLeaveDetect(const QString &extraInfo)
 {
     QJsonObject jsonObj;
-    jsonObj.insert("business_id", m_businessID);
+    jsonObj.insert("business_id", BUSINESS_ID);
     jsonObj.insert("person_id", m_personIDLast);
     jsonObj.insert("os_user", extraInfo);
     jsonObj.insert("detect_time_out", m_detectTimeOut);
@@ -204,11 +202,6 @@ QString CZHTCodeDriver::dbusCall(QString method, QString args)
         KLOG_INFO() << "Call failed:" << reply.error().message().toLocal8Bit();
         return "";
     }
-}
-
-void CZHTCodeDriver::leaveDetected(QString info)
-{
-    KLOG_INFO() << "czht leave detected, Lock screen. info:" << info;
 }
 
 extern "C" Driver *createDriver() { return new CZHTCodeDriver(); }

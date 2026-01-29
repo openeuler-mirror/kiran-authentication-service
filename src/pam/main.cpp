@@ -33,17 +33,34 @@ static const QSet<QString> supportedServiceName = {
     "gdm-password",
     "gnome-screensaver"};
 
-// 通过PAM句柄获取生物认证是否支持该PAM服务
-bool pam_service_is_support(pam_handle_t *pamh)
+QString get_pam_service(pam_handle_t *pamh)
 {
     const char *value = nullptr;
     int res = pam_get_item(pamh, PAM_SERVICE, (const void **)&value);
     if (res != PAM_SUCCESS)
     {
         pam_syslog(pamh, LOG_ERR, "%s failed.", __FUNCTION__);
-        return false;
+        return QString();
     }
-    pam_syslog(pamh, LOG_INFO, "pam service: %s", value);
+    return QString(value);
+}
+
+void put_env_qt_no_glib(pam_handle_t *pamh)
+{
+    auto value = get_pam_service(pamh);
+    if (value == "gnome-screensaver" || value == "gdm-password")
+    {
+        pam_syslog(pamh, LOG_INFO, "put env QT_NO_GLIB for %s", value.toStdString().c_str());
+        // 兼容gnome程序，在gnome程序下会存在事件冲突
+        qputenv("QT_NO_GLIB", "1");
+    }
+}
+
+// 通过PAM句柄获取生物认证是否支持该PAM服务
+bool pam_service_is_support(pam_handle_t *pamh)
+{
+    auto value = get_pam_service(pamh);
+    pam_syslog(pamh, LOG_INFO, "pam service: %s", value.toStdString().c_str());
 
     return supportedServiceName.contains(value);
 }
@@ -56,6 +73,9 @@ extern "C" int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         pam_syslog(pamh, LOG_DEBUG, PROGRAM_NAME " isn't support!, ignore");
         return PAM_IGNORE;
     }
+
+    // 调用QCoreApplication前，设置QT_NO_GLIB环境变量
+    put_env_qt_no_glib(pamh);
 
     bool isLocalApp = false;
     QCoreApplication *app = QCoreApplication::instance();
@@ -119,6 +139,9 @@ extern "C" int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int, const char *
         pam_syslog(pamh, LOG_DEBUG, PROGRAM_NAME " isn't support!, ignore");
         return PAM_IGNORE;
     }
+
+    // 调用QCoreApplication前，设置QT_NO_GLIB环境变量
+    put_env_qt_no_glib(pamh);
 
     bool isLocalApp = false;
     QCoreApplication *app = QCoreApplication::instance();

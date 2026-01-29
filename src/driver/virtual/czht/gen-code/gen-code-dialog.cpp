@@ -11,7 +11,7 @@
  *
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
- 
+
 #include <QComboBox>
 #include <QDBusInterface>
 #include <QDBusReply>
@@ -53,20 +53,20 @@ void GenCodeDialog::onApplyClicked()
     int expires_in = m_spin->value();
     if (m_combo->currentIndex() == 1)
     {
-        expires_in *= 24;  //day
+        expires_in *= 24;  // day
     }
     else if (m_combo->currentIndex() == 2)
     {
-        expires_in *= 24;  //week
+        expires_in *= 24;  // week
         expires_in *= 7;
     }
     else if (m_combo->currentIndex() == 3)
     {
-        expires_in *= 24;  //month
+        expires_in *= 24;  // month
         expires_in *= 30;
     }
     QJsonObject jsonObj;
-    jsonObj.insert("business_id", "KylinsecOS");
+    jsonObj.insert("business_id", BUSINESS_ID);
     jsonObj.insert("expires_in", expires_in);
     QJsonDocument jsonDoc(jsonObj);
     QString jsonStr = jsonDoc.toJson();

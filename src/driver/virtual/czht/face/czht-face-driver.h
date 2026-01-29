@@ -41,20 +41,10 @@ private:
 
     int startSearch(const QString &extraInfo);
     int startLeaveDetect(const QString &extraInfo);
-    int stopLeaveDetect();
-
-    // 处理锁屏信号连接与否
-    void handleScreenLockSignal(bool connect = true);
-
-private slots:
-    void leaveDetected(QString info);
-    void screenLockChanged(bool active);
 
 private:
     QDBusInterface *m_iface;
 
-    // 业务ID
-    QString m_businessID;
     // 人脸搜索超时时间
     int m_searchTimeOut;
     // 人走监测超时时间

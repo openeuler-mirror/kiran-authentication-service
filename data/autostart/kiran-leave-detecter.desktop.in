@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Kiran Leave Detecter
+Name[zh_CN]=麒麟信安人走检测服务
+Comment=Detect user leave and lock screen
+Comment[zh_CN]=检测用户离开并锁定屏幕
+Exec=kiran-leave-detecter
+NoDisplay=true
+
+X-KIRAN-Autostart-Phase=Application
+X-KIRAN-Autostart-Notify=true
+X-KIRAN-AutoRestart=true
+
+# NOTE: 没什么用
+X-GNOME-Autostart-Phase=Applications
+X-GNOME-Autostart-Notify=true
+X-GNOME-AutoRestart=true
