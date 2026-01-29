@@ -36,6 +36,18 @@ install(
     ${PROJECT_BINARY_DIR}/data/services/systemd/kiran-authentication-devices.service
   DESTINATION ${SYSTEM_UNIT_DIR})
 
+# install desktop autostart file for leave-detecter
+# 使用桌面环境的 autostart 机制
+configure_file(
+  ${PROJECT_SOURCE_DIR}/data/autostart/kiran-leave-detecter.desktop.in
+  ${PROJECT_BINARY_DIR}/data/autostart/kiran-leave-detecter.desktop
+  @ONLY
+)
+install(
+  FILES
+    ${PROJECT_BINARY_DIR}/data/autostart/kiran-leave-detecter.desktop
+  DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg/autostart)
+
 # install initd service files
 install(
   FILES ${PROJECT_SOURCE_DIR}/data/services/initd/kiran-authentication-daemon

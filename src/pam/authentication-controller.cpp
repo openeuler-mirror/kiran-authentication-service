@@ -119,7 +119,7 @@ bool AuthenticationController::isGraphical()
     }
     else if (pamService == "kiran-screensaver")
     {
-        isGraphcal = false;
+        isGraphcal = true;
     }
     else if (pamService == "gdm-password" || pamService == "gnome-screensaver")
     {

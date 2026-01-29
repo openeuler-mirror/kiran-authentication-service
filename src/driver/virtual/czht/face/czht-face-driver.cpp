@@ -27,7 +27,7 @@
 #include "czht-define.h"
 #include "czht-face-driver.h"
 
-CZHTFaceDriver::CZHTFaceDriver(QObject *parent) : VirtualFaceDriver(parent)
+CZHTFaceDriver::CZHTFaceDriver(QObject *parent) : VirtualFaceDriver(parent), m_iface(nullptr)
 {
     static QTranslator translator;
     if (!translator.load(QLocale(), "czht-face", ".", KAS_INSTALL_TRANSLATIONDIR,
@@ -40,38 +40,16 @@ CZHTFaceDriver::CZHTFaceDriver(QObject *parent) : VirtualFaceDriver(parent)
         QCoreApplication::installTranslator(&translator);
     }
 
-    m_businessID = "KylinsecOS";
-
     KLOG_INFO() << "CZHTFaceDriver config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
     QSettings settings(QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini", QSettings::IniFormat);
     m_searchTimeOut = settings.value("search_time_out").toInt();
     m_detectTimeOut = settings.value("detect_time_out").toInt();
-    KLOG_INFO() << "CZHTFaceDriver config: business_id:" << m_businessID << "search_time_out:" << m_searchTimeOut << "detect_time_out:" << m_detectTimeOut;
-
-    m_iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE,
-                                 QDBusConnection::systemBus(), this);
-    if (!m_iface->isValid())
-    {
-        KLOG_ERROR() << "D-Bus interface invalid";
-        return;
-    }
-
-    // 人走监测由人脸服务完成，本驱动不处理
-    // bool ret = QDBusConnection::systemBus().connect(
-    //     DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE, "LeaveDetected", this,
-    //     SLOT(leaveDetected(QString)));
-    // KLOG_INFO() << "connect to dbus signal com.czht.face.daemon.LeaveDetected:" << ret;
+    KLOG_INFO() << "CZHTFaceDriver config: business_id:" << BUSINESS_ID << "search_time_out:" << m_searchTimeOut << "detect_time_out:" << m_detectTimeOut;
 }
 
 CZHTFaceDriver::~CZHTFaceDriver()
 {
-    // 断开 systemBus 上的信号连接
-    QDBusConnection::systemBus().disconnect(
-        DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE, "LeaveDetected", this,
-        SLOT(leaveDetected(QString)));
 
-    // 断开锁屏信号连接
-    handleScreenLockSignal(false);
 }
 
 QString CZHTFaceDriver::getDriverName() { return tr("virtual-face-czht"); }
@@ -90,17 +68,13 @@ int CZHTFaceDriver::identify(const QString &extraInfo)
 
 void CZHTFaceDriver::identifySuccessedPostProcess(const QString &extraInfo)
 {
-    // 监听锁屏信号
-    // handleScreenLockSignal();
-
     // 启动人走监测
     startLeaveDetect(extraInfo);
-
 }
 
 QDBusInterface *CZHTFaceDriver::getBusInterface()
 {
-    if (!m_iface->isValid())
+    if (!m_iface || !m_iface->isValid())
     {
         m_iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE,
                                      QDBusConnection::systemBus(), this);
@@ -111,7 +85,7 @@ QDBusInterface *CZHTFaceDriver::getBusInterface()
 QString CZHTFaceDriver::dbusCall(QString method, QString args)
 {
     QDBusInterface *iface = getBusInterface();
-    if (!iface->isValid())
+    if (!iface || !iface->isValid())
     {
         QJsonObject jsonObj;
         jsonObj.insert("code", CZHT_ERROR_DAEMON_NOT_RUNNING);
@@ -121,7 +95,7 @@ QString CZHTFaceDriver::dbusCall(QString method, QString args)
     }
 
     KLOG_INFO() << "DBus call:" << method << args;
-    QDBusReply<QString> reply = m_iface->call(method, args);
+    QDBusReply<QString> reply = iface->call(method, args);
     if (reply.isValid())
     {
         return reply.value();
@@ -142,7 +116,7 @@ int CZHTFaceDriver::startSearch(const QString &extraInfo)
     QString searchMachineCode = extraInfoJsonObj.value("machine_code").toString();
 
     QJsonObject jsonObj;
-    jsonObj.insert("business_id", m_businessID);
+    jsonObj.insert("business_id", BUSINESS_ID);
     jsonObj.insert("search_time_out", m_searchTimeOut);
     QJsonDocument jsonDoc(jsonObj);
 
@@ -195,7 +169,7 @@ int CZHTFaceDriver::startSearch(const QString &extraInfo)
 int CZHTFaceDriver::startLeaveDetect(const QString &extraInfo)
 {
     QJsonObject jsonObj;
-    jsonObj.insert("business_id", m_businessID);
+    jsonObj.insert("business_id", BUSINESS_ID);
     jsonObj.insert("person_id", m_personIDLast);
     jsonObj.insert("os_user", extraInfo);
     jsonObj.insert("detect_time_out", m_detectTimeOut);
@@ -216,91 +190,6 @@ int CZHTFaceDriver::startLeaveDetect(const QString &extraInfo)
         KLOG_INFO() << "Reply from service:" << error_code << error_msg << jsonObj;
         return error_code;
     }
-}
-
-int CZHTFaceDriver::stopLeaveDetect()
-{
-    QJsonObject jsonObj;
-    jsonObj.insert("business_id", m_businessID);
-    QJsonDocument jsonDoc(jsonObj);
-
-    auto reply = dbusCall("StopLeaveDetect", jsonDoc.toJson());
-    jsonDoc = QJsonDocument::fromJson(reply.toUtf8());
-    jsonObj = jsonDoc.object();
-    int error_code = jsonObj.value("code").toInt();
-    if (error_code != CZHT_SUCCESS)
-    {
-        KLOG_ERROR() << "DBus call failed:" << error_code << jsonObj;
-        return error_code;
-    }
-    else
-    {
-        QString error_msg = jsonObj.value("error_msg").toString();
-        KLOG_INFO() << "Reply from service:" << error_code << error_msg << jsonObj;
-        return error_code;
-    }
-}
-
-void CZHTFaceDriver::leaveDetected(QString info)
-{
-    // 锁屏
-    KLOG_INFO() << "czht leave detected, Lock screen. info:" << info;
-    // TODO: 需要适配底版本系统的锁屏命令
-
-    // auto ret = QProcess::startDetached("sudo", {"-u", "root", "kiran-screensaver-command", "-l"});
-    // KLOG_INFO() << "Lock screen result:" << ret;
-    //调用 dbus "com.kylinsec.Kiran.ScreenSaver.Lock" 方法
-    // QDBusInterface iface("com.kylinsec.Kiran.ScreenSaver", "/com/kylinsec/Kiran/ScreenSaver", "com.kylinsec.Kiran.ScreenSaver");
-    // QDBusReply<void> reply = iface.call("Lock");
-    // if (reply.isValid())
-    // {
-    //     KLOG_INFO() << "Lock screen result:" << reply.error().message();
-    // }
-    // else
-    // {
-    //     KLOG_INFO() << "Lock screen failed:" << reply.error().message();
-    // }
-
-    // 断开锁屏信号连接
-    // handleScreenLockSignal(false);
-}
-
-void CZHTFaceDriver::screenLockChanged(bool locked)
-{
-    KLOG_INFO() << "Screen lock changed, active:" << locked;
-    if (!locked)
-    {
-        return;
-    }
-
-    // 停止监测
-    stopLeaveDetect();
-    // 断开锁屏信号连接
-    handleScreenLockSignal(false);
-}
-
-void CZHTFaceDriver::handleScreenLockSignal(bool connect)
-{
-    // NOTE: 需要适配底版本系统的锁屏命令
-    // NOTE: 在随系统启动的程序中连接sessionBus会失败，应该另起一个程序，以当前认证用户连接sessionBus
-    // // 锁屏信号连接、断开
-    // bool ret = true;
-    // if (connect)
-    // {
-    //     ret = QDBusConnection::sessionBus().connect(
-    //         "com.kylinsec.Kiran.ScreenSaver", "/com/kylinsec/Kiran/ScreenSaver",
-    //         "com.kylinsec.Kiran.ScreenSaver", "ActiveChanged", this,
-    //         SLOT(screenLockChanged(bool)));
-    //     KLOG_INFO() << "connect to dbus signal com.kylinsec.Kiran.ScreenSaver.ActiveChanged:" << ret;
-    // }
-    // else
-    // {
-    //     ret = QDBusConnection::sessionBus().disconnect(
-    //         "com.kylinsec.Kiran.ScreenSaver", "/com/kylinsec/Kiran/ScreenSaver",
-    //         "com.kylinsec.Kiran.ScreenSaver", "ActiveChanged", this,
-    //         SLOT(screenLockChanged(bool)));
-    //     KLOG_INFO() << "disconnect from dbus signal com.kylinsec.Kiran.ScreenSaver.ActiveChanged:" << ret;
-    // }
 }
 
 extern "C" Driver *createDriver() { return new CZHTFaceDriver(); }

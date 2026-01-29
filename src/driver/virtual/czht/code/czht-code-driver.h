@@ -11,7 +11,7 @@
  *
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
- 
+
 #pragma once
 
 #include <QObject>
@@ -41,14 +41,9 @@ private:
     int verifyAuthorizationCode(const QString &extraInfo);
     int startLeaveDetect(const QString &extraInfo);
 
-private slots:
-    void leaveDetected(QString info);
-
 private:
     QDBusInterface *m_iface;
 
-    // 业务ID
-    QString m_businessID;
     // 人走监测超时时间
     int m_detectTimeOut;
     // 记录上一次识别的人名

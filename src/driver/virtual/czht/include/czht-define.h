@@ -11,7 +11,7 @@
  *
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
- 
+
 #pragma once
 
 #include <QMap>
@@ -19,6 +19,7 @@
 
 #define DBUS_INTERFACE "com.czht.face.daemon"
 #define DBUS_PATH "/com/czht/face/daemon"
+#define BUSINESS_ID "KylinsecOS"
 
 /*
 | 错误码 | 说明 | 可能的原因/场景 |
