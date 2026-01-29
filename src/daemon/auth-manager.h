@@ -85,6 +85,25 @@ public Q_SLOTS:  // DBUS METHODS
     // 通过指定的认证应用获取支持的认证类型,返回值为有序列表
     QList<int> GetAuthTypeByApp(int32_t authApp);
 
+    // 定制功能：从外部服务获取认证类型列表
+    // 当前实现：通过CZHT dbus服务获取认证类型列表
+    // NOTE: 未来添加其他外部服务时，请按照以下模式实现：
+    //   1. 添加 isXXXServiceAvailable() 函数：检查该服务是否可用（检查设备、服务是否存在等）
+    //   2. 添加 GetAuthTypeFromXXX() 函数：从该服务获取认证类型列表（调用D-Bus接口，解析工作模式并返回认证类型）
+    //   3. 在 GetAuthTypeByApp() 中使用 if (isXXXServiceAvailable()) 判断并调用 GetAuthTypeFromXXX() 获取认证类型
+    //   考虑当多种认证服务都存在时，获取的认证类型是互斥还是并存，还是根据某种规则选择一种服务
+
+    // CZHT服务相关函数
+    /// @brief 检查CZHT服务是否可用
+    /// @return 如果服务可用（设备存在且D-Bus服务已注册）返回true，否则返回false
+    bool isCZHTServiceAvailable();
+
+    /// @brief 从CZHT服务获取认证类型列表
+    /// @details 调用CZHT服务的GetWorkMode接口，根据工作模式返回对应的认证类型列表
+    ///           工作模式定义：1=人脸，2=人脸+密码，3=人脸+授权码，4=人脸+密码+授权码
+    /// @return 如果成功获取，返回对应的认证类型列表；否则返回空列表
+    QList<int> GetAuthTypeFromCZHT();
+
     void onNameLost(const QString &serviceName);
 
     // root
