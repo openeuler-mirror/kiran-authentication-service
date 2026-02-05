@@ -22,6 +22,7 @@
 #include "json/auth-device.h"
 #include "kas-authentication-i.h"
 #include "lib/utils.h"
+#include "qt5-log-i.h"
 
 namespace Kiran
 {
@@ -167,12 +168,12 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
         if (!devices.isEmpty())
         {
             auto randomDevice = devices.at(0);
-            KLOG_DEBUG() << "Found auth device:" << randomDevice.id() << randomDevice.name() << randomDevice.objectPath();
+            KLOG_INFO() << "Found auth device:" << randomDevice.id() << randomDevice.name() << randomDevice.objectPath();
             deviceObjectPath.setPath(randomDevice.objectPath());
         }
         else
         {
-            KLOG_DEBUG("Not found available %s device.", Utils::authTypeEnum2Str(authType).toStdString().c_str());
+            KLOG_WARNING("Not found available %s device.", Utils::authTypeEnum2Str(authType).toStdString().c_str());
         }
     }
 
@@ -181,11 +182,11 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
         dbusDeviceProxy = QSharedPointer<AuthDeviceProxy>::create(AUTH_DEVICE_DBUS_NAME,
                                                                   deviceObjectPath.path(),
                                                                   QDBusConnection::systemBus());
-        KLOG_DEBUG() << "Use device " << dbusDeviceProxy->deviceID() << " as active device.";
+        KLOG_INFO() << "Use device " << dbusDeviceProxy->deviceID() << " as active device.";
     }
     else
     {
-        KLOG_DEBUG("Not found %s device.", Utils::authTypeEnum2Str(authType).toStdString().c_str());
+        KLOG_WARNING("Not found %s device.", Utils::authTypeEnum2Str(authType).toStdString().c_str());
     }
 
     return dbusDeviceProxy;

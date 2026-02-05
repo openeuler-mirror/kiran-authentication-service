@@ -45,6 +45,15 @@ start() {
     fi
     
     echo "$NAME not running, starting..."
+    # 设置locale环境变量，从系统配置读取
+    if [ -f /etc/sysconfig/i18n ]; then
+        source /etc/sysconfig/i18n
+    elif [ -f /etc/locale.conf ]; then
+        source /etc/locale.conf
+    fi
+    # 如果LANG仍未设置，使用默认值
+    LANG=${LANG:-zh_CN.UTF-8}
+    export LANG
     $DAEMON &
     daemon_pid=$!
     

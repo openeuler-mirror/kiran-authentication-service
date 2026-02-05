@@ -16,6 +16,7 @@
 #include <QCoreApplication>
 #include <QDBusMetaType>
 #include <QFileInfo>
+#include <QLocale>
 #include <QTranslator>
 
 #include "config.h"
@@ -39,13 +40,14 @@ int main(int argc, char *argv[])
     }
 
     QTranslator translator;
-    if (translator.load(QLocale(), qAppName(), ".", KAS_INSTALL_TRANSLATIONDIR, ".qm"))
+    QLocale locale;
+    if (translator.load(locale, qAppName(), ".", KAS_INSTALL_TRANSLATIONDIR, ".qm"))
     {
         a.installTranslator(&translator);
     }
     else
     {
-        KLOG_WARNING() << "Load translator failed!";
+        KLOG_WARNING() << "Load translator failed! Locale:" << locale.name();
     }
 
     Kiran::FeatureDB::globalInit();

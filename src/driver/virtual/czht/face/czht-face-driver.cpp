@@ -11,7 +11,7 @@
  *
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
- 
+
 #include <qt5-log-i.h>
 #include <QCoreApplication>
 #include <QDBusInterface>
@@ -49,10 +49,9 @@ CZHTFaceDriver::CZHTFaceDriver(QObject *parent) : VirtualFaceDriver(parent), m_i
 
 CZHTFaceDriver::~CZHTFaceDriver()
 {
-
 }
 
-QString CZHTFaceDriver::getDriverName() { return tr("virtual-face-czht"); }
+QString CZHTFaceDriver::getDriverName() { return "virtual-face-czht"; }
 
 QString CZHTFaceDriver::getErrorMsg(int errorNum)
 {

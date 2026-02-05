@@ -67,7 +67,7 @@ CZHTCodeDriver::~CZHTCodeDriver()
         SLOT(leaveDetected(QString)));
 }
 
-QString CZHTCodeDriver::getDriverName() { return tr("virtual-code-czht"); }
+QString CZHTCodeDriver::getDriverName() { return "virtual-code-czht"; }
 
 QString CZHTCodeDriver::getErrorMsg(int errorNum)
 {
