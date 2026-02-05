@@ -17,17 +17,18 @@
 #include <QCoreApplication>
 #include <QDBusMetaType>
 #include <QFileInfo>
+#include <QLocale>
 #include <QString>
 #include <QTranslator>
 
 #include "auth-config.h"
 #include "auth-manager.h"
 #include "config-daemon.h"
+#include "config.h"
 #include "device/device-adaptor-factory.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
 #include "user-manager.h"
-#include "config.h"
 
 int main(int argc, char *argv[])
 {
@@ -44,9 +45,10 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationVersion(PROJECT_VERSION);
 
     QTranslator translator;
-    if (!translator.load(QLocale(), qAppName(), ".", KAS_INSTALL_TRANSLATIONDIR, ".qm"))
+    QLocale locale;
+    if (!translator.load(locale, qAppName(), ".", KAS_INSTALL_TRANSLATIONDIR, ".qm"))
     {
-        KLOG_WARNING() << "Load translator failed!";
+        KLOG_WARNING() << "Load translator failed! Locale:" << locale.name();
     }
     else
     {

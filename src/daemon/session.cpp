@@ -129,7 +129,7 @@ void Session::StartAuth()
         DBUS_ERROR_REPLY_AND_RET(QDBusError::AccessDenied, KADErrorCode::ERROR_USER_IDENTIFIYING);
     }
 
-    KLOG_DEBUG() << m_sessionID << "start auth";
+    KLOG_INFO() << m_sessionID << "start auth";
     this->m_verifyInfo.m_inAuth = true;
     this->m_verifyInfo.m_dbusMessage = this->message();
     this->startPhaseAuth();
@@ -269,6 +269,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 
 void Session::startPhaseAuth()
 {
+    KLOG_INFO() << m_sessionID << "start phase auth for auth type:" << this->m_authType;
     m_waitForResponseFunc = nullptr;
 
     // 开始阶段认证前,通知认证类型状态变更
@@ -338,10 +339,11 @@ void Session::startVirtualFaceAuth()
     // 传输用户名和机器码
     QString machineCode = getMachineCode();
     QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}});
-    startGeneralAuth(jsonDoc.toJson());
 
     KLOG_INFO() << m_sessionID << "start virtual face auth for user:" << m_userName << "machine code:" << machineCode;
     Q_EMIT this->AuthMessage(tr("Please look at the camera"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+
+    startGeneralAuth(jsonDoc.toJson());
 }
 
 void Session::startVirtualCodeAuth()
@@ -373,7 +375,7 @@ void Session::startPasswdAuth()
 
 void Session::startGeneralAuth(const QString &extraInfo)
 {
-    KLOG_INFO() << m_sessionID << "start phase auth for auth type:" << m_authType;
+    KLOG_INFO() << m_sessionID << "start general auth for auth type:" << m_authType;
     auto deviceType = Utils::authType2DeviceType(this->m_authType);
     if (deviceType == -1)
     {
@@ -413,7 +415,6 @@ void Session::startGeneralAuth(const QString &extraInfo)
         }
     }
 
-    KLOG_INFO() << m_sessionID << "start phase auth for auth type:" << m_authType;
     rootObject["feature_ids"] = QJsonArray::fromStringList(bids);
 
     this->m_verifyInfo.deviceAdaptor = device;
@@ -466,6 +467,7 @@ void Session::finishPhaseAuth(SessionAuthResult authResult)
     case SESSION_AUTH_CANCEL:
     case SESSION_AUTH_INTERNAL_ERROR:
     {
+        KLOG_WARNING() << m_sessionID << "session failed phase auth, auth type:" << this->m_authType << "auth result:" << (authResultKey ? authResultKey : "NULL");
         // 阶段认证失败，则算失败
         this->finishAuth(authResult);
         break;
