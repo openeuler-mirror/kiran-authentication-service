@@ -91,6 +91,7 @@ int CZHTFaceDriver::startSearch(const QString &extraInfo)
     }
 
     bool found = false;
+    bool foundExpired = false;  // 记录是否找到匹配但已过期的数据
     QJsonArray users = jsonObj.value("users").toArray();
     for (const QJsonValue &user : users)
     {
@@ -105,17 +106,29 @@ int CZHTFaceDriver::startSearch(const QString &extraInfo)
         {
             if (expired)
             {
-                KLOG_ERROR() << "StartSearch user expired:" << searchUserName << searchMachineCode;
-                return CZHT_ERROR_USER_EXPIRED;
+                // 数据匹配但已过期，记录标志，继续遍历
+                foundExpired = true;
+                KLOG_INFO() << "StartSearch found expired user:" << searchUserName << searchMachineCode;
+                continue;
             }
-
-            // 人脸服务的用户，用于启动人走监测
-            m_personIDLast = personID;
-            found = true;
-            break;
+            else
+            {
+                // 数据匹配且未过期，跳出循环
+                m_personIDLast = personID;
+                found = true;
+                break;
+            }
         }
     }
 
+    // 如果没找到匹配且未过期的数据，但存在过期数据，返回过期错误
+    if (!found && foundExpired)
+    {
+        KLOG_ERROR() << "StartSearch user expired:" << searchUserName << searchMachineCode;
+        return CZHT_ERROR_USER_EXPIRED;
+    }
+
+    // 如果没找到匹配的数据，返回未找到错误
     if (!found)
     {
         KLOG_ERROR() << "StartSearch user not match:" << searchUserName << searchMachineCode;
