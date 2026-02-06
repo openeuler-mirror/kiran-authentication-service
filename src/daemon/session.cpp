@@ -19,6 +19,7 @@
 #include <QJsonDocument>
 #include <QMetaEnum>
 
+#include "auth-config.h"
 #include "auth-manager.h"
 #include "auxiliary.h"
 #include "device/device-adaptor-factory.h"
@@ -325,10 +326,16 @@ QString Session::getMachineCode()
             KLOG_WARNING() << "get machine code failed:" << reply.error().message();
         }
     }
+    // 当dbus接口获取机器码失败时，从配置文件获取机器码（兼容低版本系统上不存在LicenseHelper的情况）
     else
     {
-        KLOG_WARNING() << "com.kylinsec.Kiran.LicenseHelper service not registered,"
-                       << "get machine code failed";
+        KLOG_WARNING() << "com.kylinsec.Kiran.LicenseHelper service not registered, get machine code from config file";
+        KLOG_INFO() << "get machine code from config file";
+        machineCode = AuthConfig::getInstance()->getMachineCode();
+        if (machineCode.isEmpty())
+        {
+            KLOG_WARNING() << "machine code not found in config file";
+        }
     }
 
     return machineCode;
