@@ -53,7 +53,7 @@ public:
     virtual QStringList GetFeatureIDList() = 0;
     int deviceStatus() { return m_status; };
 
-    virtual void IdentifySuccessedPostProcess(const QString &extraInfo){};
+    virtual void IdentifyResultPostProcess(const QString &extraInfo) {};
 
     // signals:
     //     void identifyStatus(IdentifyStatus status, QString msg);

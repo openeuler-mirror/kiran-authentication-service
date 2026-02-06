@@ -82,11 +82,11 @@ QStringList VirtualCodeDevice::GetFeatureIDList()
     return QStringList();
 }
 
-void VirtualCodeDevice::IdentifySuccessedPostProcess(const QString& extraInfo)
+void VirtualCodeDevice::IdentifyResultPostProcess(const QString& extraInfo)
 {
-    KLOG_INFO() << "VirtualCodeDevice onIdentifySuccessed, extraInfo:" << extraInfo;
-    // 认证成功后处理（如开启人走监测等）
-    m_driver->identifySuccessedPostProcess(extraInfo);
+    KLOG_INFO() << "VirtualCodeDevice identifyResultPostProcess, extraInfo:" << extraInfo;
+    // 识别结果后处理（如上报日志、开启人走监测等）
+    m_driver->identifyResultPostProcess(extraInfo);
 }
 
 }  // namespace Kiran

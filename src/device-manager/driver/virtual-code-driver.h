@@ -19,10 +19,10 @@
 class VirtualCodeDriver : public Driver
 {
 public:
-    VirtualCodeDriver(QObject* parent = nullptr) : Driver(parent){};
+    VirtualCodeDriver(QObject* parent = nullptr) : Driver(parent) {};
     virtual ~VirtualCodeDriver() = default;
     virtual int identify(const QString& extraInfo) = 0;
-    // 认证成功后处理
-    virtual void identifySuccessedPostProcess(const QString& extraInfo) = 0;
+    // 识别结果后处理（无论成功失败）
+    virtual void identifyResultPostProcess(const QString& extraInfo) = 0;
 };
 typedef QSharedPointer<VirtualCodeDriver> VirtualCodeDriverPtr;

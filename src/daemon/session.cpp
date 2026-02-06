@@ -17,6 +17,7 @@
 #include <QDBusConnectionInterface>
 #include <QEventLoop>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QMetaEnum>
 
 #include "auth-config.h"
@@ -221,17 +222,39 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 {
     KLOG_INFO() << m_sessionID << "verify identify status:" << bid << result << message;
 
-    if ((this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE && result == IdentifyStatus::IDENTIFY_STATUS_MATCH) ||
-        (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE && result == IdentifyStatus::IDENTIFY_STATUS_MATCH))
+    // 虚拟设备认证类型，无论成功失败都要上报登录日志
+    if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE ||
+        this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE)
     {
-        // TODO: 虚拟设备认证成功
-        // 由于特征信息保存在远程服务中，无法校验特征与用户绑定信息
-        // 但还需要进行用户匹配，需要人脸服务返回用户信息
-        this->m_verifyInfo.m_authenticatedUserName = this->getSpecifiedUser();
+        QString osUser;
+        int loginResult = 0;  // 1=成功，0=失败
 
-        KLOG_INFO() << m_sessionID << "virtual device authentication successfully, authenticated user name:" << this->m_verifyInfo.m_authenticatedUserName;
-        // 认证成功后处理，如开启人走监测等
-        this->m_verifyInfo.deviceAdaptor->identifySuccessedPostProcess(this, this->m_verifyInfo.m_authenticatedUserName);
+        if (result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
+        {
+            // 认证成功
+            this->m_verifyInfo.m_authenticatedUserName = this->getSpecifiedUser();
+            osUser = this->m_verifyInfo.m_authenticatedUserName;
+            loginResult = 1;
+            KLOG_INFO() << m_sessionID << "virtual device authentication successfully, authenticated user name:" << osUser;
+        }
+        else
+        {
+            // 认证失败
+            osUser = this->getSpecifiedUser();
+            loginResult = 0;
+            KLOG_INFO() << m_sessionID << "virtual device authentication failed, user name:" << osUser;
+        }
+
+        // 构造 JSON 字符串，包含 os_user、result、fail_reason
+        QJsonObject jsonObj;
+        jsonObj.insert("os_user", osUser);
+        jsonObj.insert("result", loginResult);
+        if (loginResult == 0)
+        {
+            jsonObj.insert("fail_reason", message);
+        }
+        QJsonDocument jsonDoc(jsonObj);
+        this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, jsonDoc.toJson());
     }
     else if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
              result == IdentifyStatus::IDENTIFY_STATUS_MATCH)

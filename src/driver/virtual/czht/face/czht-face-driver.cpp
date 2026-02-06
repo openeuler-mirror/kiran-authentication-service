@@ -13,38 +13,18 @@
  */
 
 #include <qt5-log-i.h>
-#include <QCoreApplication>
-#include <QDBusInterface>
-#include <QDBusReply>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QProcess>
-#include <QSettings>
-#include <QTranslator>
 
 #include "config.h"
 #include "czht-define.h"
 #include "czht-face-driver.h"
 
-CZHTFaceDriver::CZHTFaceDriver(QObject *parent) : VirtualFaceDriver(parent), m_iface(nullptr)
+CZHTFaceDriver::CZHTFaceDriver(QObject *parent) : VirtualFaceDriver(parent), CZHTDriverBase(parent)
 {
-    static QTranslator translator;
-    if (!translator.load(QLocale(), "czht-face", ".", KAS_INSTALL_TRANSLATIONDIR,
-                         ".qm"))
-    {
-        KLOG_INFO() << "Load translator failed!";
-    }
-    else
-    {
-        QCoreApplication::installTranslator(&translator);
-    }
-
-    KLOG_INFO() << "CZHTFaceDriver config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
-    QSettings settings(QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini", QSettings::IniFormat);
-    m_searchTimeOut = settings.value("search_time_out").toInt();
-    m_detectTimeOut = settings.value("detect_time_out").toInt();
-    KLOG_INFO() << "CZHTFaceDriver config: business_id:" << BUSINESS_ID << "search_time_out:" << m_searchTimeOut << "detect_time_out:" << m_detectTimeOut;
+    // 加载翻译器
+    loadTranslator("czht-face");
 }
 
 CZHTFaceDriver::~CZHTFaceDriver()
@@ -65,46 +45,26 @@ int CZHTFaceDriver::identify(const QString &extraInfo)
     return startSearch(extraInfo);
 }
 
-void CZHTFaceDriver::identifySuccessedPostProcess(const QString &extraInfo)
+void CZHTFaceDriver::identifyResultPostProcess(const QString &extraInfo)
 {
-    // 启动人走监测
-    startLeaveDetect(extraInfo);
+    // 解析 extraInfo JSON
+    QJsonDocument extraInfoJsonDoc = QJsonDocument::fromJson(extraInfo.toUtf8());
+    QJsonObject jsonObj = extraInfoJsonDoc.object();
+
+    int result = jsonObj.value("result").toInt(0);
+    QString osUser = jsonObj.value("os_user").toString();
+
+    // 上报登录日志（调用基类方法）
+    reportLoginLog(jsonObj);
+
+    // 只有成功时才启动人走监测（调用基类方法）
+    if (result == 1)
+    {
+        startLeaveDetect(osUser);
+    }
 }
 
-QDBusInterface *CZHTFaceDriver::getBusInterface()
-{
-    if (!m_iface || !m_iface->isValid())
-    {
-        m_iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE,
-                                     QDBusConnection::systemBus(), this);
-    }
-    return m_iface;
-}
-
-QString CZHTFaceDriver::dbusCall(QString method, QString args)
-{
-    QDBusInterface *iface = getBusInterface();
-    if (!iface || !iface->isValid())
-    {
-        QJsonObject jsonObj;
-        jsonObj.insert("code", CZHT_ERROR_DAEMON_NOT_RUNNING);
-        QJsonDocument jsonDoc(jsonObj);
-        KLOG_ERROR() << "D-Bus interface invalid";
-        return jsonDoc.toJson();
-    }
-
-    KLOG_INFO() << "DBus call:" << method << args;
-    QDBusReply<QString> reply = iface->call(method, args);
-    if (reply.isValid())
-    {
-        return reply.value();
-    }
-    else
-    {
-        KLOG_INFO() << "Call failed:" << reply.error().message().toLocal8Bit();
-        return "";
-    }
-}
+// getBusInterface 和 dbusCall 已在基类中实现，使用延迟初始化方式
 
 int CZHTFaceDriver::startSearch(const QString &extraInfo)
 {
@@ -163,32 +123,6 @@ int CZHTFaceDriver::startSearch(const QString &extraInfo)
     }
 
     return CZHT_SUCCESS;
-}
-
-int CZHTFaceDriver::startLeaveDetect(const QString &extraInfo)
-{
-    QJsonObject jsonObj;
-    jsonObj.insert("business_id", BUSINESS_ID);
-    jsonObj.insert("person_id", m_personIDLast);
-    jsonObj.insert("os_user", extraInfo);
-    jsonObj.insert("detect_time_out", m_detectTimeOut);
-    QJsonDocument jsonDoc(jsonObj);
-
-    auto reply = dbusCall("StartLeaveDetect", jsonDoc.toJson());
-    jsonDoc = QJsonDocument::fromJson(reply.toUtf8());
-    jsonObj = jsonDoc.object();
-    int error_code = jsonObj.value("code").toInt();
-    if (error_code != CZHT_SUCCESS)
-    {
-        KLOG_ERROR() << "DBus call failed:" << error_code << jsonObj;
-        return error_code;
-    }
-    else
-    {
-        QString error_msg = jsonObj.value("error_msg").toString();
-        KLOG_INFO() << "Reply from service:" << error_code << error_msg << jsonObj;
-        return error_code;
-    }
 }
 
 extern "C" Driver *createDriver() { return new CZHTFaceDriver(); }

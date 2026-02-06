@@ -5,7 +5,9 @@ find_package(Qt5 REQUIRED COMPONENTS DBus Core)
 set(TARGET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/czht-face-driver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/czht-face-driver.h
-    ${CZHT_INCLUDE_DIRS}/czht-define.h)
+    ${CZHT_INCLUDE_DIRS}/czht-define.h
+    ${CZHT_INCLUDE_DIRS}/czht-driver-base.cpp
+    ${CZHT_INCLUDE_DIRS}/czht-driver-base.h)
 
 # 定义翻译源文件列表
 set(QM_FILES "")

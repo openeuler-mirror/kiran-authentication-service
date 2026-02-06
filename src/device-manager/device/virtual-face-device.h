@@ -33,7 +33,7 @@ public:
     void IdentifyStop() override;
     QStringList GetFeatureIDList() override;
 
-    void IdentifySuccessedPostProcess(const QString &extraInfo) override;
+    void IdentifyResultPostProcess(const QString &extraInfo) override;
 
 private:
     VirtualFaceDriverPtr m_driver;

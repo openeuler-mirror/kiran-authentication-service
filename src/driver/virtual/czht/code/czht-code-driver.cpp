@@ -13,7 +13,6 @@
  */
 
 #include <qt5-log-i.h>
-#include <QCoreApplication>
 #include <QDBusInterface>
 #include <QDBusReply>
 #include <QDateTime>
@@ -21,30 +20,17 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
-#include <QSettings>
-#include <QTranslator>
 
 #include "config.h"
 #include "czht-code-driver.h"
 #include "czht-define.h"
 
-CZHTCodeDriver::CZHTCodeDriver(QObject *parent) : VirtualCodeDriver(parent)
+CZHTCodeDriver::CZHTCodeDriver(QObject *parent) : VirtualCodeDriver(parent), CZHTDriverBase(parent)
 {
-    static QTranslator translator;
-    if (!translator.load(QLocale(), "czht-code", ".", KAS_INSTALL_TRANSLATIONDIR,
-                         ".qm"))
-    {
-        KLOG_INFO() << "Load translator failed!";
-    }
-    else
-    {
-        QCoreApplication::installTranslator(&translator);
-    }
+    // 加载翻译器
+    loadTranslator("czht-code");
 
-    KLOG_INFO() << "CZHTCodeDriver config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
-    QSettings settings(QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini", QSettings::IniFormat);
-    m_detectTimeOut = settings.value("detect_time_out").toInt();
-
+    // 初始化 D-Bus 接口（直接初始化方式，不使用延迟初始化）
     m_iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE,
                                  QDBusConnection::systemBus(), this);
     if (!m_iface->isValid())
@@ -53,6 +39,7 @@ CZHTCodeDriver::CZHTCodeDriver(QObject *parent) : VirtualCodeDriver(parent)
         return;
     }
 
+    // 连接 LeaveDetected 信号
     bool ret = QDBusConnection::systemBus().connect(
         DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE, "LeaveDetected", this,
         SLOT(leaveDetected(QString)));
@@ -149,48 +136,36 @@ int CZHTCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
     return CZHT_SUCCESS;
 }
 
-void CZHTCodeDriver::identifySuccessedPostProcess(const QString &extraInfo)
+void CZHTCodeDriver::identifyResultPostProcess(const QString &extraInfo)
 {
-    // 启动人走监测
-    startLeaveDetect(extraInfo);
+    // 解析 extraInfo JSON
+    QJsonDocument extraInfoJsonDoc = QJsonDocument::fromJson(extraInfo.toUtf8());
+    QJsonObject jsonObj = extraInfoJsonDoc.object();
 
-    // 授权码登录需要录屏
-    QString osUser = extraInfo;
-    QString fileName = QString("%1_%2_%3.mp4").arg(m_personIDLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
-    QProcess::startDetached("sudo", QStringList() << "-u"
-                                                  << osUser
-                                                  << "kiran-screen-recorder"
-                                                  << fileName);
-}
+    int result = jsonObj.value("result").toInt(0);
+    QString osUser = jsonObj.value("os_user").toString();
 
-int CZHTCodeDriver::startLeaveDetect(const QString &extraInfo)
-{
-    QJsonObject jsonObj;
-    jsonObj.insert("business_id", BUSINESS_ID);
-    jsonObj.insert("person_id", m_personIDLast);
-    jsonObj.insert("os_user", extraInfo);
-    jsonObj.insert("detect_time_out", m_detectTimeOut);
-    QJsonDocument jsonDoc(jsonObj);
+    // 上报登录日志（调用基类方法）
+    reportLoginLog(jsonObj);
 
-    auto reply = dbusCall("StartLeaveDetect", jsonDoc.toJson());
-    jsonDoc = QJsonDocument::fromJson(reply.toUtf8());
-    jsonObj = jsonDoc.object();
-    int error_code = jsonObj.value("code").toInt();
-    if (error_code != CZHT_SUCCESS)
+    // 只有成功时才启动人走监测和录屏
+    if (result == 1)
     {
-        KLOG_ERROR() << "DBus call failed:" << error_code << jsonObj;
-        return error_code;
-    }
-    else
-    {
-        QString error_msg = jsonObj.value("error_msg").toString();
-        KLOG_INFO() << "Reply from service:" << error_code << error_msg << jsonObj;
-        return error_code;
+        // 启动人走监测（调用基类方法）
+        startLeaveDetect(osUser);
+
+        // 授权码登录需要录屏（特有功能）
+        QString fileName = QString("%1_%2_%3.mp4").arg(m_personIDLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
+        QProcess::startDetached("sudo", QStringList() << "-u"
+                                                      << osUser
+                                                      << "kiran-screen-recorder"
+                                                      << fileName);
     }
 }
 
 QString CZHTCodeDriver::dbusCall(QString method, QString args)
 {
+    // 覆盖基类方法，使用直接初始化方式（不使用延迟初始化）
     KLOG_INFO() << "DBus call:" << method << args;
     QDBusReply<QString> reply = m_iface->call(method, args);
     if (reply.isValid())
