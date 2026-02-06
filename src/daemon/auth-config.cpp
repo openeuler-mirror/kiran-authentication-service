@@ -28,6 +28,7 @@ using namespace Kiran;
 #define INIFILE_GENERAL_KEY_AUTH_MODE "AuthMode"
 #define INIFILE_GENERAL_KEY_AUTH_ORDER "AuthOrder"
 #define INIFILE_GENERAL_KEY_MAX_FAILURES "MaxFailures"
+#define INIFILE_GENERAL_KEY_MACHINE_CODE "MachineCode"
 
 #define INIFILE_FP_AUTHTYPE_GROUP_NAME "FingerPrint"
 #define INIFILE_UKEY_AUTHTYPE_GROUP_NAME "Ukey"
@@ -98,6 +99,9 @@ bool AuthConfig::load()
     auto maxFailures = m_settings->value(INIFILE_GENERAL_KEY_MAX_FAILURES, 3).toInt();
     this->m_maxFailures = maxFailures;
 
+    auto machineCode = m_settings->value(INIFILE_GENERAL_KEY_MACHINE_CODE, "").toString();
+    this->m_machineCode = machineCode;
+
     // 读取认证类型下设置项,认证类型开关默认都为关闭
     const bool authTypeDefaultEnable = false;
     auto iter = AuthTypeGroupMap.begin();
@@ -162,6 +166,11 @@ QList<int> AuthConfig::getAuthOrder()
 int AuthConfig::getMaxFailures()
 {
     return m_maxFailures;
+}
+
+QString AuthConfig::getMachineCode()
+{
+    return m_machineCode;
 }
 
 QString AuthConfig::getDefaultDeviceID(KADAuthType authType)

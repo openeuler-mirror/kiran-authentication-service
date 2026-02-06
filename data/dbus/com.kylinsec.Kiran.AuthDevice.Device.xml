@@ -25,11 +25,11 @@
             <description>Stop an on-going fingerprint identification started with IdentifyStart.</description>
         </method>
 
-        <method name="IdentifySuccessedPostProcess">
+        <method name="IdentifyResultPostProcess">
             <arg name="extraInfo" direction="in" type="s">
-                <description>Extra information.</description>
+                <description>Extra information in JSON format, containing os_user, result, and optional fail_reason.</description>
             </arg>
-            <description>Perform post-processing after successful identification.</description>
+            <description>Perform post-processing after identification result (both success and failure).</description>
         </method>
 
         <method name="GetFeatureIDList">

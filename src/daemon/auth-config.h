@@ -41,6 +41,7 @@ public:
     int getAuthMode();
     QList<int> getAuthOrder();
     int getMaxFailures();
+    QString getMachineCode();
 
     QString getDefaultDeviceID(KADAuthType authType);
     bool getAuthTypeEnable(KADAuthType authType);
@@ -69,6 +70,8 @@ private:
     int m_authMode;
     QList<int> m_authOrder;
     int m_maxFailures;
+
+    QString m_machineCode;
 
     // QMap<认证类型,默认设备ID> - 缓存每个认证类型的默认设备ID
     QMap<int, QString> m_defaultDeviceMap;

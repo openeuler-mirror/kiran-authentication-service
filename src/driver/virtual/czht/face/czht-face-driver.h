@@ -11,16 +11,16 @@
  *
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
- 
+
 #pragma once
 
 #include <QObject>
 #include <QSharedPointer>
 
+#include "czht-driver-base.h"
 #include "src/device-manager/driver/virtual-face-driver.h"
 
-class QDBusInterface;
-class CZHTFaceDriver : public VirtualFaceDriver
+class CZHTFaceDriver : public VirtualFaceDriver, public CZHTDriverBase
 {
     Q_OBJECT
 public:
@@ -32,25 +32,10 @@ public:
     DriverType getType() override;
 
     int identify(const QString &extraInfo) override;
-    void identifySuccessedPostProcess(const QString &extraInfo) override;
+    void identifyResultPostProcess(const QString &extraInfo) override;
 
 private:
-    QDBusInterface *getBusInterface();
-
-    QString dbusCall(QString method, QString args);
-
     int startSearch(const QString &extraInfo);
-    int startLeaveDetect(const QString &extraInfo);
-
-private:
-    QDBusInterface *m_iface;
-
-    // 人脸搜索超时时间
-    int m_searchTimeOut;
-    // 人走监测超时时间
-    int m_detectTimeOut;
-    // 记录上一次识别的人名
-    int m_personIDLast;
 };
 typedef QSharedPointer<CZHTFaceDriver> CZHTFaceDriverPtr;
 extern "C" Driver *

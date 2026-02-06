@@ -18,10 +18,10 @@
 #include <QProcess>
 #include <QSharedPointer>
 
+#include "czht-driver-base.h"
 #include "src/device-manager/driver/virtual-code-driver.h"
 
-class QDBusInterface;
-class CZHTCodeDriver : public VirtualCodeDriver
+class CZHTCodeDriver : public VirtualCodeDriver, public CZHTDriverBase
 {
     Q_OBJECT
 public:
@@ -33,21 +33,17 @@ public:
     DriverType getType() override;
 
     int identify(const QString &extraInfo) override;
-    void identifySuccessedPostProcess(const QString &extraInfo) override;
+    void identifyResultPostProcess(const QString &extraInfo) override;
 
 private:
-    QString dbusCall(QString method, QString args);
+    // 覆盖基类的 dbusCall，使用直接初始化方式
+    QString dbusCall(QString method, QString args) override;
 
     int verifyAuthorizationCode(const QString &extraInfo);
-    int startLeaveDetect(const QString &extraInfo);
 
 private:
-    QDBusInterface *m_iface;
-
-    // 人走监测超时时间
-    int m_detectTimeOut;
-    // 记录上一次识别的人名
-    int m_personIDLast;
+    // 是否开启授权码认证下的录屏功能
+    bool m_enableScreenRecorder;
 };
 typedef QSharedPointer<CZHTCodeDriver> CZHTCodeDriverPtr;
 extern "C" Driver *

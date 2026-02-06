@@ -35,13 +35,13 @@ class DeviceAdaptor : public QObject
     Q_OBJECT
 public:
     DeviceAdaptor(QSharedPointer<AuthDeviceProxy> dbusDeviceProxy);
-    virtual ~DeviceAdaptor(){};
+    virtual ~DeviceAdaptor() {};
 
     QString getDeviceID() { return m_deviceID; }
 
     void enroll(DeviceRequestSource* source, const QString& extraInfo);
     void identify(DeviceRequestSource* source, const QString& extraInfo);
-    void identifySuccessedPostProcess(DeviceRequestSource* source, const QString& extraInfo);
+    void identifyResultPostProcess(DeviceRequestSource* source, const QString& extraInfo);
     void stop(int64_t requestID);
 
     // 取消/清空 所有的认证请求
@@ -71,7 +71,7 @@ private:
     void enrollStop();
     void identifyStart(const QString& extraInfo);
     void identifyStop();
-    void identifySuccessedPostProcessStart(const QString& extraInfo);
+    void identifyResultPostProcessStart(const QString& extraInfo);
 
     // 判断进程是否是活跃会话
     bool isActiveSession(uint32_t pid);

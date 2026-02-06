@@ -71,13 +71,13 @@ void DeviceAdaptor::identify(DeviceRequestSource *source, const QString &extraIn
     this->pushRequest(deviceRequst);
 }
 
-void DeviceAdaptor::identifySuccessedPostProcess(DeviceRequestSource *source, const QString &extraInfo)
+void DeviceAdaptor::identifyResultPostProcess(DeviceRequestSource *source, const QString &extraInfo)
 {
     auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
         .reqID = this->generateRequestID(),
         .time = QTime::currentTime(),
         .source = source,
-        .start = std::bind(&DeviceAdaptor::identifySuccessedPostProcessStart, this, extraInfo),
+        .start = std::bind(&DeviceAdaptor::identifyResultPostProcessStart, this, extraInfo),
         .stop = nullptr});
     this->pushRequest(deviceRequst);
 }
@@ -302,11 +302,11 @@ void DeviceAdaptor::identifyStop()
     }
 }
 
-void DeviceAdaptor::identifySuccessedPostProcessStart(const QString &extraInfo)
+void DeviceAdaptor::identifyResultPostProcessStart(const QString &extraInfo)
 {
     if (this->m_dbusDeviceProxy)
     {
-        this->m_dbusDeviceProxy->IdentifySuccessedPostProcess(extraInfo);
+        this->m_dbusDeviceProxy->IdentifyResultPostProcess(extraInfo);
     }
 
     this->finishRequest();
