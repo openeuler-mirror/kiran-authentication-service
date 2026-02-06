@@ -21,6 +21,11 @@
 #define DBUS_PATH "/com/czht/face/daemon"
 #define BUSINESS_ID "KylinsecOS"
 
+// 配置文件字段名
+#define CZHT_CONFIG_KEY_SEARCH_TIME_OUT "search_time_out"
+#define CZHT_CONFIG_KEY_DETECT_TIME_OUT "detect_time_out"
+#define CZHT_CONFIG_KEY_ENABLE_SCREEN_RECORDER "enable_screen_recorder"
+
 /*
 | 错误码 | 说明 | 可能的原因/场景 |
 |--------|------|----------------|

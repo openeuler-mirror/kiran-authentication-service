@@ -146,9 +146,9 @@ void CZHTDriverBase::loadTranslator(const QString &translatorName)
 
 void CZHTDriverBase::loadConfig()
 {
-    KLOG_INFO() << "CZHTDriver config file:" << QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini";
-    QSettings settings(QString(VIRTUAL_CZHT_DRIVER_INSTALL_DIR) + "/config.ini", QSettings::IniFormat);
-    m_detectTimeOut = settings.value("detect_time_out").toInt();
-    m_searchTimeOut = settings.value("search_time_out").toInt();
+    KLOG_INFO() << "CZHTDriver config file:" << VIRTUAL_CZHT_DRIVER_CONFIG_FILE;
+    QSettings settings(VIRTUAL_CZHT_DRIVER_CONFIG_FILE, QSettings::IniFormat);
+    m_detectTimeOut = settings.value(CZHT_CONFIG_KEY_DETECT_TIME_OUT).toInt();
+    m_searchTimeOut = settings.value(CZHT_CONFIG_KEY_SEARCH_TIME_OUT).toInt();
     KLOG_INFO() << "CZHTDriver config: business_id:" << BUSINESS_ID << "search_time_out:" << m_searchTimeOut << "detect_time_out:" << m_detectTimeOut;
 }

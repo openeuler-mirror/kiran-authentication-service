@@ -20,6 +20,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
+#include <QSettings>
 
 #include "config.h"
 #include "czht-code-driver.h"
@@ -27,8 +28,14 @@
 
 CZHTCodeDriver::CZHTCodeDriver(QObject *parent) : VirtualCodeDriver(parent), CZHTDriverBase(parent)
 {
-    // 加载翻译器
+    // 加载翻译
     loadTranslator("czht-code");
+
+    // 加载录屏配置
+    KLOG_INFO() << "CZHTCodeDriver config file:" << VIRTUAL_CZHT_DRIVER_CONFIG_FILE;
+    QSettings settings(VIRTUAL_CZHT_DRIVER_CONFIG_FILE, QSettings::IniFormat);
+    m_enableScreenRecorder = settings.value(CZHT_CONFIG_KEY_ENABLE_SCREEN_RECORDER, true).toBool();
+    KLOG_INFO() << "CZHTCodeDriver config: enable_screen_recorder:" << m_enableScreenRecorder;
 
     // 初始化 D-Bus 接口（直接初始化方式，不使用延迟初始化）
     m_iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE,
@@ -154,12 +161,15 @@ void CZHTCodeDriver::identifyResultPostProcess(const QString &extraInfo)
         // 启动人走监测（调用基类方法）
         startLeaveDetect(osUser);
 
-        // 授权码登录需要录屏（特有功能）
-        QString fileName = QString("%1_%2_%3.mp4").arg(m_personIDLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
-        QProcess::startDetached("sudo", QStringList() << "-u"
-                                                      << osUser
-                                                      << "kiran-screen-recorder"
-                                                      << fileName);
+        // 授权码登录需要录屏（特有功能，根据配置决定是否开启）
+        if (m_enableScreenRecorder)
+        {
+            QString fileName = QString("%1_%2_%3.mp4").arg(m_personIDLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
+            QProcess::startDetached("sudo", QStringList() << "-u"
+                                                          << osUser
+                                                          << "kiran-screen-recorder"
+                                                          << fileName);
+        }
     }
 }
 

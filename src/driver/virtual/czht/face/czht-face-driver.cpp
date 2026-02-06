@@ -23,7 +23,7 @@
 
 CZHTFaceDriver::CZHTFaceDriver(QObject *parent) : VirtualFaceDriver(parent), CZHTDriverBase(parent)
 {
-    // 加载翻译器
+    // 加载翻译
     loadTranslator("czht-face");
 }
 

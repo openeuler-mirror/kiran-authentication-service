@@ -40,6 +40,10 @@ private:
     QString dbusCall(QString method, QString args) override;
 
     int verifyAuthorizationCode(const QString &extraInfo);
+
+private:
+    // 是否开启授权码认证下的录屏功能
+    bool m_enableScreenRecorder;
 };
 typedef QSharedPointer<CZHTCodeDriver> CZHTCodeDriverPtr;
 extern "C" Driver *
