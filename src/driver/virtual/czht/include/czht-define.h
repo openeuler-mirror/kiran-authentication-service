@@ -56,6 +56,11 @@
 | 111 | 授权验证device_code不存在 | 授权验证device_code不存在 |
 | 112 | 授权验证user_id与device_code关联绑定不存在 | 授权验证user_id与device_code关联绑定不存在 |
 
+// kylinsec 自定义错误码
+| 10000 | CZHT人脸服务后台没有启动 | CZHT人脸服务后台没有启动 |
+| 10001 | 无登录权限
+| 10002 | 没有找到人脸绑定关系
+
 */
 enum CZHT_ERROR_NUM
 {
@@ -86,6 +91,9 @@ enum CZHT_ERROR_NUM
     CZHT_ERROR_AUTHORIZATION_VERIFICATION_DEVICE_CODE_NOT_FOUND = 111,
     CZHT_ERROR_AUTHORIZATION_VERIFICATION_BINDING_NOT_FOUND = 112,
     CZHT_ERROR_DAEMON_NOT_RUNNING = 10000,
+    CZHT_ERROR_NO_LOGIN_PERMISSION = 10001,
+    CZHT_ERROR_NO_FACE_BINDING_RELATION = 10002,
+
 };
 
 static const QString getCZHTErrorMsg(int errorNum)
@@ -119,6 +127,8 @@ static const QString getCZHTErrorMsg(int errorNum)
         {CZHT_ERROR_AUTHORIZATION_VERIFICATION_DEVICE_CODE_NOT_FOUND, QObject::tr("authorization verification device_code not found")},
         {CZHT_ERROR_AUTHORIZATION_VERIFICATION_BINDING_NOT_FOUND, QObject::tr("authorization verification user_id device_code binding not found")},
         {CZHT_ERROR_DAEMON_NOT_RUNNING, QObject::tr("CZHT daemon not running")},
+        {CZHT_ERROR_NO_LOGIN_PERMISSION, QObject::tr("no login permission")},
+        {CZHT_ERROR_NO_FACE_BINDING_RELATION, QObject::tr("no face binding relation")},
     };
 
     return CZHT_ERROR_MSG.value(errorNum);
