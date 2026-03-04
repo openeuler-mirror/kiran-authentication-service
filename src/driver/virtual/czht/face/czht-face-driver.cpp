@@ -93,6 +93,12 @@ int CZHTFaceDriver::startSearch(const QString &extraInfo)
     bool found = false;
     bool foundExpired = false;  // 记录是否找到匹配但已过期的数据
     QJsonArray users = jsonObj.value("users").toArray();
+    if (users.isEmpty())
+    {
+        KLOG_ERROR() << "no face binding relation, user_id:" << searchUserName << "machine_code:" << searchMachineCode;
+        return CZHT_ERROR_NO_FACE_BINDING_RELATION;
+    }
+
     for (const QJsonValue &user : users)
     {
         QJsonObject userObj = user.toObject();
@@ -127,12 +133,11 @@ int CZHTFaceDriver::startSearch(const QString &extraInfo)
         KLOG_ERROR() << "StartSearch user expired:" << searchUserName << searchMachineCode;
         return CZHT_ERROR_USER_EXPIRED;
     }
-
-    // 如果没找到匹配的数据，返回未找到错误
-    if (!found)
+    // 存在绑定关系，但无当前机器绑定关系
+    else if (!found && !foundExpired)
     {
-        KLOG_ERROR() << "StartSearch user not match:" << searchUserName << searchMachineCode;
-        return CZHT_ERROR_MATCH_PERSON_NOT_FOUND;
+        KLOG_ERROR() << "no login permission, user_id:" << searchUserName << "machine_code:" << searchMachineCode;
+        return CZHT_ERROR_NO_LOGIN_PERMISSION;
     }
 
     return CZHT_SUCCESS;
