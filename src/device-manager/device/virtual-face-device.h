@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <QFutureWatcher>
 #include "device.h"
 #include "driver/virtual-face-driver.h"
 
@@ -37,6 +38,8 @@ public:
 
 private:
     VirtualFaceDriverPtr m_driver;
+    QFutureWatcher<int> m_identifyWatcher;
+    bool m_identifyStopRequested{false};
 };
 typedef QSharedPointer<VirtualFaceDevice> VirtualFaceDevicePtr;
 
