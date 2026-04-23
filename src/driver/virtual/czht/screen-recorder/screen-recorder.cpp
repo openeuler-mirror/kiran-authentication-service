@@ -131,156 +131,29 @@ void ScreenRecorder::start(const QString &fileName)
     }
     finalFileName = videoSaveDir + "/" + finalFileName;
 
-    // 获取屏幕分辨率
-    QString resolution;
-    QProcess xdpyinfoProcess;
-    // 设置 DISPLAY 环境变量，优先使用环境变量中的值，否则使用默认值 :0.0
-    // TODO: 需要支持多显示显示服务
-    QString display = qgetenv("DISPLAY");
-    if (display.isEmpty())
-    {
-        display = ":0.0";
-    }
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("DISPLAY", display);
-    xdpyinfoProcess.setProcessEnvironment(env);
-    xdpyinfoProcess.start("xdpyinfo", QStringList());
-    if (xdpyinfoProcess.waitForFinished(3000))
-    {
-        QByteArray output = xdpyinfoProcess.readAllStandardOutput();
-        QString outputStr = QString::fromUtf8(output);
-        // 使用正则表达式匹配 "dimensions: 1920x1080" 格式
-        QRegularExpression re("dimensions:\\s+(\\d+x\\d+)");
-        QRegularExpressionMatch match = re.match(outputStr);
-        if (match.hasMatch())
-        {
-            resolution = match.captured(1);
-        }
-        else
-        {
-            // 如果标准输出中没有找到，尝试从标准错误中查找
-            QByteArray errorOutput = xdpyinfoProcess.readAllStandardError();
-            QString errorStr = QString::fromUtf8(errorOutput);
-            match = re.match(errorStr);
-            if (match.hasMatch())
-            {
-                resolution = match.captured(1);
-            }
-        }
-    }
-    
-    if (resolution.isEmpty())
-    {
-        KLOG_ERROR() << "Failed to get screen resolution";
-        return;
-    }
-    KLOG_INFO() << "screen resolution:" << resolution;
-
-    // 逐一尝试编码器，按优先级：NVIDIA > Intel QSV > VAAPI > CPU
-    QString codec = "libx264";
-    QStringList extraArgs;
-    bool codecFound = false;
-    
-    // 1. 尝试 NVIDIA h264_nvenc
-    if (!codecFound)
-    {
-        QStringList nvencArgs;
-        nvencArgs << "-preset" << "fast" << "-b:v" << "5M";
-        if (tryCodec("h264_nvenc", nvencArgs, resolution, display, finalFileName))
-        {
-            codec = "h264_nvenc";
-            extraArgs = nvencArgs;
-            codecFound = true;
-            KLOG_INFO() << "Selected Codec: h264_nvenc (NVIDIA)";
-        }
-    }
-    
-    // 2. 尝试 Intel h264_qsv
-    if (!codecFound)
-    {
-        QStringList qsvArgs;
-        if (tryCodec("h264_qsv", qsvArgs, resolution, display, finalFileName))
-        {
-            codec = "h264_qsv";
-            extraArgs = qsvArgs;
-            codecFound = true;
-            KLOG_INFO() << "Selected Codec: h264_qsv (Intel)";
-        }
-    }
-    
-    // 3. 尝试 VAAPI (支持 Intel 和 AMD)
-    if (!codecFound)
-    {
-        // 查找可用的 renderD 设备
-        QDir driDir("/dev/dri");
-        QStringList renderNodes = driDir.entryList(QStringList() << "renderD*", QDir::Files);
-        
-        // 尝试每个 renderD 设备
-        for (const QString &renderNode : renderNodes)
-        {
-            QString renderDevice = "/dev/dri/" + renderNode;
-            QStringList vaapiArgs;
-            vaapiArgs << "-vaapi_device" << renderDevice 
-                      << "-vf" << "format=nv12,hwupload";
-            
-            if (tryCodec("h264_vaapi", vaapiArgs, resolution, display, finalFileName))
-            {
-                codec = "h264_vaapi";
-                extraArgs = vaapiArgs;
-                codecFound = true;
-                KLOG_INFO() << "Selected Codec: h264_vaapi (VAAPI), device:" << renderDevice;
-                break;
-            }
-        }
-    }
-    
-    // 4. 最后尝试 CPU 编码 libx264
-    if (!codecFound)
-    {
-        QStringList cpuArgs;
-        if (tryCodec("libx264", cpuArgs, resolution, display, finalFileName))
-        {
-            codec = "libx264";
-            extraArgs = cpuArgs;
-            codecFound = true;
-            KLOG_INFO() << "Selected Codec: libx264 (CPU)";
-        }
-        else
-        {
-            KLOG_ERROR() << "All codecs test failed, using default CPU codec libx264";
-            codec = "libx264";
-            extraArgs.clear();
-        }
-    }
-    
-    KLOG_INFO() << "Final used codec:" << codec;
-
-    // 构建并执行 ffmpeg 命令
+    // 构建并执行 ks-vaudit 命令
     QString logFile = finalFileName + ".log";
-    QStringList ffmpegArgs;
-    ffmpegArgs << "-f" << "x11grab"
-               << "-framerate" << "12"
-               << "-video_size" << resolution
-               << "-i" << display
-               << "-c:v" << codec;
-    ffmpegArgs << extraArgs;
-    ffmpegArgs << finalFileName
-               << "-y";
+    QStringList ksvaudit;
+    ksvaudit << "--purecli"
+             << "--format=mp4"
+             << "--outfile=" + finalFileName
+             << "--y";
 
-    KLOG_INFO() << "Start recording: ffmpeg" << ffmpegArgs.join(" ");
+    KLOG_INFO() << "Start recording: ks-vaudit" << ksvaudit.join(" ");
     
-    // 启动 ffmpeg 进程，将输出重定向到日志文件
+    // 启动 ksvaudit 进程，将输出重定向到日志文件
     // 设置 DISPLAY 环境变量
-    QProcessEnvironment ffmpegEnv = QProcessEnvironment::systemEnvironment();
-    ffmpegEnv.insert("DISPLAY", display);
-    m_process.setProcessEnvironment(ffmpegEnv);
+    // TODO:这里不用设置DISPLAY环境变量，因为ks-vaudit会自动判断
+    // QProcessEnvironment ksvauditEnv = QProcessEnvironment::systemEnvironment();
+    // ksvauditEnv.insert("DISPLAY", display);
+    // m_process.setProcessEnvironment(ksvauditEnv);
     m_process.setStandardOutputFile(logFile);
     m_process.setStandardErrorFile(logFile);
-    m_process.start("ffmpeg", ffmpegArgs);
+    m_process.start("ks-vaudit", ksvaudit);
     
     if (!m_process.waitForStarted(3000))
     {
-        KLOG_ERROR() << "Failed to start ffmpeg process";
+        KLOG_ERROR() << "Failed to start ks-vaudit process";
     }
 }
 
@@ -295,22 +168,22 @@ void ScreenRecorder::stop()
         return;
     }
     
-    // 先尝试优雅地停止 ffmpeg（发送 SIGINT，相当于按 Ctrl+C）
-    // ffmpeg 收到 SIGINT 后会正常结束并完成文件写入
+    // 先尝试优雅地停止 ks-vaudit（发送 SIGINT，相当于按 Ctrl+C）
+    // ks-vaudit 收到 SIGINT 后会正常结束并完成文件写入
     qint64 pid = m_process.processId();
     if (pid > 0)
     {
-        KLOG_INFO() << "send SIGINT to ffmpeg process" << pid;
+        KLOG_INFO() << "send SIGINT to ks-vaudit process" << pid;
         kill(pid, SIGINT);
         
         // 等待进程正常结束，最多等待 5 秒
         if (m_process.waitForFinished(5000))
         {
-            KLOG_INFO() << "ffmpeg process finished normally, exit";
+            KLOG_INFO() << "ks-vaudit process finished normally, exit";
         }
         else
         {
-            KLOG_WARNING() << "ffmpeg process did not finish in time, forcing termination, exit";
+            KLOG_WARNING() << "ks-vaudit process did not finish in time, forcing termination, exit";
             // 如果超时，强制终止
             m_process.kill();
             m_process.waitForFinished(1000);
@@ -319,11 +192,11 @@ void ScreenRecorder::stop()
     else
     {
         // 如果无法获取进程 ID，使用 terminate() 发送 SIGTERM
-        KLOG_INFO() << "terminating ffmpeg process";
+        KLOG_INFO() << "terminating ks-vaudit process";
         m_process.terminate();
         if (!m_process.waitForFinished(5000))
         {
-            KLOG_WARNING() << "ffmpeg process did not finish, forcing kill";
+            KLOG_WARNING() << "ks-vaudit process did not finish, forcing kill";
             m_process.kill();
             m_process.waitForFinished(1000);
         }
