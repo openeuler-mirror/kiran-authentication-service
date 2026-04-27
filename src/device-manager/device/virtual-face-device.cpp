@@ -13,6 +13,7 @@
  */
 
 #include <qt5-log-i.h>
+#include <QtConcurrent/QtConcurrent>
 
 #include "auth_device_adaptor.h"
 #include "virtual-face-device.h"
@@ -22,6 +23,30 @@ namespace Kiran
 VirtualFaceDevice::VirtualFaceDevice(DriverPtr driver, QObject* parent) : Device(driver, parent)
 {
     m_driver = driver.staticCast<VirtualFaceDriver>();
+    connect(&m_identifyWatcher, &QFutureWatcher<int>::finished, this, [this]() {
+        const int ret = m_identifyWatcher.result();
+        const bool stopped = m_identifyStopRequested;
+        m_identifyStopRequested = false;
+        m_status = DEVICE_STATUS_IDLE;
+
+        if (stopped)
+        {
+            KLOG_INFO() << "VirtualFaceDevice Identify finished but stop requested, ignore result";
+            return;
+        }
+
+        if (0 != ret)
+        {
+            QString msg = m_driver->getErrorMsg(ret);
+            KLOG_ERROR() << "identify fail:" << msg;
+            Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_NOT_MATCH, msg);
+        }
+        else
+        {
+            KLOG_INFO() << "identify success";
+            Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_MATCH, tr("identify success"));
+        }
+    });
 }
 
 VirtualFaceDevice::~VirtualFaceDevice()
@@ -56,25 +81,22 @@ void VirtualFaceDevice::IdentifyStart(const QString& extraInfo)
         return;
     }
 
-    int ret = m_driver->identify(extraInfo);
-    if (0 != ret)
-    {
-        QString msg = m_driver->getErrorMsg(ret);
-        KLOG_ERROR() << "identify fail:" << msg;
-        Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_NOT_MATCH, msg);
-    }
-    else
-    {
-        KLOG_INFO() << "identify success";
-        Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_MATCH, tr("identify success"));
-    }
+    m_status = DEVICE_STATUS_DOING_IDENTIFY;
+    m_identifyStopRequested = false;
+    auto driver = m_driver;
+    auto info = extraInfo;
+    m_identifyWatcher.setFuture(QtConcurrent::run([driver, info]() -> int {
+        return driver->identify(info);
+    }));
 }
 
 void VirtualFaceDevice::IdentifyStop()
 {
     if (DEVICE_STATUS_DOING_IDENTIFY == deviceStatus())
     {
-        m_status = DEVICE_STATUS_IDLE;
+        // driver 接口当前不支持真正的中断，这里只标记停止并让 DBus 调用立即返回；
+        // 识别线程完成后会丢弃结果，避免阻塞切换到密码的 prompt。
+        m_identifyStopRequested = true;
     }
 }
 

@@ -13,6 +13,7 @@
  */
 
 #include <qt5-log-i.h>
+#include <QtConcurrent/QtConcurrent>
 
 #include "auth_device_adaptor.h"
 #include "virtual-code-device.h"
@@ -22,6 +23,30 @@ namespace Kiran
 VirtualCodeDevice::VirtualCodeDevice(DriverPtr driver, QObject* parent) : Device(driver, parent)
 {
     m_driver = driver.staticCast<VirtualCodeDriver>();
+    connect(&m_identifyWatcher, &QFutureWatcher<int>::finished, this, [this]() {
+        const int ret = m_identifyWatcher.result();
+        const bool stopped = m_identifyStopRequested;
+        m_identifyStopRequested = false;
+        m_status = DEVICE_STATUS_IDLE;
+
+        if (stopped)
+        {
+            KLOG_INFO() << "VirtualCodeDevice Identify finished but stop requested, ignore result";
+            return;
+        }
+
+        if (0 != ret)
+        {
+            QString msg = m_driver->getErrorMsg(ret);
+            KLOG_ERROR() << "identify fail:" << msg;
+            Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_NOT_MATCH, msg);
+        }
+        else
+        {
+            KLOG_INFO() << "identify success";
+            Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_MATCH, tr("identify success"));
+        }
+    });
 }
 
 VirtualCodeDevice::~VirtualCodeDevice()
@@ -55,25 +80,20 @@ void VirtualCodeDevice::IdentifyStart(const QString& extraInfo)
         return;
     }
 
-    int ret = m_driver->identify(extraInfo);
-    if (0 != ret)
-    {
-        QString msg = m_driver->getErrorMsg(ret);
-        KLOG_ERROR() << "identify fail:" << msg;
-        Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_NOT_MATCH, msg);
-    }
-    else
-    {
-        KLOG_INFO() << "identify success";
-        Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_MATCH, tr("identify success"));
-    }
+    m_status = DEVICE_STATUS_DOING_IDENTIFY;
+    m_identifyStopRequested = false;
+    auto driver = m_driver;
+    auto info = extraInfo;
+    m_identifyWatcher.setFuture(QtConcurrent::run([driver, info]() -> int {
+        return driver->identify(info);
+    }));
 }
 
 void VirtualCodeDevice::IdentifyStop()
 {
     if (DEVICE_STATUS_DOING_IDENTIFY == deviceStatus())
     {
-        m_status = DEVICE_STATUS_IDLE;
+        m_identifyStopRequested = true;
     }
 }
 
