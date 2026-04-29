@@ -16,6 +16,8 @@
 
 #include <QObject>
 #include <QProcess>
+#include <QHash>
+#include <QString>
 
 class ScreenRecorder : public QObject
 {
@@ -27,14 +29,15 @@ public:
     void start(const QString &fileName);
     void stop();
 
-public slots:
-    void onScreenLockChanged(bool locked);
-
 private:
+    void ensureSessionBusConnected(const QString &fileName);
+    void startUserLockMonitor(const QString &userName, const QString &busAddress);
+
     // 尝试使用指定的编码器进行录屏
     bool tryCodec(const QString &codec, const QStringList &extraArgs, 
                   const QString &resolution, const QString &display,
                   const QString &outputFile);
     
     QProcess m_process;
+    QHash<QString, QProcess *> m_lockMonitors;
 };

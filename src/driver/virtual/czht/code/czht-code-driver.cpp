@@ -165,10 +165,7 @@ void CZHTCodeDriver::identifyResultPostProcess(const QString &extraInfo)
         if (m_enableScreenRecorder)
         {
             QString fileName = QString("%1_%2_%3.mp4").arg(m_personIDLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
-            QProcess::startDetached("sudo", QStringList() << "-u"
-                                                          << osUser
-                                                          << "kiran-screen-recorder"
-                                                          << fileName);
+            QProcess::startDetached("kiran-screen-recorder", QStringList() << fileName);
         }
     }
 }
