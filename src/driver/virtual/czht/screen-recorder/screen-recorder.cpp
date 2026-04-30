@@ -13,30 +13,266 @@
  */
  
 #include <qt5-log-i.h>
-#include <QDBusConnection>
 #include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
-#include <QRegularExpression>
 #include <QDir>
+#include <QHash>
 #include <signal.h>
+
+#include <pwd.h>
+#include <sys/types.h>
+#include <algorithm>
 
 #include "config.h"
 #include "screen-recorder.h"
 
+namespace
+{
+QString quoteForShell(const QString &value)
+{
+    QString escapedValue = value;
+    escapedValue.replace('\'', "'\"'\"'");
+    return QString("'%1'").arg(escapedValue);
+}
+
+QString getEnvFromProcess(pid_t pid, const QString &key)
+{
+    QFile environFile(QString("/proc/%1/environ").arg(pid));
+    if (!environFile.open(QIODevice::ReadOnly))
+    {
+        return QString();
+    }
+
+    const QList<QByteArray> envList = environFile.readAll().split('\0');
+    const QByteArray keyPrefix = key.toUtf8() + '=';
+    for (const QByteArray &env : envList)
+    {
+        if (env.startsWith(keyPrefix))
+        {
+            return QString::fromUtf8(env.mid(keyPrefix.size()));
+        }
+    }
+
+    return QString();
+}
+
+QString getSessionEnvByUser(const QString &userName, const QString &envKey)
+{
+    struct passwd *pwd = getpwnam(userName.toUtf8().constData());
+    if (pwd == nullptr)
+    {
+        return QString();
+    }
+
+    auto readRealUidFromStatus = [](const QString &statusPath, bool *okOut) -> uint {
+        QFile statusFile(statusPath);
+        if (!statusFile.open(QIODevice::ReadOnly))
+        {
+            if (okOut)
+            {
+                *okOut = false;
+            }
+            return 0;
+        }
+
+        const QByteArray content = statusFile.read(4096);
+        const QList<QByteArray> lines = content.split('\n');
+        for (const QByteArray &rawLine : lines)
+        {
+            const QByteArray line = rawLine.trimmed();
+            if (!line.startsWith("Uid:"))
+            {
+                continue;
+            }
+
+            const QByteArray simplified = line.mid(4).simplified();
+            QList<QByteArray> fields = simplified.split(' ');
+            fields.erase(std::remove_if(fields.begin(), fields.end(),
+                                        [](const QByteArray &b) { return b.isEmpty(); }),
+                         fields.end());
+
+            if (okOut)
+            {
+                *okOut = true;
+            }
+            if (fields.isEmpty())
+            {
+                return 0U;
+            }
+            return fields.first().toUInt();
+        }
+
+        if (okOut)
+        {
+            *okOut = false;
+        }
+        return 0;
+    };
+
+    QDir procDir("/proc");
+    const QFileInfoList procEntries = procDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QFileInfo &entry : procEntries)
+    {
+        bool ok = false;
+        pid_t pid = entry.fileName().toLongLong(&ok);
+        if (!ok)
+        {
+            continue;
+        }
+
+        QFile cmdlineFile(entry.filePath() + "/cmdline");
+        if (!cmdlineFile.open(QIODevice::ReadOnly))
+        {
+            continue;
+        }
+
+        const QList<QByteArray> argv = cmdlineFile.readAll().split('\0');
+        if (argv.isEmpty() || argv.first().isEmpty())
+        {
+            continue;
+        }
+
+        const QString argv0 = QString::fromUtf8(argv.first());
+        const QString exeName = QFileInfo(argv0).fileName();
+        if (exeName != "kiran-session-manager" && exeName != "gnome-session")
+        {
+            continue;
+        }
+
+        bool statusOk = false;
+        const uint realUid = readRealUidFromStatus(entry.filePath() + "/status", &statusOk);
+        if (!statusOk || realUid != static_cast<uint>(pwd->pw_uid))
+        {
+            continue;
+        }
+
+        const QString envValue = getEnvFromProcess(pid, envKey);
+        if (!envValue.isEmpty())
+        {
+            return envValue;
+        }
+    }
+
+    return QString();
+}
+
+QString parseUserFromRecorderFileName(const QString &fileName)
+{
+    // 规则：按下划线分割，第二段就是用户名
+    // 例如：5639_root_20260428091302.mp4 -> root
+    //      456_yujingmin_789.mp4       -> yujingmin
+    // 兼容带路径：/var/.../456_yujingmin_789.mp4
+    const QString baseName = QFileInfo(fileName).fileName();
+    const QStringList parts = baseName.split('_', Qt::SkipEmptyParts);
+    if (parts.size() < 2)
+    {
+        return QString();
+    }
+    return parts.at(1);
+}
+}
+
 ScreenRecorder::ScreenRecorder(QObject *parent)
     : QObject(parent)
 {
-    // 监听锁屏信号
-    QDBusConnection bus = QDBusConnection::sessionBus();
-    auto ret = bus.connect("com.kylinsec.Kiran.ScreenSaver",
-                           "/com/kylinsec/Kiran/ScreenSaver",
-                           "com.kylinsec.Kiran.ScreenSaver", "ActiveChanged",
-                           this, SLOT(onScreenLockChanged(bool)));
+    // D-Bus 连接在 start() 中根据文件名对应的用户 session 建立
 }
 
 ScreenRecorder::~ScreenRecorder()
 {
+    for (auto it = m_lockMonitors.begin(); it != m_lockMonitors.end(); ++it)
+    {
+        QProcess *proc = it.value();
+        if (proc != nullptr && proc->state() != QProcess::NotRunning)
+        {
+            proc->kill();
+            proc->waitForFinished(1000);
+        }
+    }
+    m_lockMonitors.clear();
+}
+
+void ScreenRecorder::startUserLockMonitor(const QString &userName, const QString &busAddress)
+{
+    QProcess *existing = m_lockMonitors.value(userName, nullptr);
+    if (existing != nullptr && existing->state() != QProcess::NotRunning)
+    {
+        return;
+    }
+    if (existing != nullptr)
+    {
+        delete existing;
+        m_lockMonitors.remove(userName);
+    }
+
+    auto *proc = new QProcess(this);
+
+    // 用目标用户身份监听其 session bus 上的锁屏信号，避免 root 直接连被策略拒绝
+    const QString monitorCmd =
+        QString("DBUS_SESSION_BUS_ADDRESS=%1 gdbus monitor --session --dest %2 --object-path %3")
+            .arg(quoteForShell(busAddress),
+                 quoteForShell("com.kylinsec.Kiran.ScreenSaver"),
+                 quoteForShell("/com/kylinsec/Kiran/ScreenSaver"));
+
+    QStringList args;
+    args << "-" << userName << "-c" << monitorCmd;
+
+    proc->setProgram("su");
+    proc->setArguments(args);
+    proc->setProcessChannelMode(QProcess::MergedChannels);
+
+    connect(proc, &QProcess::readyRead, this, [this, proc]() {
+        const QString out = QString::fromUtf8(proc->readAll());
+        if (out.contains("ActiveChanged") && (out.contains(" true") || out.contains("true")))
+        {
+            stop();
+        }
+    });
+
+    connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, [this, userName, proc](int code, QProcess::ExitStatus status) {
+                KLOG_WARNING() << "Lock monitor exited. user:" << userName << "code:" << code << "status:" << status;
+                if (m_lockMonitors.value(userName, nullptr) == proc)
+                {
+                    m_lockMonitors.remove(userName);
+                }
+                proc->deleteLater();
+            });
+
+    proc->start();
+    if (!proc->waitForStarted(3000))
+    {
+        KLOG_WARNING() << "Failed to start lock monitor process for user:" << userName;
+        proc->deleteLater();
+        return;
+    }
+
+    m_lockMonitors.insert(userName, proc);
+}
+
+void ScreenRecorder::ensureSessionBusConnected(const QString &fileName)
+{
+    QString userName = parseUserFromRecorderFileName(fileName);
+    if (userName.isEmpty())
+    {
+        KLOG_WARNING() << "Failed to parse user from file name:" << fileName;
+    }
+
+    QString busAddress;
+    if (!userName.isEmpty())
+    {
+        busAddress = getSessionEnvByUser(userName, "DBUS_SESSION_BUS_ADDRESS");
+        if (busAddress.isEmpty())
+        {
+            KLOG_WARNING() << "Failed to get DBUS_SESSION_BUS_ADDRESS for user:" << userName;
+        }
+    }
+
+    if (!busAddress.isEmpty())
+    {
+        startUserLockMonitor(userName, busAddress);
+    }
 }
 
 bool ScreenRecorder::tryCodec(const QString &codec, const QStringList &extraArgs,
@@ -124,6 +360,9 @@ void ScreenRecorder::start(const QString &fileName)
     }
     KLOG_INFO() << "screen recorder file name:" << finalFileName;
 
+    // 根据文件名（携带用户名）连接到指定用户的 session bus，用于监听锁屏信号
+    ensureSessionBusConnected(finalFileName);
+
     QString videoSaveDir = "/var/log/kylinsec/kiran-authentication-service/video";
     if (!QDir(videoSaveDir).exists())
     {
@@ -134,6 +373,22 @@ void ScreenRecorder::start(const QString &fileName)
     // 构建并执行 ks-vaudit 命令
     QString logFile = finalFileName + ".log";
     QStringList ksvaudit;
+
+    const QString userName = parseUserFromRecorderFileName(fileName);
+    if (!userName.isEmpty())
+    {
+        const QString display = getSessionEnvByUser(userName, "DISPLAY");
+        const QString xauth = getSessionEnvByUser(userName, "XAUTHORITY");
+        if (!display.isEmpty())
+        {
+            ksvaudit << "--display=" + display;
+        }
+        if (!xauth.isEmpty())
+        {
+            ksvaudit << "--xauth=" + xauth;
+        }
+    }
+
     ksvaudit << "--purecli"
              << "--format=mp4"
              << "--outfile=" + finalFileName
@@ -203,13 +458,4 @@ void ScreenRecorder::stop()
     }
     
     exit(0);
-}
-
-void ScreenRecorder::onScreenLockChanged(bool locked)
-{
-    KLOG_INFO() << "detect screen is" << (locked ? "Locked" : "Unlocked");
-    if (locked)
-    {
-        stop();
-    }
 }

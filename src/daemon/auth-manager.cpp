@@ -262,6 +262,9 @@ QList<int> AuthManager::GetAuthTypeFromCZHT()
     case 4:  // 人脸+密码+授权码
         authTypes << KAD_AUTH_TYPE_VIRTUAL_FACE << KAD_AUTH_TYPE_VIRTUAL_CODE << KAD_AUTH_TYPE_PASSWORD;
         break;
+    case 5:  // 密码
+        authTypes << KAD_AUTH_TYPE_PASSWORD;
+        break;
     default:
         KLOG_WARNING() << "Unknown work_mode:" << workMode;
         break;
