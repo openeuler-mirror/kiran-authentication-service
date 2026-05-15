@@ -28,6 +28,7 @@
 #include <QSpinBox>
 #include <QStyledItemDelegate>
 #include <QVBoxLayout>
+#include <qt5-log-i.h>
 
 #include "config.h"
 #include "czht-define.h"

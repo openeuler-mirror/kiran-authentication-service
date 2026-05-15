@@ -2,7 +2,7 @@
 #
 # kiran-authentication-daemon: start and stop the Kiran Authentication Daemon
 #
-# chkconfig: 2345 99 01
+# chkconfig: 345 85 15
 # description: Kiran Authentication Daemon Service
 # processname: kiran-authentication-daemon
 # pidfile: /var/run/kiran-authentication-daemon.pid

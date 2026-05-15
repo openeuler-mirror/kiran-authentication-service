@@ -164,7 +164,7 @@ QString parseUserFromRecorderFileName(const QString &fileName)
     //      456_yujingmin_789.mp4       -> yujingmin
     // 兼容带路径：/var/.../456_yujingmin_789.mp4
     const QString baseName = QFileInfo(fileName).fileName();
-    const QStringList parts = baseName.split('_', Qt::SkipEmptyParts);
+    const QStringList parts = baseName.simplified().split('_');
     if (parts.size() < 2)
     {
         return QString();
@@ -230,7 +230,7 @@ void ScreenRecorder::startUserLockMonitor(const QString &userName, const QString
         }
     });
 
-    connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+    connect(proc, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
             this, [this, userName, proc](int code, QProcess::ExitStatus status) {
                 KLOG_INFO() << "Lock monitor exited. user:" << userName << "code:" << code << "status:" << status;
                 if (!m_stopping)
