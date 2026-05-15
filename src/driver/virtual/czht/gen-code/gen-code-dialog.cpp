@@ -74,7 +74,8 @@ void GenCodeDialog::onApplyClicked()
     QDBusReply<QString> reply = iface->call("CodeGen", jsonStr);
     if (reply.isValid())
     {
-        jsonDoc = QJsonDocument::fromJson(reply.value().toUtf8());
+        KLOG_INFO() << "CodeGen reply:" << reply.value();
+        jsonDoc = QJsonDocument::fromJson(reply.value().toLatin1());
         jsonObj = jsonDoc.object();
         int error_code = jsonObj.value("code").toInt();
         if (error_code != CZHT_SUCCESS)

@@ -199,7 +199,8 @@ void LeaveDetecter::stopLeaveDetect()
     QJsonDocument jsonDoc(jsonObj);
 
     auto reply = dbusCall("StopLeaveDetect", jsonDoc.toJson());
-    jsonDoc = QJsonDocument::fromJson(reply.toUtf8());
+    KLOG_INFO() << "StopLeaveDetect reply:" << reply;
+    jsonDoc = QJsonDocument::fromJson(reply.toLatin1());
     jsonObj = jsonDoc.object();
     int error_code = jsonObj.value("code").toInt();
     if (error_code != CZHT_SUCCESS)

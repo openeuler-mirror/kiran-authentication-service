@@ -68,7 +68,8 @@ int CZHTDriverBase::startLeaveDetect(const QString &osUser)
     QJsonDocument jsonDoc(jsonObj);
 
     auto reply = dbusCall("StartLeaveDetect", jsonDoc.toJson());
-    jsonDoc = QJsonDocument::fromJson(reply.toUtf8());
+    KLOG_INFO() << "StartLeaveDetect reply:" << reply;
+    jsonDoc = QJsonDocument::fromJson(reply.toLatin1());
     jsonObj = jsonDoc.object();
     int error_code = jsonObj.value("code").toInt();
     if (error_code != CZHT_SUCCESS)
@@ -91,14 +92,14 @@ int CZHTDriverBase::reportLoginLog(QJsonObject &jsonObj)
 
     QJsonDocument jsonDoc(jsonObj);
     QString reply = dbusCall("ReportLoginLog", jsonDoc.toJson());
-
+    KLOG_INFO() << "ReportLoginLog reply:" << reply;
     if (reply.isEmpty())
     {
         KLOG_ERROR() << "ReportLoginLog D-Bus call failed";
         return -1;
     }
 
-    QJsonDocument replyDoc = QJsonDocument::fromJson(reply.toUtf8());
+    QJsonDocument replyDoc = QJsonDocument::fromJson(reply.toLatin1());
     QJsonObject replyObj = replyDoc.object();
     int error_code = replyObj.value("code").toInt();
 
