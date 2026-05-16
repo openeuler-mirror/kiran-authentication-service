@@ -15,6 +15,7 @@
 #pragma once
 
 #include <QObject>
+#include <QTimer>
 
 class QDBusInterface;
 
@@ -28,6 +29,7 @@ public:
 private slots:
     void onLeaveDetected(QString info);
     void onScreenLockChanged(bool active);
+    void onCheckGreeterTimer();
 
 private:
     void lockScreen();
@@ -36,4 +38,5 @@ private:
     QString dbusCall(QString method, QString args);
 
     QDBusInterface *m_iface;
+    QTimer *m_greeterTimer;
 };
