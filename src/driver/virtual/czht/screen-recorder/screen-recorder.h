@@ -40,4 +40,5 @@ private:
     
     QProcess m_process;
     QHash<QString, QProcess *> m_lockMonitors;
+    bool m_stopping = false;
 };

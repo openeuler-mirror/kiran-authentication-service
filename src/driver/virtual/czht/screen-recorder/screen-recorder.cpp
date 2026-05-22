@@ -232,12 +232,18 @@ void ScreenRecorder::startUserLockMonitor(const QString &userName, const QString
 
     connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this, userName, proc](int code, QProcess::ExitStatus status) {
-                KLOG_WARNING() << "Lock monitor exited. user:" << userName << "code:" << code << "status:" << status;
-                if (m_lockMonitors.value(userName, nullptr) == proc)
+                KLOG_INFO() << "Lock monitor exited. user:" << userName << "code:" << code << "status:" << status;
+                if (!m_stopping)
                 {
-                    m_lockMonitors.remove(userName);
+                    if (m_lockMonitors.value(userName, nullptr) == proc)
+                    {
+                        m_lockMonitors.remove(userName);
+                    }
+                    proc->deleteLater();
+                    // gdbus monitor 退出意味着 session bus 已断开（通常是 session manager 退出），
+                    // 此时应该停止录屏
+                    stop();
                 }
-                proc->deleteLater();
             });
 
     proc->start();
@@ -414,15 +420,50 @@ void ScreenRecorder::start(const QString &fileName)
 
 void ScreenRecorder::stop()
 {
+    // 防止重复调用
+    if (m_stopping)
+    {
+        return;
+    }
+    m_stopping = true;
+
     KLOG_INFO() << "stop recorder";
-    
+
+    // 先停止所有 gdbus monitor 进程，避免进程残留
+    for (auto it = m_lockMonitors.begin(); it != m_lockMonitors.end(); ++it)
+    {
+        QProcess *proc = it.value();
+        if (proc != nullptr && proc->state() != QProcess::NotRunning)
+        {
+            KLOG_INFO() << "stopping lock monitor process for user:" << it.key();
+            qint64 pid = proc->processId();
+            if (pid > 0)
+            {
+                // 先尝试 SIGTERM，让 su 有机会把信号传递给子进程
+                ::kill(pid, SIGTERM);
+                if (!proc->waitForFinished(500))
+                {
+                    // 如果超时，用 SIGKILL 强制杀死
+                    ::kill(pid, SIGKILL);
+                    proc->waitForFinished(500);
+                }
+
+                // 再用 pkill 确保子进程也被杀死
+                QProcess pkillProc;
+                pkillProc.start("pkill", QStringList() << "-P" << QString::number(pid));
+                pkillProc.waitForFinished(500);
+            }
+        }
+    }
+    m_lockMonitors.clear();
+
     if (m_process.state() == QProcess::NotRunning)
     {
         KLOG_INFO() << "recorder process is not running, exit";
         exit(0);
         return;
     }
-    
+
     // 先尝试优雅地停止 ks-vaudit（发送 SIGINT，相当于按 Ctrl+C）
     // ks-vaudit 收到 SIGINT 后会正常结束并完成文件写入
     qint64 pid = m_process.processId();
@@ -430,7 +471,7 @@ void ScreenRecorder::stop()
     {
         KLOG_INFO() << "send SIGINT to ks-vaudit process" << pid;
         kill(pid, SIGINT);
-        
+
         // 等待进程正常结束，最多等待 5 秒
         if (m_process.waitForFinished(5000))
         {
@@ -456,6 +497,6 @@ void ScreenRecorder::stop()
             m_process.waitForFinished(1000);
         }
     }
-    
+
     exit(0);
 }
