@@ -93,7 +93,7 @@ int CZHTCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
 
     auto reply = dbusCall("CodeCheck", jsonDoc.toJson());
     KLOG_INFO() << "CodeCheck reply:" << reply;
-    jsonDoc = QJsonDocument::fromJson(reply.toUtf8());
+    jsonDoc = QJsonDocument::fromJson(reply.toLatin1());
     jsonObj = jsonDoc.object();
     int error_code = jsonObj.value("code").toInt();
 

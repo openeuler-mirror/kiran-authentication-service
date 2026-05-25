@@ -2,7 +2,7 @@
 #
 # kiran-authentication-devices: start and stop the Kiran Authentication Devices
 #
-# chkconfig: 2345 99 01
+# chkconfig: 345 85 15
 # description: Kiran Authentication Devices Service
 # processname: kiran-authentication-devices
 # pidfile: /var/run/kiran-authentication-devices.pid

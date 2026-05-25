@@ -18,15 +18,45 @@
 #include <QDBusReply>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QCoreApplication>
 #include <QProcess>
 
 #include "config.h"
 #include "czht-define.h"
 #include "leave-detecter.h"
 
-LeaveDetecter::LeaveDetecter(QObject *parent)
-    : QObject(parent), m_iface(nullptr)
+/// @brief 检查指定进程是否正在运行
+/// @param processName 要检查的进程名称
+/// @return 如果进程存在返回true，否则返回false
+static bool isProcessRunning(const QString &processName)
 {
+    QProcess process;
+    process.start("pgrep", QStringList() << "-f" << processName);
+
+    if (!process.waitForFinished(3000))
+    {
+        return false;
+    }
+
+    // pgrep找到进程时返回0，输出匹配的进程ID
+    return (process.exitCode() == 0);
+}
+
+LeaveDetecter::LeaveDetecter(QObject *parent)
+    : QObject(parent), m_iface(nullptr), m_greeterTimer(new QTimer(this))
+{
+    // 启动定时器定期检测 lightdm-kiran-greeter
+    // 用于处理切换用户时，人走检测仍在运行导致的摄像头不可用情况
+    // FIXME: 如果两个tty图形，一个锁屏、一个登陆，从锁屏界面进入系统后，人走检测退出
+    // 需要调研是否有其他更好的方式来判断切换至登录界面这个动作，而不是通过判断lightdm-kiran-greeter进程是否存在的方式来实现，后续再调研方案，比如给lightdm增加SwtichToGreeter的信号。
+
+    // 现在在lightdm中去掉了切换用户功能
+    // 此方案不完善，后续考虑新方案，暂时注释掉
+    // m_greeterTimer->setInterval(1000);  // 每秒检测一次
+    // connect(m_greeterTimer, &QTimer::timeout, this, &LeaveDetecter::onCheckGreeterTimer);
+    // m_greeterTimer->start();
+    // KLOG_INFO() << "Start greeter detect timer";
+
     // 连接系统总线上的 LeaveDetected 信号
     QDBusConnection systemBus = QDBusConnection::systemBus();
     bool ret = systemBus.connect(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE,
@@ -67,6 +97,8 @@ LeaveDetecter::~LeaveDetecter()
         "org.gnome.ScreenSaver", "/org/gnome/ScreenSaver",
         "org.gnome.ScreenSaver", "ActiveChanged", this,
         SLOT(onScreenLockChanged(bool)));
+
+    KLOG_INFO() << "LeaveDetecter destroyed";
 }
 
 void LeaveDetecter::onLeaveDetected(QString info)
@@ -82,6 +114,34 @@ void LeaveDetecter::onScreenLockChanged(bool active)
     {
         stopLeaveDetect();
     }
+}
+
+void LeaveDetecter::onCheckGreeterTimer()
+{
+    // 分为注销、切换用户 两种情况
+    // 注销：LeaveDetecter 退出
+    // 切换用户：停止人走检测
+    //         再次进入当前用户：不会重新拉起之前会话中存在的进程，因此不要停止当前进程，需要重新start m_greeterTimer
+    //         进入其他用户：LeaveDetecter 存在两个实例
+    //         切换到锁屏界面进入：LeaveDetecter 重新拉起
+    
+    // 方案不完善，调用已注释，后续考虑新方案
+    if (isProcessRunning("lightdm-kiran-greeter"))
+    {
+        KLOG_INFO() << "lightdm-kiran-greeter is running, stopping leave detect and exiting";
+        // 当lightdm-kiran-greeter正在运行，需要停止m_greeterTimer，不然会持续调用stopLeaveDetect
+        m_greeterTimer->stop();
+        stopLeaveDetect();
+    }
+    else 
+    {
+        if (!m_greeterTimer->isActive())
+        {
+            KLOG_INFO() << "lightdm-kiran-greeter is not running, starting leave detect";
+            m_greeterTimer->start();
+        }
+    }
+    
 }
 
 /// @brief 检查命令是否存在（使用which命令）
@@ -199,7 +259,8 @@ void LeaveDetecter::stopLeaveDetect()
     QJsonDocument jsonDoc(jsonObj);
 
     auto reply = dbusCall("StopLeaveDetect", jsonDoc.toJson());
-    jsonDoc = QJsonDocument::fromJson(reply.toUtf8());
+    KLOG_INFO() << "StopLeaveDetect reply:" << reply;
+    jsonDoc = QJsonDocument::fromJson(reply.toLatin1());
     jsonObj = jsonDoc.object();
     int error_code = jsonObj.value("code").toInt();
     if (error_code != CZHT_SUCCESS)

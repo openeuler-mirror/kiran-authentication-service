@@ -80,10 +80,10 @@ int CZHTFaceDriver::startSearch(const QString &extraInfo)
     QJsonDocument jsonDoc(jsonObj);
 
     QString reply = dbusCall("StartSearch", jsonDoc.toJson());
-    jsonDoc = QJsonDocument::fromJson(reply.toUtf8());
+    KLOG_INFO() << "StartSearch reply:" << reply;
+    jsonDoc = QJsonDocument::fromJson(reply.toLatin1());
     jsonObj = jsonDoc.object();
     int error_code = jsonObj.value("code").toInt();
-    KLOG_INFO() << "StartSearch reply:" << jsonObj;
     if (error_code != CZHT_SUCCESS)
     {
         KLOG_ERROR() << "StartSearch failed:" << error_code << jsonObj;
