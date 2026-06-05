@@ -4,67 +4,70 @@
 <context>
     <name>GenCodeDialog</name>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="39"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="40"/>
         <source>Request Authorization Code</source>
         <translation>申请授权码</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="49"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="50"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="90"/>
         <source>Failed to request authorization code, please check if the face service (com.czht.face.daemon) is running</source>
         <translation>申请授权码失败，请确认人脸服务(com.czht.face.daemon)是否正常运行</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="82"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="72"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="124"/>
         <source>Failed to request authorization code: %1</source>
         <translation>申请授权码失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="86"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="128"/>
         <source>Request authorization code successfully, please wait for the SMS notification</source>
         <translation>申请授权码成功，请等待短信通知</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="91"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="78"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="133"/>
         <source>Failed to request authorization code, please try again, %1</source>
         <translation>申请授权码失败，请重试，%1</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="133"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="175"/>
         <source>Authorization code request duration</source>
         <translation>请选择合适的申请时长</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="138"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="180"/>
         <source>day</source>
         <translation>天</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="138"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="180"/>
         <source>week</source>
         <translation>周</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="138"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="180"/>
         <source>month</source>
         <translation>月</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="138"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="180"/>
         <source>hour</source>
         <translation>小时</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="143"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="185"/>
         <source>request</source>
         <translation>申请</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="144"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="186"/>
         <source>please look at camera when click &quot;request&quot; button</source>
         <translation>点击&quot;申请&quot;时，请正视摄像头</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="165"/>
+        <location filename="../src/driver/virtual/czht/gen-code/gen-code-dialog.cpp" line="207"/>
         <source>Confirm</source>
         <translation>确认</translation>
     </message>

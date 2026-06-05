@@ -105,6 +105,8 @@ QString Utils::authTypeEnum2Str(int authType)
         return QStringLiteral(AUTH_TYPE_STR_VIRTUAL_FACE);
     case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE:
         return QStringLiteral(AUTH_TYPE_STR_VIRTUAL_CODE);
+    case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA:
+        return QStringLiteral(AUTH_TYPE_STR_VIRTUAL_CODE_NO_CAMERA);
     default:
         KLOG_WARNING() << "Unknown authType: " << authType;
     }
@@ -131,6 +133,8 @@ int Utils::authTypeStr2Enum(const QString& authType)
         return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE;
     case CONNECT(AUTH_TYPE_STR_VIRTUAL_CODE, _hash):
         return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE;
+    case CONNECT(AUTH_TYPE_STR_VIRTUAL_CODE_NO_CAMERA, _hash):
+        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA;
     default:
         KLOG_WARNING() << "Unknown authType: " << authType;
     }
@@ -155,6 +159,8 @@ int32_t Utils::authType2DeviceType(int32_t authType)
         return DeviceType::DEVICE_TYPE_Virtual_Face;
     case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE:
         return DeviceType::DEVICE_TYPE_Virtual_Code;
+    case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA:
+        return DeviceType::DEVICE_TYPE_Virtual_Code_No_Camera;
     default:
         KLOG_WARNING() << "Unsupported authType: " << authType;
     }
@@ -179,6 +185,8 @@ int32_t Utils::deviceType2AuthType(int32_t deviceType)
         return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE;
     case DeviceType::DEVICE_TYPE_Virtual_Code:
         return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE;
+    case DeviceType::DEVICE_TYPE_Virtual_Code_No_Camera:
+        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA;
     default:
         KLOG_WARNING() << "Unsupported deviceType: " << deviceType;
     }
@@ -214,7 +222,8 @@ QString Utils::authTypeEnum2LocaleStr(int authType)
                                             {KAD_AUTH_TYPE_IRIS, QCoreApplication::tr("iris")},
                                             {KAD_AUTH_TYPE_UKEY, QCoreApplication::tr("ukey")},
                                             {KAD_AUTH_TYPE_VIRTUAL_FACE, QCoreApplication::tr("virtual face")},
-                                            {KAD_AUTH_TYPE_VIRTUAL_CODE, QCoreApplication::tr("virtual code")}};
+                                            {KAD_AUTH_TYPE_VIRTUAL_CODE, QCoreApplication::tr("virtual code")},
+                                            {KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA, QCoreApplication::tr("virtual code no camera")}};
 
     auto iter = localeAuthTypeMap.find(authType);
     if (iter == localeAuthTypeMap.end())

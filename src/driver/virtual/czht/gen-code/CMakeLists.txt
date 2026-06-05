@@ -1,6 +1,6 @@
 set(TARGET_NAME kiran-auth-code-request)
 
-find_package(Qt5 REQUIRED COMPONENTS DBus Widgets)
+find_package(Qt5 REQUIRED COMPONENTS DBus Widgets Core)
 
 set(TARGET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/gen-code-dialog.cpp
@@ -38,7 +38,7 @@ target_include_directories(
           ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include
           ${KLOG_QT5_INCLUDE_DIRS} ${CZHT_INCLUDE_DIRS})
 
-target_link_libraries(${TARGET_NAME} PRIVATE Qt5::Widgets Qt5::DBus
+target_link_libraries(${TARGET_NAME} PRIVATE Qt5::Widgets Qt5::DBus Qt5::Core
                                              ${KLOG_QT5_LIBRARIES})
 
 install(FILES ${QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})

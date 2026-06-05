@@ -69,6 +69,11 @@ private Q_SLOTS:
     void onAuthSuccessed(const QString &userName);
     void onAuthTypeChanged(int authType);
 
+    bool isSshService() const;
+    QString mergePendingSshInfoIntoPrompt(const QString &text);
+    /** sshd：在结束认证前用 PROMPT 展示缓冲文案（避免 PAM_AUTH_ERR 时 inst 被客户端转成八进制） */
+    void flushPendingSshMessagesBeforeFinish();
+
 protected:
     PAMHandle *m_pamHandle;
     QStringList m_arguments;
@@ -81,5 +86,21 @@ protected:
     AuthManagerProxy *m_authManagerProxy;
     AuthSessionProxy *m_authSessionProxy;
     AuthUserProxy *m_authUserProxy;
+
+    /*
+     * 仅用于 sshd：缓存 INFO/ERROR，避免 PAM_TEXT_INFO、PAM_ERROR_MSG 在认证结束（die/requisite
+     * 返回 PAM_AUTH_ERR）时进入 keyboard-interactive 的 inst 字段而被 SSH 客户端 strnvis 成八进制。
+     *
+     * INFO 另可避免 PAM_TEXT_INFO 在 stderr/stdout 双通道各显示一遍。
+     *
+     * 写入：onAuthMessage() 在 isSshService() 且 type 为 INFO 或 ERROR 时 append。
+     * 消费：
+     *   - onAuthPrompt()：合并进下一次交互 prompt；
+     *   - onAuthFailed() / onAuthUnavail()：flushPendingSshMessagesBeforeFinish() 用 PROMPT 展示后结束；
+     *   - onAuthSuccessed()：直接清空。
+     *
+     * /etc/pam.d/sshd 请使用 requisite/required + default=die，勿用 default=ignore（ignore 会继续密码认证）。
+     */
+    QStringList m_pendingSshInfoMessages;
 };
 }  // namespace Kiran

@@ -54,7 +54,9 @@ static const QMap<KADAuthType, QString> AuthTypeGroupMap = {
     {KAD_AUTH_TYPE_VIRTUAL_FACE,
      "VirtualFace"},
     {KAD_AUTH_TYPE_VIRTUAL_CODE,
-     "VirtualCode"}};
+     "VirtualCode"},
+    {KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA,
+     "VirtualCodeNoCamera"}};
 
 static const QMap<KADAuthApplication, QString> AuthAppKeyMap = {
     {KAD_AUTH_APPLICATION_LOGIN,

@@ -30,7 +30,7 @@ protected:
     QDBusInterface *m_iface;
     int m_detectTimeOut;
     int m_searchTimeOut;
-    int m_personIDLast;
+    int m_personIDLast = 0; //0表示没有人
 
     // D-Bus 调用（子类可覆盖）
     virtual QString dbusCall(QString method, QString args);

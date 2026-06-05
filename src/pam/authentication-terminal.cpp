@@ -42,11 +42,25 @@ void AuthenticationTerminal::notifySupportAuthType()
         tempAuthTypeList << (KADAuthType)authType;
     }
 
+    // 当前业务需求，这两种不支持命令行认证
+    tempAuthTypeList.removeAll(KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE);
+    tempAuthTypeList.removeAll(KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE);
+    if (tempAuthTypeList.isEmpty())
+    {
+        tempAuthTypeList << KADAuthType::KAD_AUTH_TYPE_PASSWORD;
+    }
+
     m_supportAuthTypes.swap(tempAuthTypeList);
 }
 
 int32_t AuthenticationTerminal::requestAuthType()
 {
+    // 若只有一种认证方式，不需要用户选择，直接进入
+    if (1 == m_supportAuthTypes.size())
+    {
+        return m_supportAuthTypes.first();
+    }
+
     do
     {
         // 从1开始生成认证类型以及序号，例如："1 指纹认证","2 指静脉认证"
@@ -96,7 +110,8 @@ int32_t AuthenticationTerminal::requestAuthType()
             authType == KADAuthType::KAD_AUTH_TYPE_FACE ||
             authType == KADAuthType::KAD_AUTH_TYPE_IRIS ||
             authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE ||
-            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE)
+            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE ||
+            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA)
         {
             return authType;
         }

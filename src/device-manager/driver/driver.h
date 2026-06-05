@@ -29,6 +29,7 @@ enum DriverType
     DRIVER_TYPE_UKey,          // ukey
     DRIVER_TYPE_Virtual_Face,  // 虚拟人脸
     DRIVER_TYPE_Virtual_Code,  // 虚拟验证码
+    DRIVER_TYPE_Virtual_Code_No_Camera,  // 虚拟验证码（无摄像头）
 };
 
 inline QString getDriverTypeStr(DriverType type)
@@ -40,7 +41,8 @@ inline QString getDriverTypeStr(DriverType type)
                                                             {DRIVER_TYPE_VoicePrint, "VoicePrint"},
                                                             {DRIVER_TYPE_UKey, "UKey"},
                                                             {DRIVER_TYPE_Virtual_Face, "VirtualFace"},
-                                                            {DRIVER_TYPE_Virtual_Code, "VirtualCode"}};
+                                                            {DRIVER_TYPE_Virtual_Code, "VirtualCode"},
+                                                            {DRIVER_TYPE_Virtual_Code_No_Camera, "VirtualCodeNoCamera"}};
 
     if (driverTypeMap.contains(type))
         return driverTypeMap.value(type);

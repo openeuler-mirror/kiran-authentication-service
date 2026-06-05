@@ -14,13 +14,13 @@
 
 #pragma once
 
-#include <QFutureWatcher>
-#include "device.h"
-#include "driver/virtual-code-driver.h"
+#include <QSharedPointer>
+
+#include "virtual-code-base-device.h"
 
 namespace Kiran
 {
-class VirtualCodeDevice : public Device
+class VirtualCodeDevice : public VirtualCodeBaseDevice
 {
     Q_OBJECT
 public:
@@ -28,18 +28,6 @@ public:
     ~VirtualCodeDevice();
 
     DeviceType deviceType() override;
-    void EnrollStart(const QString &extraInfo) override;
-    void EnrollStop() override;
-    void IdentifyStart(const QString &extraInfo) override;
-    void IdentifyStop() override;
-    QStringList GetFeatureIDList() override;
-
-    void IdentifyResultPostProcess(const QString &extraInfo) override;
-
-private:
-    VirtualCodeDriverPtr m_driver;
-    QFutureWatcher<int> m_identifyWatcher;
-    bool m_identifyStopRequested{false};
 };
 typedef QSharedPointer<VirtualCodeDevice> VirtualCodeDevicePtr;
 

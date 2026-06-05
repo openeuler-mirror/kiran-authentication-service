@@ -54,6 +54,8 @@ void CZHTFaceDriver::identifyResultPostProcess(const QString &extraInfo)
     int result = jsonObj.value("result").toInt(0);
     QString osUser = jsonObj.value("os_user").toString();
 
+    jsonObj.insert("auth_type", tr("face auth"));
+
     // 上报登录日志（调用基类方法）
     reportLoginLog(jsonObj);
 

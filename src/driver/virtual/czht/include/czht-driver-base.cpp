@@ -53,8 +53,12 @@ QString CZHTDriverBase::dbusCall(QString method, QString args)
     }
     else
     {
-        KLOG_INFO() << "Call failed:" << reply.error().message().toLocal8Bit();
-        return "";
+        KLOG_ERROR() << "Call failed:" << reply.error().message().toLocal8Bit();
+        QJsonObject jsonObj;
+        jsonObj.insert("code", CZHT_ERROR_SERVER_RETURN_ERROR);
+        jsonObj.insert("error_msg", reply.error().message());
+        QJsonDocument jsonDoc(jsonObj);
+        return jsonDoc.toJson();
     }
 }
 

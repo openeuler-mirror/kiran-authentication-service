@@ -18,6 +18,7 @@
 #include "device/device.h"
 #include "device/ukey-device.h"
 #include "device/virtual-code-device.h"
+#include "device/virtual-code-no-camera-device.h"
 #include "device/virtual-face-device.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
@@ -137,6 +138,9 @@ bool Manager::genVirtualDevices()
                 break;
             case DRIVER_TYPE_Virtual_Code:  // 虚拟验证码
                 device = VirtualCodeDevicePtr(new VirtualCodeDevice(driver));
+                break;
+            case DRIVER_TYPE_Virtual_Code_No_Camera:  // 虚拟验证码（无摄像头）
+                device = VirtualCodeNoCameraDevicePtr(new VirtualCodeNoCameraDevice(driver));
                 break;
             }
             if (device)

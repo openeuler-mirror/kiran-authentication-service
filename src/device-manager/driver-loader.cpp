@@ -80,6 +80,7 @@ void DriverLoader::init()
             break;
             case DRIVER_TYPE_Virtual_Face:
             case DRIVER_TYPE_Virtual_Code:
+            case DRIVER_TYPE_Virtual_Code_No_Camera:
             {
                 m_virtualDrivers.append(file);
             }

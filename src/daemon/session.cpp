@@ -48,7 +48,8 @@ Session::Session(uint32_t sessionID,
       m_loginUserSwitchable(false),
       m_authApplication(authApp),
       m_authMode(KADAuthMode::KAD_AUTH_MODE_OR),
-      m_authType(KADAuthType::KAD_AUTH_TYPE_NONE)
+      m_authType(KADAuthType::KAD_AUTH_TYPE_NONE),
+      m_gencodeProcess(nullptr)
 {
     this->m_dbusAdaptor = new SessionAdaptor(this);
     this->m_objectPath = QDBusObjectPath(QString("%1/%2").arg(KAD_SESSION_DBUS_OBJECT_PATH).arg(this->m_sessionID));
@@ -77,6 +78,16 @@ Session::Session(uint32_t sessionID,
 
 Session::~Session()
 {
+    if (m_gencodeProcess)
+    {
+        if (m_gencodeProcess->state() != QProcess::NotRunning)
+        {
+            m_gencodeProcess->kill();
+            m_gencodeProcess->waitForFinished(1000);
+        }
+        m_gencodeProcess->deleteLater();
+        m_gencodeProcess = nullptr;
+    }
 }
 
 int Session::getAuthType() const
@@ -104,7 +115,70 @@ void Session::ResponsePrompt(const QString &text)
 {
     RETURN_IF_FALSE(m_waitForResponseFunc);
     m_waitForResponseFunc(text);
-    m_waitForResponseFunc = nullptr;
+
+    // VIRTUAL_CODE_NO_CAMERA 存在两步认证，第一步选择验证方式后不需要清除 m_waitForResponseFunc，用于处理第二阶段的返回
+    if (!(m_authType == KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA && m_authCodeStep == AUTH_CODE_STEP_INPUT_CODE))
+    {
+        m_waitForResponseFunc = nullptr;
+    }
+}
+
+void Session::onAuthCodeSelectResponse(const QString &response)
+{
+    bool toIntOk = false;
+    int choice = response.toInt(&toIntOk);
+    if (!toIntOk || (choice != 1 && choice != 2))
+    {
+        // 显示错误信息，结束验证
+        Q_EMIT this->AuthMessage(tr("Invalid choice"), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+        return;
+    }
+
+    if (choice == 1)
+    {
+        // 执行 kiran-auth-code-request --auto 命令申请授权码
+        m_gencodeProcess = new QProcess(this);
+        connect(m_gencodeProcess, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
+                this, &Session::onGencodeProcessFinished);
+        m_gencodeProcess->start("kiran-auth-code-request", QStringList() << "--auto");
+
+        if (!m_gencodeProcess->waitForStarted(5000))
+        {
+            // 显示错误信息，结束验证
+            Q_EMIT this->AuthMessage(tr("Failed to request authorization code, please try again."), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+            this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+            return;
+        }
+
+        Q_EMIT this->AuthMessage(tr("Authorization code request successful. Please contact the device administrator to obtain it."), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+        m_authCodeStep = AUTH_CODE_STEP_INPUT_CODE;
+        // 重新设置 m_waitForResponseFunc 以处理下一阶段的输入
+        m_waitForResponseFunc = [this](const QString &response)
+        {
+            onAuthCodeInputResponse(response);
+        };
+        Q_EMIT this->AuthPrompt(tr("please input authorization code:"), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
+    }
+    else if (choice == 2)
+    {
+        Q_EMIT this->AuthMessage(tr("waiting for authorization code..."), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+
+        m_authCodeStep = AUTH_CODE_STEP_INPUT_CODE;
+        // 重新设置 m_waitForResponseFunc 以处理下一阶段的输入
+        m_waitForResponseFunc = [this](const QString &response)
+        {
+            onAuthCodeInputResponse(response);
+        };
+        Q_EMIT this->AuthPrompt(tr("please input authorization code:"), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
+    }
+}
+
+void Session::onAuthCodeInputResponse(const QString &response)
+{
+    QString machineCode = getMachineCode();
+    QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}, {"code", response}});
+    startGeneralAuth(jsonDoc.toJson());
 }
 
 void Session::SetAuthType(int authType)
@@ -140,6 +214,14 @@ void Session::StartAuth()
 void Session::StopAuth()
 {
     KLOG_DEBUG() << m_sessionID << "stop auth";
+
+    if (m_gencodeProcess && m_gencodeProcess->state() != QProcess::NotRunning)
+    {
+        m_gencodeProcess->kill();
+        m_gencodeProcess->waitForFinished(1000);
+        m_gencodeProcess->deleteLater();
+        m_gencodeProcess = nullptr;
+    }
 
     m_waitForResponseFunc = nullptr;
 
@@ -224,7 +306,8 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 
     // 虚拟设备认证类型，无论成功失败都要上报登录日志
     if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE ||
-        this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE)
+        this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE ||
+        this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA)
     {
         QString osUser;
         int loginResult = 0;  // 1=成功，0=失败
@@ -270,9 +353,11 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     }
     else if (result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
     {
-        if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE)
+        if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA)
         {
             Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+            this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+            return;
         }
         else
         {
@@ -312,6 +397,9 @@ void Session::startPhaseAuth()
         break;
     case KAD_AUTH_TYPE_VIRTUAL_CODE:
         startVirtualCodeAuth();
+        break;
+    case KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA:
+        startVirtualCodeNoCameraAuth();
         break;
     default:
         startGeneralAuth();
@@ -387,7 +475,45 @@ void Session::startVirtualCodeAuth()
 
     KLOG_DEBUG() << "auth prompt: input authorization code";
     Q_EMIT this->AuthMessage(tr("Please request for an authorization code and then enter it"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
-    Q_EMIT this->AuthPrompt(tr("please input authorization code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);
+    Q_EMIT this->AuthPrompt(tr("please input authorization code."), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
+}
+
+void Session::startVirtualCodeNoCameraAuth()
+{
+    m_authCodeStep = AUTH_CODE_STEP_SELECT;
+    m_gencodeProcess = nullptr;
+
+    m_waitForResponseFunc = [this](const QString &response)
+    {
+        if (m_authCodeStep == AUTH_CODE_STEP_SELECT)
+        {
+            onAuthCodeSelectResponse(response);
+        }
+        else if (m_authCodeStep == AUTH_CODE_STEP_INPUT_CODE)
+        {
+            onAuthCodeInputResponse(response);
+        }
+    };
+
+    KLOG_DEBUG() << "auth prompt: select auth code mode";
+    Q_EMIT this->AuthMessage(tr("1. Request an authorization code 2. Input authorization code"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+    Q_EMIT this->AuthPrompt(tr("please select:"), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
+}
+
+void Session::onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    if (m_gencodeProcess)
+    {
+        if (exitCode != 0 || exitStatus != QProcess::NormalExit)
+        {
+            QString errorOutput = QString::fromUtf8(m_gencodeProcess->readAllStandardError());
+            KLOG_WARNING() << m_sessionID << "gencode command failed, exit code:" << exitCode << "error:" << errorOutput;
+            Q_EMIT this->AuthMessage(tr("Failed to request authorization code, please try again. %s").arg(errorOutput), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+            this->finishPhaseAuth(SESSION_AUTH_INTERNAL_ERROR);
+        }
+        m_gencodeProcess->deleteLater();
+        m_gencodeProcess = nullptr;
+    }
 }
 
 void Session::startPasswdAuth()

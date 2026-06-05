@@ -27,6 +27,10 @@ class GenCodeDialog : public QDialog
 public:
     GenCodeDialog(QWidget* parent = nullptr);
 
+public:
+    // 命令行模式调用，使用默认参数申请授权码，成功返回空字符串，失败返回错误信息
+    static QString requestAuthCodeCli();
+
 private slots:
     void onApplyClicked();
     void onConfirmClicked();

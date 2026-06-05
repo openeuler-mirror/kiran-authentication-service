@@ -15,32 +15,28 @@
 #pragma once
 
 #include <QObject>
-#include <QProcess>
 #include <QSharedPointer>
 
 #include "czht-driver-base.h"
 #include "src/device-manager/driver/virtual-code-driver.h"
 
-class CZHTCodeDriver : public VirtualCodeDriver, public CZHTDriverBase
+class CZHTCodeNoCameraDriver : public VirtualCodeDriver, public CZHTDriverBase
 {
     Q_OBJECT
 public:
-    explicit CZHTCodeDriver(QObject *parent = nullptr);
-    ~CZHTCodeDriver();
+    explicit CZHTCodeNoCameraDriver(QObject *parent = nullptr);
+    ~CZHTCodeNoCameraDriver();
 
     QString getDriverName() override;
-    QString getErrorMsg(int errorNum) override;
     DriverType getType() override;
+    QString getErrorMsg(int errorNum) override;
 
     int identify(const QString &extraInfo) override;
     void identifyResultPostProcess(const QString &extraInfo) override;
 
-    int verifyAuthorizationCode(const QString &extraInfo);
-
 private:
-    // 是否开启授权码认证下的录屏功能
-    bool m_enableScreenRecorder;
+    int verifyAuthorizationCode(const QString &extraInfo);
 };
-typedef QSharedPointer<CZHTCodeDriver> CZHTCodeDriverPtr;
+typedef QSharedPointer<CZHTCodeNoCameraDriver> CZHTCodeNoCameraDriverPtr;
 extern "C" Driver *
 createDriver();
