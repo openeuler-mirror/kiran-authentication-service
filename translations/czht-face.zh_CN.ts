@@ -2,6 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>CZHTFaceDriver</name>
+    <message>
+        <location filename="../src/driver/virtual/czht/face/czht-face-driver.cpp" line="57"/>
+        <source>face auth</source>
+        <translation>人脸认证</translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <location filename="../src/driver/virtual/czht/include/czht-define.h" line="103"/>

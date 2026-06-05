@@ -60,6 +60,7 @@
 #define AUTH_TYPE_STR_UKEY "ukey"
 #define AUTH_TYPE_STR_VIRTUAL_FACE "virtual face"
 #define AUTH_TYPE_STR_VIRTUAL_CODE "virtual code"
+#define AUTH_TYPE_STR_VIRTUAL_CODE_NO_CAMERA "virtual code no camera"
 
 /* ------------ 认证场景定义 ----------------- */
 #define AUTH_APPLICATION_STR_LOGIN "login"
@@ -160,6 +161,7 @@ enum DeviceType
                                       // ...预留，未来可能增加其他物理设备...
     DEVICE_TYPE_Virtual_Face = 1000,  // 虚拟人脸
     DEVICE_TYPE_Virtual_Code,         // 验证码
+    DEVICE_TYPE_Virtual_Code_No_Camera, // 验证码（无摄像头）
 };
 
 // 设备状态
@@ -215,17 +217,19 @@ enum KADAuthType
     KAD_AUTH_TYPE_IRIS = (1 << 5),
     // 虚拟人脸
     KAD_AUTH_TYPE_VIRTUAL_FACE = (1 << 6),
-
+    // 授权码（有摄像头）
     KAD_AUTH_TYPE_VIRTUAL_CODE = (1 << 7),
-    KAD_AUTH_TYPE_LAST = (1 << 8),
+    // 授权码（无摄像头）
+    KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA = (1 << 8),
+    KAD_AUTH_TYPE_LAST = (1 << 9),
 };
 
 // 认证提示消息类型，接收方需要响应消息
 enum KADPromptType
 {
-    // 请求密文应答信息
-    KAD_PROMPT_TYPE_QUESTION = 1,
     // 请求明文应答信息
+    KAD_PROMPT_TYPE_QUESTION = 1,
+    // 请求密文应答信息
     KAD_PROMPT_TYPE_SECRET,
 };
 

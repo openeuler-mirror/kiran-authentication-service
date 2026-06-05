@@ -2,6 +2,22 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>CZHTCodeDriver</name>
+    <message>
+        <location filename="../src/driver/virtual/czht/code/czht-code-driver.cpp" line="136"/>
+        <source>code auth</source>
+        <translation>授权码认证</translation>
+    </message>
+</context>
+<context>
+    <name>CZHTCodeNoCameraDriver</name>
+    <message>
+        <location filename="../src/driver/virtual/czht/code/czht-code-no-camera-driver.cpp" line="49"/>
+        <source>code no camera auth</source>
+        <translation>授权码(无摄像头)认证</translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <location filename="../src/driver/virtual/czht/include/czht-define.h" line="103"/>

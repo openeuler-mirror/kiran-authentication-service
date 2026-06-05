@@ -42,6 +42,46 @@ GenCodeDialog::GenCodeDialog(QWidget *parent)
     init();
 }
 
+QString GenCodeDialog::requestAuthCodeCli()
+{
+    QDBusInterface *iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE, QDBusConnection::systemBus());
+    if (!iface->isValid())
+    {
+        return tr("Failed to request authorization code, please check if the face service (com.czht.face.daemon) is running");
+    }
+
+    // 使用默认参数：1天
+    QJsonObject jsonObj;
+    jsonObj.insert("business_id", BUSINESS_ID);
+    jsonObj.insert("expires_in", 24);  // 1天
+    QJsonDocument jsonDoc(jsonObj);
+    QString jsonStr = jsonDoc.toJson();
+
+    KLOG_INFO() << "CLI DBus call CodeGen with args:" << jsonStr;
+    QDBusReply<QString> reply = iface->call("CodeGen", jsonStr);
+
+    QString errorMsg;
+    if (reply.isValid())
+    {
+        KLOG_INFO() << "CLI CodeGen reply:" << reply.value();
+        QJsonDocument rspDoc = QJsonDocument::fromJson(reply.value().toLatin1());
+        QJsonObject rspObj = rspDoc.object();
+        int error_code = rspObj.value("code").toInt();
+        if (error_code != CZHT_SUCCESS)
+        {
+            errorMsg = tr("Failed to request authorization code: %1").arg(getCZHTErrorMsg(error_code));
+        }
+        // else: success, errorMsg stays empty
+    }
+    else
+    {
+        errorMsg = tr("Failed to request authorization code, please try again, %1").arg(reply.error().message());
+    }
+
+    delete iface;
+    return errorMsg;
+}
+
 void GenCodeDialog::onApplyClicked()
 {
     QDBusInterface *iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE, QDBusConnection::systemBus(), this);

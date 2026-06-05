@@ -176,12 +176,14 @@ bool AuthManager::isCZHTServiceAvailable()
     // 检查是否存在虚拟人脸和虚拟码认证设备
     QString virtualFaceDevices = GetDevicesForType(KAD_AUTH_TYPE_VIRTUAL_FACE);
     QString virtualCodeDevices = GetDevicesForType(KAD_AUTH_TYPE_VIRTUAL_CODE);
+    QString virtualCodeNoCameraDevices = GetDevicesForType(KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA);
 
     bool hasVirtualFaceDevice = !virtualFaceDevices.isEmpty();
     bool hasVirtualCodeDevice = !virtualCodeDevices.isEmpty();
+    bool hasVirtualCodeNoCameraDevice = !virtualCodeNoCameraDevices.isEmpty();
 
     // 如果不存在虚拟设备，不需要使用CZHT服务
-    if (!hasVirtualFaceDevice && !hasVirtualCodeDevice)
+    if (!hasVirtualFaceDevice && !hasVirtualCodeDevice && !hasVirtualCodeNoCameraDevice)
     {
         return false;
     }
@@ -265,6 +267,9 @@ QList<int> AuthManager::GetAuthTypeFromCZHT()
     case 5:  // 密码
         authTypes << KAD_AUTH_TYPE_PASSWORD;
         break;
+    case 6:  // 无摄像头授权码
+        authTypes << KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA;
+        break;
     default:
         KLOG_WARNING() << "Unknown work_mode:" << workMode;
         break;
@@ -344,6 +349,7 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
 int AuthManager::QueryAuthApp(const QString &pamServiceName)
 {
     static QMap<QString, int> pamAuthAppMap = {{"lightdm", KAD_AUTH_APPLICATION_LOGIN},
+                                               {"sshd", KAD_AUTH_APPLICATION_LOGIN},
                                                {"kiran-screensaver", KAD_AUTH_APPLICATION_UNLOCK},
                                                {"polkit-1", KAD_AUTH_APPLICATION_EMPOWERMENT},
                                                {"sudo", KAD_AUTH_APPLICATION_EMPOWERMENT},

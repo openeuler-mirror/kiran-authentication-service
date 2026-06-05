@@ -73,13 +73,14 @@ void DeviceAdaptor::identify(DeviceRequestSource *source, const QString &extraIn
 
 void DeviceAdaptor::identifyResultPostProcess(DeviceRequestSource *source, const QString &extraInfo)
 {
-    auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
-        .reqID = this->generateRequestID(),
-        .time = QTime::currentTime(),
-        .source = source,
-        .start = std::bind(&DeviceAdaptor::identifyResultPostProcessStart, this, extraInfo),
-        .stop = nullptr});
-    this->pushRequest(deviceRequst);
+    // auto deviceRequst = QSharedPointer<DeviceRequest>::create(DeviceRequest{
+    //     .reqID = this->generateRequestID(),
+    //     .time = QTime::currentTime(),
+    //     .source = source,
+    //     .start = std::bind(&DeviceAdaptor::identifyResultPostProcessStart, this, extraInfo),
+    //     .stop = nullptr});
+    // this->pushRequest(deviceRequst);
+    this->identifyResultPostProcessStart(extraInfo);
 }
 
 void DeviceAdaptor::removeAllRequest()

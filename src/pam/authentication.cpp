@@ -278,17 +278,55 @@ bool Authentication::initSession()
     return true;
 }
 
+QString Authentication::mergePendingSshInfoIntoPrompt(const QString &text)
+{
+    if (this->m_pendingSshInfoMessages.isEmpty())
+    {
+        return text;
+    }
+    auto prompt = this->m_pendingSshInfoMessages.join(QLatin1Char('\n')) + QLatin1Char('\n') + text;
+    this->m_pendingSshInfoMessages.clear();
+    return prompt;
+}
+
+void Authentication::flushPendingSshMessagesBeforeFinish()
+{
+    if (!this->isSshService() || this->m_pendingSshInfoMessages.isEmpty())
+    {
+        return;
+    }
+
+    const auto text = this->m_pendingSshInfoMessages.join(QLatin1Char('\n'));
+    this->m_pendingSshInfoMessages.clear();
+
+    QString response;
+    const auto retval = this->m_pamHandle->sendQuestionPrompt(text, response);
+    if (retval != PAM_SUCCESS)
+    {
+        this->m_pamHandle->syslog(LOG_WARNING,
+                                  QString("Flush pending ssh message via prompt failed,result:%1,text:%2")
+                                      .arg(retval)
+                                      .arg(text));
+    }
+}
+
 void Authentication::onAuthPrompt(const QString &text, int type)
 {
+    QString prompt = text;
+    if (this->isSshService() && !this->m_pendingSshInfoMessages.isEmpty())
+    {
+        prompt = this->mergePendingSshInfoIntoPrompt(text);
+    }
+
     QString response;
     int32_t retval = PAM_SUCCESS;
     switch (type)
     {
     case KADPromptType::KAD_PROMPT_TYPE_QUESTION:
-        retval = this->m_pamHandle->sendQuestionPrompt(text, response);
+        retval = this->m_pamHandle->sendQuestionPrompt(prompt, response);
         break;
     case KADPromptType::KAD_PROMPT_TYPE_SECRET:
-        retval = this->m_pamHandle->sendSecretPrompt(text, response);
+        retval = this->m_pamHandle->sendSecretPrompt(prompt, response);
         break;
     default:
         this->m_pamHandle->syslog(LOG_WARNING, QString("Unknown message type: %1").arg(type));
@@ -306,8 +344,20 @@ void Authentication::onAuthPrompt(const QString &text, int type)
     }
 }
 
+bool Authentication::isSshService() const
+{
+    return this->m_serviceName == QLatin1String("sshd");
+}
+
 void Authentication::onAuthMessage(const QString &text, int type)
 {
+    if (this->isSshService() &&
+        (type == KADMessageType::KAD_MESSAGE_TYPE_INFO || type == KADMessageType::KAD_MESSAGE_TYPE_ERROR))
+    {
+        this->m_pendingSshInfoMessages.append(text);
+        return;
+    }
+
     QString response;
     int32_t retval = PAM_SUCCESS;
 
@@ -336,12 +386,14 @@ void Authentication::onAuthMessage(const QString &text, int type)
 void Authentication::onAuthFailed()
 {
     this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication failed,session ID:%1").arg(m_sessionID));
+    this->flushPendingSshMessagesBeforeFinish();
     this->finishAuth(PAM_AUTH_ERR);
 }
 
 void Authentication::onAuthUnavail()
 {
     this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication unavail,session ID:%1").arg(m_sessionID));
+    this->flushPendingSshMessagesBeforeFinish();
     this->finishAuth(PAM_AUTHINFO_UNAVAIL);
 }
 
@@ -359,6 +411,7 @@ void Authentication::onAuthSuccessed(const QString &userName)
     }
 
     this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication successed,session ID:%1").arg(m_sessionID));
+    this->m_pendingSshInfoMessages.clear();
     this->finishAuth(PAM_SUCCESS);
 }
 

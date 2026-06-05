@@ -12,20 +12,23 @@
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
 
-#include "virtual-code-device.h"
+#pragma once
+
+#include <QSharedPointer>
+
+#include "virtual-code-base-device.h"
 
 namespace Kiran
 {
-VirtualCodeDevice::VirtualCodeDevice(DriverPtr driver, QObject *parent)
-    : VirtualCodeBaseDevice(driver, parent)
+class VirtualCodeNoCameraDevice : public VirtualCodeBaseDevice
 {
-}
+    Q_OBJECT
+public:
+    VirtualCodeNoCameraDevice(DriverPtr driver, QObject *parent = nullptr);
+    ~VirtualCodeNoCameraDevice();
 
-VirtualCodeDevice::~VirtualCodeDevice() {}
-
-DeviceType VirtualCodeDevice::deviceType()
-{
-    return DEVICE_TYPE_Virtual_Code;
-}
+    DeviceType deviceType() override;
+};
+typedef QSharedPointer<VirtualCodeNoCameraDevice> VirtualCodeNoCameraDevicePtr;
 
 }  // namespace Kiran

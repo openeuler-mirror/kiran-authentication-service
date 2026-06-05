@@ -13,11 +13,27 @@
  */
 
 #include <QApplication>
+#include <QCommandLineOption>
+#include <QCommandLineParser>
+#include <QCoreApplication>
 #include <QFileInfo>
 #include <QTranslator>
+#include <QDebug>
 
 #include "config.h"
 #include "gen-code-dialog.h"
+
+static bool hasAutoFlag(int argc, char *argv[])
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        if (QLatin1String(argv[i]) == QLatin1String("--auto"))
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +42,34 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName(programName);
     QCoreApplication::setApplicationVersion(PROJECT_VERSION);
 
+    // --auto 模式使用 QCoreApplication，避免加载 Qt 平台插件；GUI 模式使用 QApplication。
+    // 二者不能在同一进程中先后创建，需先判断运行模式。
+    if (hasAutoFlag(argc, argv))
+    {
+        QCoreApplication coreApp(argc, argv);
+
+        QCommandLineParser parser;
+        parser.setApplicationDescription("Authorization code request tool");
+        parser.addHelpOption();
+        parser.addOption(QCommandLineOption("auto", "Request authorization code with default parameters and exit"));
+        parser.process(coreApp);
+
+        QString errorMsg = GenCodeDialog::requestAuthCodeCli();
+        if (!errorMsg.isEmpty())
+        {
+            qCritical() << errorMsg;
+            return 1;
+        }
+        return 0;
+    }
+
     QApplication app(argc, argv);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Authorization code request tool");
+    parser.addHelpOption();
+    parser.addOption(QCommandLineOption("auto", "Request authorization code with default parameters and exit"));
+    parser.process(app);
 
     QTranslator translator;
     if (translator.load(QLocale(), qAppName(), ".", KAS_INSTALL_TRANSLATIONDIR, ".qm"))
@@ -35,7 +78,6 @@ int main(int argc, char *argv[])
     }
 
     GenCodeDialog dlg;
-    // 使用 exec() 显示模态对话框，会阻塞直到对话框关闭
     dlg.exec();
     return 0;
 }

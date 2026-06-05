@@ -12,20 +12,20 @@
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
 
-#include "virtual-code-device.h"
+#include "virtual-code-no-camera-device.h"
 
 namespace Kiran
 {
-VirtualCodeDevice::VirtualCodeDevice(DriverPtr driver, QObject *parent)
+VirtualCodeNoCameraDevice::VirtualCodeNoCameraDevice(DriverPtr driver, QObject *parent)
     : VirtualCodeBaseDevice(driver, parent)
 {
 }
 
-VirtualCodeDevice::~VirtualCodeDevice() {}
+VirtualCodeNoCameraDevice::~VirtualCodeNoCameraDevice() {}
 
-DeviceType VirtualCodeDevice::deviceType()
+DeviceType VirtualCodeNoCameraDevice::deviceType()
 {
-    return DEVICE_TYPE_Virtual_Code;
+    return DEVICE_TYPE_Virtual_Code_No_Camera;
 }
 
 }  // namespace Kiran

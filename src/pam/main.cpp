@@ -31,7 +31,8 @@ static const QSet<QString> supportedServiceName = {
     "polkit-1",
     "sudo",
     "gdm-password",
-    "gnome-screensaver"};
+    "gnome-screensaver",
+    "sshd"};
 
 QString get_pam_service(pam_handle_t *pamh)
 {

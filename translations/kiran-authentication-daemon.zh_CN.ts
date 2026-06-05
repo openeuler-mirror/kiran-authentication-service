@@ -12,37 +12,78 @@
 <context>
     <name>Kiran::Session</name>
     <message>
-        <location filename="../src/daemon/session.cpp" line="197"/>
+        <location filename="../src/daemon/session.cpp" line="153"/>
+        <source>Authorization code request successful. Please contact the device administrator to obtain it.</source>
+        <translation>申请授权码成功，请联系设备管理员获取。</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="160"/>
+        <location filename="../src/daemon/session.cpp" line="172"/>
+        <source>please input authorization code:</source>
+        <translation>请输入授权码：</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="164"/>
+        <source>waiting for authorization code...</source>
+        <translation>等待输入授权码...</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="280"/>
         <source>Please wait while the %1 request is processed</source>
         <translation>请等待,%1录入请求正在处理</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="306"/>
+        <location filename="../src/daemon/session.cpp" line="416"/>
         <source>Insert the UKey and enter the PIN code</source>
         <translation>请插入UKey并输入PIN码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="307"/>
+        <location filename="../src/daemon/session.cpp" line="417"/>
         <source>please input ukey code.</source>
         <translation>请输入PIN码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="344"/>
+        <location filename="../src/daemon/session.cpp" line="459"/>
         <source>Please look at the camera</source>
         <translation>请直视摄像头</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="357"/>
+        <location filename="../src/daemon/session.cpp" line="474"/>
         <source>Please request for an authorization code and then enter it</source>
         <translation>请申请授权码然后输入授权码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="358"/>
+        <location filename="../src/daemon/session.cpp" line="497"/>
+        <source>please select:</source>
+        <translation>请选择：</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="475"/>
         <source>please input authorization code.</source>
         <translation>请输入授权码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="392"/>
+        <location filename="../src/daemon/session.cpp" line="132"/>
+        <source>Invalid choice</source>
+        <translation>无效选择</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="148"/>
+        <source>Failed to request authorization code, please try again.</source>
+        <translation>申请授权码失败，请重试。</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="496"/>
+        <source>1. Request an authorization code 2. Input authorization code</source>
+        <translation>1. 申请授权码 2.输入授权码</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="508"/>
+        <source>Failed to request authorization code, please try again. %s</source>
+        <translation>申请授权码失败，请重试。%s</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="547"/>
         <source>can not find %1 device</source>
         <translation>未能检测到%1设备</translation>
     </message>
@@ -68,44 +109,49 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../lib/utils.cpp" line="210"/>
+        <location filename="../lib/utils.cpp" line="218"/>
         <source>password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="211"/>
+        <location filename="../lib/utils.cpp" line="219"/>
         <source>fingerprint</source>
         <translation>指纹</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="212"/>
+        <location filename="../lib/utils.cpp" line="220"/>
         <source>face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="213"/>
+        <location filename="../lib/utils.cpp" line="221"/>
         <source>fingervein</source>
         <translation>指静脉</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="214"/>
+        <location filename="../lib/utils.cpp" line="222"/>
         <source>iris</source>
         <translation>虹膜</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="215"/>
+        <location filename="../lib/utils.cpp" line="223"/>
         <source>ukey</source>
         <translation>UKey</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="216"/>
+        <location filename="../lib/utils.cpp" line="224"/>
         <source>virtual face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="217"/>
+        <location filename="../lib/utils.cpp" line="225"/>
         <source>virtual code</source>
         <translation>授权码</translation>
+    </message>
+    <message>
+        <location filename="../lib/utils.cpp" line="226"/>
+        <source>virtual code no camera</source>
+        <translation>授权码(无摄像头)</translation>
     </message>
 </context>
 <context>
@@ -156,22 +202,22 @@
         <translation> (错误码:0x%x)</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="234"/>
+        <location filename="../lib/utils.cpp" line="243"/>
         <source>Feature not match.</source>
         <translation>特征不匹配。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="236"/>
+        <location filename="../lib/utils.cpp" line="245"/>
         <source>Feature matching successed.</source>
         <translation>特征匹配成功。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="238"/>
+        <location filename="../lib/utils.cpp" line="247"/>
         <source>Feature not match, please retry it.</source>
         <translation>特征不匹配，请重试。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="243"/>
+        <location filename="../lib/utils.cpp" line="252"/>
         <source>Unknown verfication error.</source>
         <translation>未知认证错误。</translation>
     </message>

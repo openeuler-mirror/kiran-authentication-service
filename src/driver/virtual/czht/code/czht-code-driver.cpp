@@ -36,29 +36,10 @@ CZHTCodeDriver::CZHTCodeDriver(QObject *parent) : VirtualCodeDriver(parent), CZH
     QSettings settings(VIRTUAL_CZHT_DRIVER_CONFIG_FILE, QSettings::IniFormat);
     m_enableScreenRecorder = settings.value(CZHT_CONFIG_KEY_ENABLE_SCREEN_RECORDER, true).toBool();
     KLOG_INFO() << "CZHTCodeDriver config: enable_screen_recorder:" << m_enableScreenRecorder;
-
-    // 初始化 D-Bus 接口（直接初始化方式，不使用延迟初始化）
-    m_iface = new QDBusInterface(DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE,
-                                 QDBusConnection::systemBus(), this);
-    if (!m_iface->isValid())
-    {
-        KLOG_ERROR() << "D-Bus interface invalid";
-        return;
-    }
-
-    // 连接 LeaveDetected 信号
-    bool ret = QDBusConnection::systemBus().connect(
-        DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE, "LeaveDetected", this,
-        SLOT(leaveDetected(QString)));
-    KLOG_INFO() << "connect to dbus signal com.czht.face.daemon.LeaveDetected:" << ret;
 }
 
 CZHTCodeDriver::~CZHTCodeDriver()
 {
-    // 断开 systemBus 上的信号连接
-    QDBusConnection::systemBus().disconnect(
-        DBUS_INTERFACE, DBUS_PATH, DBUS_INTERFACE, "LeaveDetected", this,
-        SLOT(leaveDetected(QString)));
 }
 
 QString CZHTCodeDriver::getDriverName() { return "virtual-code-czht"; }
@@ -93,8 +74,27 @@ int CZHTCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
 
     auto reply = dbusCall("CodeCheck", jsonDoc.toJson());
     KLOG_INFO() << "CodeCheck reply:" << reply;
+
+    if (reply.isEmpty())
+    {
+        KLOG_ERROR() << "CodeCheck D-Bus call returned empty reply";
+        return CZHT_ERROR_SERVER_RETURN_ERROR;
+    }
+
     jsonDoc = QJsonDocument::fromJson(reply.toLatin1());
+    if (jsonDoc.isNull() || !jsonDoc.isObject())
+    {
+        KLOG_ERROR() << "CodeCheck invalid JSON reply:" << reply;
+        return CZHT_ERROR_SERVER_RETURN_ERROR;
+    }
+
     jsonObj = jsonDoc.object();
+    if (!jsonObj.contains("code"))
+    {
+        KLOG_ERROR() << "CodeCheck reply missing code field:" << jsonObj;
+        return CZHT_ERROR_SERVER_RETURN_ERROR;
+    }
+
     int error_code = jsonObj.value("code").toInt();
 
     if (error_code != CZHT_SUCCESS)
@@ -136,7 +136,7 @@ int CZHTCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
 
     if (!found)
     {
-        KLOG_ERROR() << "StartSearch user not match:" << searchUserName << searchMachineCode;
+        KLOG_ERROR() << "CodeCheck user not match:" << searchUserName << searchMachineCode;
         return CZHT_ERROR_MATCH_PERSON_NOT_FOUND;
     }
 
@@ -151,6 +151,8 @@ void CZHTCodeDriver::identifyResultPostProcess(const QString &extraInfo)
 
     int result = jsonObj.value("result").toInt(0);
     QString osUser = jsonObj.value("os_user").toString();
+
+    jsonObj.insert("auth_type", tr("code auth"));
 
     // 上报登录日志（调用基类方法）
     reportLoginLog(jsonObj);
@@ -167,22 +169,6 @@ void CZHTCodeDriver::identifyResultPostProcess(const QString &extraInfo)
             QString fileName = QString("%1_%2_%3.mp4").arg(m_personIDLast).arg(osUser).arg(QDateTime::currentDateTime().toString("yyyyMMddHHmmss"));
             QProcess::startDetached("kiran-screen-recorder", QStringList() << fileName);
         }
-    }
-}
-
-QString CZHTCodeDriver::dbusCall(QString method, QString args)
-{
-    // 覆盖基类方法，使用直接初始化方式（不使用延迟初始化）
-    KLOG_INFO() << "DBus call:" << method << args;
-    QDBusReply<QString> reply = m_iface->call(method, args);
-    if (reply.isValid())
-    {
-        return reply.value();
-    }
-    else
-    {
-        KLOG_INFO() << "Call failed:" << reply.error().message().toLocal8Bit();
-        return "";
     }
 }
 
