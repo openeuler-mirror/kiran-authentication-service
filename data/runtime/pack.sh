@@ -20,7 +20,7 @@ for libdep in $(cat ${sourcedir}/data/runtime/lib64); do
         echo "WARNING: miss libdep: ${libdep}"
             continue;
     fi
-    cp $dep_path ${lib64_installdir}
+    cp -n $dep_path ${lib64_installdir}
 done
 
 # set -x
