@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <QSharedPointer>
 #include <QTime>
 #include <QVariantMap>

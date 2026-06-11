@@ -5,6 +5,20 @@ project(kiran-authentication-service VERSION 2.6)
 include(GNUInstallDirs)
 
 option(ENABLE_CZHT_VIRTUAL_DRIVER "Enable czht virtual driver" OFF)
+option(ENABLE_KIRAN_FACE_DRIVER "Enable Kiran face driver" OFF)
+
+# 将 CMake option 传递给 C++ 预处理器
+if(ENABLE_CZHT_VIRTUAL_DRIVER)
+  add_definitions(-DENABLE_CZHT_VIRTUAL_DRIVER)
+endif()
+if(ENABLE_KIRAN_FACE_DRIVER)
+  add_definitions(-DENABLE_KIRAN_FACE_DRIVER)
+endif()
+
+# 互斥检查：czht 和 kiran 不能同时启用
+if(ENABLE_CZHT_VIRTUAL_DRIVER AND ENABLE_KIRAN_FACE_DRIVER)
+  message(FATAL_ERROR "ENABLE_CZHT_VIRTUAL_DRIVER and ENABLE_KIRAN_FACE_DRIVER are mutually exclusive. Enable only one of them.")
+endif()
 
 set(KAS_INSTALL_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME})
 set(KAS_INSTALL_INCLUDE ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${PROJECT_NAME})
