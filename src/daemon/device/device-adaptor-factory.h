@@ -47,6 +47,9 @@ public:
     bool deleteFeature(const QString &featureID);
     bool setDrivereEanbled(const QString &driverName, bool enabled);
 
+    // 获取当前已加载驱动支持的认证类型列表
+    QList<int> getSupportedAuthTypes();
+
 private:
     void init();
 

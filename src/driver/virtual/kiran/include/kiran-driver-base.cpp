@@ -155,3 +155,49 @@ void KiranDriverBase::loadConfig()
     m_searchTimeOut = settings.value(KIRAN_CONFIG_KEY_SEARCH_TIME_OUT).toInt();
     KLOG_INFO() << "KiranDriver config: business_id:" << KIRAN_BUSINESS_ID << "search_time_out:" << m_searchTimeOut;
 }
+
+QList<int> KiranDriverBase::getSupportedAuthTypesFromService()
+{
+    QList<int> authTypes;
+
+    QDBusMessage message = QDBusMessage::createMethodCall(KIRAN_DBUS_INTERFACE,
+                                                          KIRAN_DBUS_PATH,
+                                                          KIRAN_DBUS_INTERFACE,
+                                                          QStringLiteral("GetWorkMode"));
+    QDBusReply<QString> reply = QDBusConnection::systemBus().call(message);
+    if (!reply.isValid())
+    {
+        KLOG_WARNING() << "Kiran GetWorkMode failed:" << reply.error().message();
+        return authTypes;
+    }
+
+    QJsonParseError parseError;
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(reply.value().toUtf8(), &parseError);
+    if (parseError.error != QJsonParseError::NoError)
+    {
+        KLOG_WARNING() << "Kiran GetWorkMode JSON parse error:" << parseError.errorString();
+        return authTypes;
+    }
+
+    QJsonObject jsonObj = jsonDoc.object();
+    int code = jsonObj.value("code").toInt(-1);
+    if (code != 0)
+    {
+        KLOG_WARNING() << "Kiran GetWorkMode returned error code:" << code;
+        return authTypes;
+    }
+
+    int workMode = jsonObj.value("work_mode").toInt(-1);
+    KLOG_INFO() << "Kiran GetWorkMode, work_mode:" << workMode;
+
+    if (workMode & KIRAN_WORK_MODE_FACE)
+        authTypes << (1 << 6);
+    if (workMode & KIRAN_WORK_MODE_PASSWORD)
+        authTypes << (1 << 1);
+    if (workMode & KIRAN_WORK_MODE_CODE)
+        authTypes << (1 << 7);
+    if (workMode & KIRAN_WORK_MODE_SMS)
+        KLOG_INFO() << "Kiran GetWorkMode: SMS mode present but no KADAuthType mapping";
+
+    return authTypes;
+}

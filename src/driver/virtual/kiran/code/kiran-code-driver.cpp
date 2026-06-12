@@ -107,4 +107,9 @@ int KiranCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
     return KIRAN_SUCCESS;
 }
 
+QList<int> KiranCodeDriver::getSupportedAuthTypes()
+{
+    return getSupportedAuthTypesFromService();
+}
+
 extern "C" Driver *createDriver() { return new KiranCodeDriver(); }

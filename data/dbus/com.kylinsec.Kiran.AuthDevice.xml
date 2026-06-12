@@ -56,8 +56,14 @@
             <arg name="enable" direction="in" type="b">
                 <description>Enable drive or not.</description>
             </arg>            
-        </method>        
-         
+        </method>
+
+        <method name="GetSupportedAuthTypes">
+            <arg name="auth_types" direction="out" type="s">
+                <description>JSON array of int (KADAuthType values) supported by currently loaded drivers.</description>
+            </arg>
+        </method>
+
         <signal name="DeviceAdded">
             <arg name="device_type" type="i">
                 <description>The device type.</description>

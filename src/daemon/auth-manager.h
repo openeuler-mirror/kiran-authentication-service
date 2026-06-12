@@ -26,7 +26,6 @@ class AuthManagerAdaptor;
 class QSettings;
 class BiometricsProxy;
 class QDBusServiceWatcher;
-class IExternalAuthServiceAdapter;
 
 namespace Kiran
 {
@@ -86,10 +85,6 @@ public Q_SLOTS:  // DBUS METHODS
     // 通过指定的认证应用获取支持的认证类型,返回值为有序列表
     QList<int> GetAuthTypeByApp(int32_t authApp);
 
-    // 定制功能：从外部服务获取认证类型列表
-    // 通过 IExternalAuthServiceAdapter 模式解耦具体服务实现
-    // 编译时由 ENABLE_KIRAN_FACE_DRIVER 决定注入哪个适配器
-
     void onNameLost(const QString &serviceName);
 
     // root
@@ -123,9 +118,6 @@ private:
 
     // 结合其他信息生成的认证顺序
     QList<KADAuthType> m_authOrder;
-
-    /** 外部认证服务适配器（由 Qt 父子树管理生命周期） */
-    IExternalAuthServiceAdapter *m_externalAuthAdapter = nullptr;
 
     // <会话ID，会话>
     QMap<int32_t, Session *> m_sessions;

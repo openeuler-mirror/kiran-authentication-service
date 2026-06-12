@@ -39,11 +39,6 @@
 #include "qt5-log-i.h"
 #include "session.h"
 #include "user-manager.h"
-#include "iexternal-auth-adapter.h"
-
-#ifdef ENABLE_KIRAN_FACE_DRIVER
-#include "src/driver/virtual/kiran/adapter/kiran-auth-adapter.h"
-#endif
 
 #define AUTH_USER_ADMIN "com.kylinsec.kiran.authentication.user-administration"
 
@@ -57,10 +52,6 @@ AuthManager::AuthManager(UserManager *userManager, AuthConfig *authConfig)
 {
     this->m_dbusAdaptor = new AuthManagerAdaptor(this);
     this->m_serviceWatcher = new QDBusServiceWatcher(this);
-
-#ifdef ENABLE_KIRAN_FACE_DRIVER
-    m_externalAuthAdapter = new KiranAuthAdapter(this);
-#endif
 }
 
 AuthManager *AuthManager::m_instance = nullptr;
@@ -185,19 +176,10 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
 {
     KLOG_INFO() << "GetAuthTypeByApp: authApp:" << authApp;
 
-    // 从外部服务获取认证类型列表（通过适配器模式）
-    QList<int> externalAuthTypes;
-
-    if (m_externalAuthAdapter && m_externalAuthAdapter->isAvailable())
-    {
-        externalAuthTypes.append(m_externalAuthAdapter->getAuthTypes());
-        KLOG_INFO() << "GetAuthTypeByApp: external service available, auth types:" << externalAuthTypes;
-    }
-
-    // 如果所有外部服务都不可用，则使用后续的默认逻辑
+    QList<int> externalAuthTypes = DeviceAdaptorFactory::getInstance()->getSupportedAuthTypes();
     if (!externalAuthTypes.isEmpty())
     {
-        KLOG_INFO() << "GetAuthTypeByApp: using external service auth types:" << externalAuthTypes;
+        KLOG_INFO() << "GetAuthTypeByApp: external auth types from drivers:" << externalAuthTypes;
         return externalAuthTypes;
     }
 

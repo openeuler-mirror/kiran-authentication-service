@@ -35,6 +35,8 @@ public:
     int identify(const QString &extraInfo) override;
     void identifyResultPostProcess(const QString &extraInfo) override;
 
+    QList<int> getSupportedAuthTypes() override;
+
     int verifyAuthorizationCode(const QString &extraInfo);
 
 private:

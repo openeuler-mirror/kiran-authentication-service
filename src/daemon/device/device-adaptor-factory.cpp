@@ -81,6 +81,25 @@ QString DeviceAdaptorFactory::getDriversForType(int32_t authType)
     return driverInfo;
 }
 
+QList<int> DeviceAdaptorFactory::getSupportedAuthTypes()
+{
+    if (!this->m_authDeviceManagerProxy)
+    {
+        KLOG_WARNING() << "auth device manager proxy is null.";
+        return {};
+    }
+
+    QList<int> authTypes;
+    QString jsonStr = m_authDeviceManagerProxy->GetSupportedAuthTypes();
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
+    if (jsonDoc.isArray())
+    {
+        for (const QJsonValue &val : jsonDoc.array())
+            authTypes << val.toInt();
+    }
+    return authTypes;
+}
+
 bool DeviceAdaptorFactory::setDrivereEanbled(const QString &driverName, bool enabled)
 {
     if (!this->m_authDeviceManagerProxy)

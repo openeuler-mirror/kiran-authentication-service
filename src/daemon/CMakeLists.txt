@@ -1,11 +1,6 @@
 file(GLOB_RECURSE H_FILES ./*.h)
 file(GLOB_RECURSE CPP_FILES ./*.cpp)
 
-# 外部认证服务适配器
-if(ENABLE_KIRAN_FACE_DRIVER)
-    list(APPEND CPP_FILES ${PROJECT_SOURCE_DIR}/src/driver/virtual/kiran/adapter/kiran-auth-adapter.cpp)
-endif()
-
 qt5_add_dbus_adaptor(
   AUTH_MANAGER_ADAPTOR_SRCS
   ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.Authentication.xml

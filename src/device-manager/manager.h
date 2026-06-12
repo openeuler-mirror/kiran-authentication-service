@@ -61,6 +61,7 @@ public:
     QString GetDriversByType(int device_type);
     void SetEnableDriver(const QString &driver_name, bool enable);
     void Remove(const QString &feature_id);
+    QString GetSupportedAuthTypes();
 
 private:
     static Manager *m_instance;

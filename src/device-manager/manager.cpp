@@ -331,4 +331,27 @@ void Manager::Remove(const QString& feature_id)
     // NOTE: 是否需要重置ukey设备
 }
 
+QString Manager::GetSupportedAuthTypes()
+{
+    QList<int> authTypes;
+    for (auto device : m_devices)
+    {
+        if (device && device->m_driver)
+        {
+            QList<int> driverTypes = device->m_driver->getSupportedAuthTypes();
+            for (int type : driverTypes)
+            {
+                if (!authTypes.contains(type))
+                    authTypes << type;
+            }
+        }
+    }
+
+    QJsonArray jsonArray;
+    for (int type : authTypes)
+        jsonArray.append(type);
+    QJsonDocument jsonDoc(jsonArray);
+    return QString(jsonDoc.toJson(QJsonDocument::Compact));
+}
+
 }  // namespace Kiran

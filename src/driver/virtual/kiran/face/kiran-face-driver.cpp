@@ -139,4 +139,9 @@ int KiranFaceDriver::startSearch(const QString &extraInfo)
     return KIRAN_SUCCESS;
 }
 
+QList<int> KiranFaceDriver::getSupportedAuthTypes()
+{
+    return getSupportedAuthTypesFromService();
+}
+
 extern "C" Driver *createDriver() { return new KiranFaceDriver(); }

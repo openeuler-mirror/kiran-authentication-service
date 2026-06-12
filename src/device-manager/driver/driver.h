@@ -15,6 +15,7 @@
 #pragma once
 
 #include <QFutureWatcher>
+#include <QList>
 #include <QObject>
 #include <QSharedPointer>
 
@@ -62,6 +63,9 @@ public:
     virtual QString getDriverName() = 0;
     virtual QString getErrorMsg(int errorNum) = 0;
     virtual DriverType getType() = 0;
+
+    /** 获取驱动支持的外部认证类型列表（KADAuthType 枚举值） */
+    virtual QList<int> getSupportedAuthTypes() = 0;
 };
 typedef QSharedPointer<Driver> DriverPtr;
 typedef Driver* (*CreateDriverFunc)();

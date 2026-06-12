@@ -16,6 +16,7 @@
 
 #include <QDBusInterface>
 #include <QJsonObject>
+#include <QList>
 #include <QObject>
 #include <QString>
 
@@ -31,6 +32,9 @@ class KiranDriverBase
 public:
     KiranDriverBase(QObject *parent = nullptr);
     virtual ~KiranDriverBase() = default;
+
+    /** 获取 Kiran 人脸服务支持的认证类型（KADAuthType 枚举值） */
+    QList<int> getSupportedAuthTypesFromService();
 
 protected:
     QDBusInterface *m_iface;

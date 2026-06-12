@@ -34,6 +34,8 @@ public:
     int identify(const QString &extraInfo) override;
     void identifyResultPostProcess(const QString &extraInfo) override;
 
+    QList<int> getSupportedAuthTypes() override;
+
 private:
     int startSearch(const QString &extraInfo);
 };
