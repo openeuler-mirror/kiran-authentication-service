@@ -18,6 +18,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QHash>
+#include <QThread>
 #include <signal.h>
 
 #include <pwd.h>
@@ -41,6 +42,7 @@ QString getEnvFromProcess(pid_t pid, const QString &key)
     QFile environFile(QString("/proc/%1/environ").arg(pid));
     if (!environFile.open(QIODevice::ReadOnly))
     {
+        KLOG_WARNING() << "getEnvFromProcess: fail open /proc/" << pid << "/environ";
         return QString();
     }
 
@@ -62,6 +64,7 @@ QString getSessionEnvByUser(const QString &userName, const QString &envKey)
     struct passwd *pwd = getpwnam(userName.toUtf8().constData());
     if (pwd == nullptr)
     {
+        KLOG_WARNING() << "getSessionEnvByUser: user not found:" << userName;
         return QString();
     }
 
@@ -110,47 +113,74 @@ QString getSessionEnvByUser(const QString &userName, const QString &envKey)
         return 0;
     };
 
-    QDir procDir("/proc");
-    const QFileInfoList procEntries = procDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-    for (const QFileInfo &entry : procEntries)
+    constexpr int kMaxRetry = 30;
+
+    for (int retry = 1; retry <= kMaxRetry; ++retry)
     {
-        bool ok = false;
-        pid_t pid = entry.fileName().toLongLong(&ok);
-        if (!ok)
+        QDir procDir("/proc");
+        const QFileInfoList procEntries = procDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QFileInfo &entry : procEntries)
         {
-            continue;
+            bool ok = false;
+            pid_t pid = entry.fileName().toLongLong(&ok);
+            if (!ok)
+            {
+                continue;
+            }
+
+            QFile cmdlineFile(entry.filePath() + "/cmdline");
+            if (!cmdlineFile.open(QIODevice::ReadOnly))
+            {
+                continue;
+            }
+
+            const QList<QByteArray> argv = cmdlineFile.readAll().split('\0');
+            if (argv.isEmpty() || argv.first().isEmpty())
+            {
+                continue;
+            }
+
+            const QString argv0 = QString::fromUtf8(argv.first());
+            const QString exeName = QFileInfo(argv0).fileName();
+            if (exeName != "kiran-session-manager" && exeName != "gnome-session")
+            {
+                continue;
+            }
+
+            bool statusOk = false;
+            const uint realUid = readRealUidFromStatus(entry.filePath() + "/status", &statusOk);
+            if (!statusOk)
+            {
+                KLOG_WARNING() << "getSessionEnvByUser: fail read uid from status, pid:" << pid << "exe:" << exeName;
+                continue;
+            }
+            if (realUid != static_cast<uint>(pwd->pw_uid))
+            {
+                continue;
+            }
+
+            const QString envValue = getEnvFromProcess(pid, envKey);
+            if (!envValue.isEmpty())
+            {
+                KLOG_INFO() << "getSessionEnvByUser: got" << envKey << "from" << exeName << "pid:" << pid
+                            << "user:" << userName;
+                return envValue;
+            }
+
+            KLOG_WARNING() << "getSessionEnvByUser: found" << exeName << "pid:" << pid
+                           << "but" << envKey << "is empty, user:" << userName;
         }
 
-        QFile cmdlineFile(entry.filePath() + "/cmdline");
-        if (!cmdlineFile.open(QIODevice::ReadOnly))
+        if (retry < kMaxRetry)
         {
-            continue;
+            KLOG_INFO() << "getSessionEnvByUser: retry" << retry << "/" << kMaxRetry
+                         << "user:" << userName << "env:" << envKey;
+            QThread::msleep(100);
         }
-
-        const QList<QByteArray> argv = cmdlineFile.readAll().split('\0');
-        if (argv.isEmpty() || argv.first().isEmpty())
+        else
         {
-            continue;
-        }
-
-        const QString argv0 = QString::fromUtf8(argv.first());
-        const QString exeName = QFileInfo(argv0).fileName();
-        if (exeName != "kiran-session-manager" && exeName != "gnome-session")
-        {
-            continue;
-        }
-
-        bool statusOk = false;
-        const uint realUid = readRealUidFromStatus(entry.filePath() + "/status", &statusOk);
-        if (!statusOk || realUid != static_cast<uint>(pwd->pw_uid))
-        {
-            continue;
-        }
-
-        const QString envValue = getEnvFromProcess(pid, envKey);
-        if (!envValue.isEmpty())
-        {
-            return envValue;
+            KLOG_WARNING() << "getSessionEnvByUser: all" << kMaxRetry << "retries exhausted"
+                           << "user:" << userName << "env:" << envKey;
         }
     }
 
