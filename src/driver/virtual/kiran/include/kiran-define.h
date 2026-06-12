@@ -21,7 +21,7 @@
 #define KIRAN_DBUS_INTERFACE "com.kiran.face.service"
 /** kiran-face-dbus-service 的 D-Bus 对象路径 */
 #define KIRAN_DBUS_PATH "/com/kiran/face/service"
-/** 业务标识（复用 czht 中 BUSINESS_ID） */
+/** 业务标识 */
 #define KIRAN_BUSINESS_ID "KylinsecOS"
 
 // 配置文件字段名

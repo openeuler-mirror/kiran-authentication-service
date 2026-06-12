@@ -1,10 +1,8 @@
 file(GLOB_RECURSE H_FILES ./*.h)
 file(GLOB_RECURSE CPP_FILES ./*.cpp)
 
-# 外部认证服务适配器（编译期二选一，直接纳入 daemon 避免循环引用）
-if(ENABLE_CZHT_VIRTUAL_DRIVER)
-    list(APPEND CPP_FILES ${PROJECT_SOURCE_DIR}/src/driver/virtual/czht/adapter/czht-auth-adapter.cpp)
-elseif(ENABLE_KIRAN_FACE_DRIVER)
+# 外部认证服务适配器
+if(ENABLE_KIRAN_FACE_DRIVER)
     list(APPEND CPP_FILES ${PROJECT_SOURCE_DIR}/src/driver/virtual/kiran/adapter/kiran-auth-adapter.cpp)
 endif()
 

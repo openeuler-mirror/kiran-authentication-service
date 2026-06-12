@@ -24,8 +24,7 @@
 /**
  * @brief Kiran 授权码申请对话框
  *
- * 代码复用 czht gen-code-dialog，但 D-Bus 目标切换为
- * com.kiran.face.service，JSON 入参追加 user_name 字段（C1）。
+ * 基于 com.kiran.face.service D-Bus 接口，
  */
 class GenCodeDialog : public QDialog
 {

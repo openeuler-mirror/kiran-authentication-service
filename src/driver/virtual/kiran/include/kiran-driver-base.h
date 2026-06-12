@@ -22,7 +22,7 @@
 /**
  * @brief Kiran 人脸驱动基类
  *
- * 与 CZHTDriverBase 功能对等，但 D-Bus 目标为 com.kiran.face.service。
+ * 数据定义与 CzhtDriverBase 保持一致，但 D-Bus 目标为 com.kiran.face.service。
  * startLeaveDetect() 不插入 detect_time_out 字段（C7），
  * 人走判定超时仅由 kiran-face-dbus-service 侧的 ini [leave_detect] 控制。
  */

@@ -39,10 +39,9 @@
 #include "qt5-log-i.h"
 #include "session.h"
 #include "user-manager.h"
+#include "iexternal-auth-adapter.h"
 
-#ifdef ENABLE_CZHT_VIRTUAL_DRIVER
-#include "src/driver/virtual/czht/adapter/czht-auth-adapter.h"
-#elif defined(ENABLE_KIRAN_FACE_DRIVER)
+#ifdef ENABLE_KIRAN_FACE_DRIVER
 #include "src/driver/virtual/kiran/adapter/kiran-auth-adapter.h"
 #endif
 
@@ -59,9 +58,7 @@ AuthManager::AuthManager(UserManager *userManager, AuthConfig *authConfig)
     this->m_dbusAdaptor = new AuthManagerAdaptor(this);
     this->m_serviceWatcher = new QDBusServiceWatcher(this);
 
-#ifdef ENABLE_CZHT_VIRTUAL_DRIVER
-    m_externalAuthAdapter = new CzhtAuthAdapter(this);
-#elif defined(ENABLE_KIRAN_FACE_DRIVER)
+#ifdef ENABLE_KIRAN_FACE_DRIVER
     m_externalAuthAdapter = new KiranAuthAdapter(this);
 #endif
 }
@@ -188,7 +185,7 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
 {
     KLOG_INFO() << "GetAuthTypeByApp: authApp:" << authApp;
 
-    // 从外部服务获取认证类型列表（通过适配器模式，编译期二选一）
+    // 从外部服务获取认证类型列表（通过适配器模式）
     QList<int> externalAuthTypes;
 
     if (m_externalAuthAdapter && m_externalAuthAdapter->isAvailable())

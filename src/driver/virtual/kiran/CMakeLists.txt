@@ -6,4 +6,3 @@ add_subdirectory(code)
 add_subdirectory(data)
 add_subdirectory(gen-code)
 add_subdirectory(leave-detecter)
-# screen-recorder 直接复用 czht 版本（无 D-Bus 依赖）
