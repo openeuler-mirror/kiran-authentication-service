@@ -4,7 +4,7 @@
 <context>
     <name>GenCodeDialog</name>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="40"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="40"/>
         <source>Request Authorization Code</source>
         <translation>申请授权码</translation>
     </message>
@@ -13,65 +13,65 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="50"/>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="90"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="50"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="90"/>
         <source>Failed to request authorization code, please check if the face service (com.kiran.face.service) is running</source>
         <translation>申请授权码失败，请确认人脸服务(com.kiran.face.service)是否正常运行</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="73"/>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="125"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="73"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="125"/>
         <source>Failed to request authorization code: %1</source>
         <translation>申请授权码失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="129"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="129"/>
         <source>Request authorization code successfully, please wait for the SMS notification</source>
         <translation>申请授权码成功，请等待短信通知</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="78"/>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="134"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="78"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="134"/>
         <source>Failed to request authorization code, please try again, %1</source>
         <translation>申请授权码失败，请重试，%1</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="175"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="175"/>
         <source>Authorization code request duration</source>
         <translation>请选择合适的申请时长</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="180"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="180"/>
         <source>day</source>
         <translation>天</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="180"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="180"/>
         <source>week</source>
         <translation>周</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="180"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="180"/>
         <source>month</source>
         <translation>月</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="180"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="180"/>
         <source>hour</source>
         <translation>小时</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="185"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="185"/>
         <source>request</source>
         <translation>申请</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="186"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="186"/>
         <source>please look at camera when click &quot;request&quot; button</source>
         <translation>点击&quot;申请&quot;时，请正视摄像头</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/gen-code/gen-code-dialog.cpp" line="205"/>
+        <location filename="../vendor-specific/kiran/gen-code/gen-code-dialog.cpp" line="205"/>
         <source>Confirm</source>
         <translation>确认</translation>
     </message>
@@ -79,132 +79,132 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="76"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="76"/>
         <source>success</source>
         <translation>成功</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="77"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="77"/>
         <source>JSON format error</source>
         <translation>JSON格式错误</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="78"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="78"/>
         <source>missing required JSON field</source>
         <translation>缺少必需的JSON字段</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="79"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="79"/>
         <source>parameter out of range</source>
         <translation>参数超出允许范围</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="83"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="83"/>
         <source>other task executing</source>
         <translation>正在执行其他任务</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="84"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="84"/>
         <source>task not executed</source>
         <translation>任务未执行</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="85"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="85"/>
         <source>cannot connect USB camera</source>
         <translation>无法连接USB摄像头</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="87"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="87"/>
         <source>match person not found (offline mode)</source>
         <translation>本地数据库中未找到匹配的人脸</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="91"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="91"/>
         <source>server internal error, such as algorithm service exception</source>
         <translation>服务器内部错误，如算法服务异常</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="92"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="92"/>
         <source>business ID not found</source>
         <translation>业务ID不存在</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="99"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="99"/>
         <source>authorization verification user_id not found</source>
         <translation>授权验证用户名不存在</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="100"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="100"/>
         <source>authorization verification device_code not found</source>
         <translation>授权验证机器码不存在</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="101"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="101"/>
         <source>authorization verification user_id device_code binding not found</source>
         <translation>授权验证用户名与机器码关联绑定不存在</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="80"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="80"/>
         <source>server return error</source>
         <translation>服务器返回错误</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="81"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="81"/>
         <source>offline mode not allowed</source>
         <translation>离线模式不允许执行</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="82"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="82"/>
         <source>report login log failed</source>
         <translation>上报登录日志失败</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="86"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="86"/>
         <source>start monitor process failed (leave detection)</source>
         <translation>启动监控进程失败（离开检测）</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="88"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="88"/>
         <source>user expired (not within valid time range)</source>
         <translation>授权不在有效时间范围内，请联系管理员确认</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="89"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="89"/>
         <source>user not in cache, cannot start leave detection</source>
         <translation>用户不在缓存中，无法开始离开检测</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="90"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="90"/>
         <source>work mode not supported</source>
         <translation>工作模式不支持</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="93"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="93"/>
         <source>face not detected</source>
         <translation>未检测到人脸</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="94"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="94"/>
         <source>match person not found</source>
         <translation>未搜索到匹配的人员(相似度低于阈值)</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="95"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="95"/>
         <source>person deleted</source>
         <translation>搜索到的人员已被删除</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="96"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="96"/>
         <source>authorization code not found</source>
         <translation>授权码不存在</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="97"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="97"/>
         <source>authorization code expired</source>
         <translation>授权码已过期</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="98"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="98"/>
         <source>person not match authorization code</source>
         <translation>人脸与授权码绑定的人员不匹配</translation>
     </message>
@@ -213,12 +213,12 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="102"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="102"/>
         <source>no login permission</source>
         <translation>无登录权限，请联系管理员确认</translation>
     </message>
     <message>
-        <location filename="../src/driver/virtual/kiran/include/kiran-define.h" line="103"/>
+        <location filename="../vendor-specific/kiran/include/kiran-define.h" line="103"/>
         <source>no face binding relation</source>
         <translation>未查询到授权信息，请联系管理员确认</translation>
     </message>

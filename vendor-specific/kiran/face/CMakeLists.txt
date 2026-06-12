@@ -1,10 +1,10 @@
-set(TARGET_NAME kiran-code)
+set(TARGET_NAME kiran-face)
 
 find_package(Qt5 REQUIRED COMPONENTS DBus Core)
 
-set(KIRAN_CODE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/kiran-code-driver.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/kiran-code-driver.h
+set(TARGET_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/kiran-face-driver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/kiran-face-driver.h
     ${KIRAN_INCLUDE_DIRS}/kiran-define.h
     ${KIRAN_INCLUDE_DIRS}/kiran-driver-base.cpp
     ${KIRAN_INCLUDE_DIRS}/kiran-driver-base.h)
@@ -14,7 +14,7 @@ set(QM_FILES "")
 
 foreach(LANG ${LANGUAGES})
   set(TS_FILE "${PROJECT_SOURCE_DIR}/translations/${TARGET_NAME}.${LANG}.ts")
-  execute_process(COMMAND lupdate-qt5 -no-obsolete ${KIRAN_CODE_SOURCES} -ts
+  execute_process(COMMAND lupdate-qt5 -no-obsolete ${TARGET_SOURCES} -ts
                           ${TS_FILE})
   set(QM_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.${LANG}.qm")
   execute_process(COMMAND lrelease-qt5 ${TS_FILE} -qm ${QM_FILE})
@@ -22,7 +22,7 @@ foreach(LANG ${LANGUAGES})
   message(STATUS "QM_FILE: ${QM_FILE}")
 endforeach()
 
-add_library(${TARGET_NAME} SHARED ${KIRAN_CODE_SOURCES} ${QM_FILES})
+add_library(${TARGET_NAME} SHARED ${TARGET_SOURCES} ${QM_FILES})
 
 target_include_directories(
   ${TARGET_NAME}
@@ -30,7 +30,7 @@ target_include_directories(
           ${PROJECT_BINARY_DIR}
           ${PROJECT_SOURCE_DIR}
           ${PROJECT_SOURCE_DIR}/include
-          ${PROJECT_SOURCE_DIR}/src/device-manager/driver
+          ${PROJECT_SOURCE_DIR}/src/device/driver
           ${KLOG_QT5_INCLUDE_DIRS}
           ${KIRAN_INCLUDE_DIRS})
 

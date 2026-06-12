@@ -28,7 +28,7 @@ endforeach()
 qt5_add_dbus_adaptor(
   AUTH_DEVICE_MANAGER_ADAPTOR_SRCS
   ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.AuthDevice.xml
-  ${CMAKE_SOURCE_DIR}/src/device-manager/manager.h
+  ${CMAKE_SOURCE_DIR}/src/device/manager.h
   Kiran::Manager
   auth_device_manager_adaptor
   AuthDeviceManagerAdaptor)
@@ -36,7 +36,7 @@ qt5_add_dbus_adaptor(
 qt5_add_dbus_adaptor(
   AUTH_DEVICE_ADAPTOR_SRCS
   ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.AuthDevice.Device.xml
-  ${CMAKE_SOURCE_DIR}/src/device-manager/device/device.h
+  ${CMAKE_SOURCE_DIR}/src/device/device/device.h
   Kiran::Device
   auth_device_adaptor
   AuthDeviceAdaptor)

@@ -12,6 +12,8 @@ set(KAS_INSTALL_TRANSLATIONDIR ${KAS_INSTALL_DATADIR}/translations)
 set(KAS_INSTALL_SYSCONFDIR ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME})
 set(KAS_INSTALL_DEP_LIBDIR ${CMAKE_INSTALL_FULL_LIBDIR}/${PROJECT_NAME}/lib64)
 set(KAS_AUTH_DRIVERSDIR ${CMAKE_INSTALL_FULL_LIBDIR}/${PROJECT_NAME}/drivers)
+set(VIRTUAL_DRIVERS_INSTALL_DIR ${KAS_AUTH_DRIVERSDIR}/virtual)
+set(VIRTUAL_KIRAN_DRIVER_INSTALL_DIR ${VIRTUAL_DRIVERS_INSTALL_DIR}/kiran)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
@@ -42,6 +44,11 @@ file(GLOB_RECURSE COMMON_CPP_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_subdirectory(data)
 add_subdirectory(lib)
 add_subdirectory(src)
+
+add_subdirectory(plugins/pam)
+if(ENABLE_KIRAN_FACE_DRIVER)
+    add_subdirectory(vendor-specific/kiran)
+endif()
 
 install(FILES include/kas-authentication-i.h
         DESTINATION ${KAS_INSTALL_INCLUDE}/)

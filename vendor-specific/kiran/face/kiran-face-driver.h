@@ -15,18 +15,17 @@
 #pragma once
 
 #include <QObject>
-#include <QProcess>
 #include <QSharedPointer>
 
 #include "kiran-driver-base.h"
-#include "src/device-manager/driver/virtual-code-driver.h"
+#include "src/device/driver/virtual-face-driver.h"
 
-class KiranCodeDriver : public VirtualCodeDriver, public KiranDriverBase
+class KiranFaceDriver : public VirtualFaceDriver, public KiranDriverBase
 {
     Q_OBJECT
 public:
-    explicit KiranCodeDriver(QObject *parent = nullptr);
-    ~KiranCodeDriver();
+    explicit KiranFaceDriver(QObject *parent = nullptr);
+    ~KiranFaceDriver();
 
     QString getDriverName() override;
     QString getErrorMsg(int errorNum) override;
@@ -37,11 +36,9 @@ public:
 
     QList<int> getSupportedAuthTypes() override;
 
-    int verifyAuthorizationCode(const QString &extraInfo);
-
 private:
-    bool m_enableScreenRecorder;
+    int startSearch(const QString &extraInfo);
 };
-typedef QSharedPointer<KiranCodeDriver> KiranCodeDriverPtr;
+typedef QSharedPointer<KiranFaceDriver> KiranFaceDriverPtr;
 extern "C" Driver *
 createDriver();
