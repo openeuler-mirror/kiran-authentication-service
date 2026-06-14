@@ -25,7 +25,7 @@ VirtualCodeDevice::~VirtualCodeDevice() {}
 
 DeviceType VirtualCodeDevice::deviceType()
 {
-    return DEVICE_TYPE_Virtual_Code;
+    return DEVICE_TYPE_VIRTUAL_CODE;
 }
 
 }  // namespace Kiran

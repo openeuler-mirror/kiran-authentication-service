@@ -152,37 +152,58 @@ enum IdentifyProcess
 // 设备类型
 enum DeviceType
 {
-    DEVICE_TYPE_FingerPrint,          // 指纹
-    DEVICE_TYPE_Face,                 // 人脸
-    DEVICE_TYPE_FingerVein,           // 指静脉
-    DEVICE_TYPE_Iris,                 // 虹膜
-    DEVICE_TYPE_VoicePrint,           // 声纹
-    DEVICE_TYPE_UKey,                 // ukey
-                                      // ...预留，未来可能增加其他物理设备...
-    DEVICE_TYPE_Virtual_Face = 1000,  // 虚拟人脸
-    DEVICE_TYPE_Virtual_Code,         // 验证码
-    DEVICE_TYPE_Virtual_Code_No_Camera, // 验证码（无摄像头）
+    // 指纹
+    DEVICE_TYPE_FINGERPRINT,
+    // 人脸
+    DEVICE_TYPE_FACE,
+    // 指静脉
+    DEVICE_TYPE_FINGERVEIN,
+    // 虹膜
+    DEVICE_TYPE_IRIS,
+    // 声纹
+    DEVICE_TYPE_VOICEPRINT,
+    // ukey
+    DEVICE_TYPE_UKEY,
+    // ...预留，未来可能增加其他物理设备...
+    // 虚拟人脸
+    DEVICE_TYPE_VIRTUAL_FACE = 1000,
+    // 验证码
+    DEVICE_TYPE_VIRTUAL_CODE,
+    // 验证码（无摄像头）
+    DEVICE_TYPE_VIRTUAL_CODE_NO_CAMERA,
 };
 
 // 设备状态
 enum DeviceStatusx
 {
-    DEVICE_STATUS_ERROR,           // 设备发生错误
-    DEVICE_STATUS_BUSY,            // 设备忙碌
-    DEVICE_STATUS_IDLE,            // 设备空闲
-    DEVICE_STATUS_DOING_ENROLL,    // 设备正在录入中
-    DEVICE_STATUS_DOING_IDENTIFY,  // 设备正在验证中
-    DEVICE_STATUS_DISABLE,         // 设备被禁用
+    // 设备发生错误
+    DEVICE_STATUS_ERROR,
+    // 设备忙碌
+    DEVICE_STATUS_BUSY,
+    // 设备空闲
+    DEVICE_STATUS_IDLE,
+    // 设备正在录入中
+    DEVICE_STATUS_DOING_ENROLL,
+    // 设备正在验证中
+    DEVICE_STATUS_DOING_IDENTIFY,
+    // 设备被禁用
+    DEVICE_STATUS_DISABLE,
 };
 
 enum GeneralResult
 {
-    GENERAL_RESULT_UNSUPPORT = -1,        // 此接口不支持
-    GENERAL_RESULT_OK = 0,                // 成功
-    GENERAL_RESULT_FAIL = 1,              // 失败
-    GENERAL_RESULT_TIMEOUT = 2,           // 超时
-    GENERAL_RESULT_NO_FOUND_DEVICE = 3,   // 设备不存在
-    GENERAL_RESULT_OPEN_DEVICE_FAIL = 4,  // 打开设备失败
+    // 此接口不支持
+    GENERAL_RESULT_UNSUPPORT = -1,
+    // 成功
+    GENERAL_RESULT_OK = 0,
+    // 失败
+    GENERAL_RESULT_FAIL = 1,
+    // 超时
+    GENERAL_RESULT_TIMEOUT = 2,
+    // 设备不存在
+    GENERAL_RESULT_NO_FOUND_DEVICE = 3,
+    // 打开设备失败
+    GENERAL_RESULT_OPEN_DEVICE_FAIL = 4,
 };
 
 // 认证模式

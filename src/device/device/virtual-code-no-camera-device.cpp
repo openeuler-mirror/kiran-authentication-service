@@ -25,7 +25,7 @@ VirtualCodeNoCameraDevice::~VirtualCodeNoCameraDevice() {}
 
 DeviceType VirtualCodeNoCameraDevice::deviceType()
 {
-    return DEVICE_TYPE_Virtual_Code_No_Camera;
+    return DEVICE_TYPE_VIRTUAL_CODE_NO_CAMERA;
 }
 
 }  // namespace Kiran

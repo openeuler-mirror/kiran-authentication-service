@@ -78,9 +78,13 @@
             </arg>
         </signal>
 
-        <signal name="AuthFailed" />
+        <signal name="AuthFailed">
+            <description>Emitted when authentication has failed. This typically means the authentication process completed but the user could not be verified. The caller should handle the failure (e.g. record failed attempts, notify user).</description>
+        </signal>
 
-        <signal name="AuthUnavail"/>
+        <signal name="AuthUnavail">
+            <description>Emitted when authentication is unavailable. This could happen if the required device is not found or the authentication service cannot proceed for some reason.</description>
+        </signal>
 
         <signal name="AuthTypeChanged">
             <arg name="authtype" type="i">

@@ -55,7 +55,7 @@ VirtualFaceDevice::~VirtualFaceDevice()
 
 DeviceType VirtualFaceDevice::deviceType()
 {
-    return DEVICE_TYPE_Virtual_Face;
+    return DEVICE_TYPE_VIRTUAL_FACE;
 }
 
 void VirtualFaceDevice::EnrollStart(const QString& extraInfo)

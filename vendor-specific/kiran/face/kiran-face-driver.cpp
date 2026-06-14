@@ -37,7 +37,7 @@ QString KiranFaceDriver::getErrorMsg(int errorNum)
     return getKiranErrorMsg(errorNum);
 }
 
-DriverType KiranFaceDriver::getType() { return DRIVER_TYPE_Virtual_Face; }
+DriverType KiranFaceDriver::getType() { return DRIVER_TYPE_VIRTUAL_FACE; }
 
 int KiranFaceDriver::identify(const QString &extraInfo)
 {

@@ -45,7 +45,7 @@ UkeyDevice::~UkeyDevice()
 }
 DeviceType UkeyDevice::deviceType()
 {
-    return DEVICE_TYPE_UKey;
+    return DEVICE_TYPE_UKEY;
 }
 
 void UkeyDevice::EnrollStart(const QString& extraInfo)

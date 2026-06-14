@@ -5,9 +5,9 @@
 
         <method name="EnrollStart">
             <arg name="enrollInfo" direction="in" type="s">
-                <description>Json format. For UKey authentication, the PIN code is passed in, and the biometric authentication is passed in blank</description>
+                <description>JSON format. For UKey authentication: {"ukey": {"pin": "&lt;PIN code&gt;", "serial_number": "&lt;device serial&gt;"}}. For biometric authentication: pass an empty string "{}".</description>
             </arg>        
-            <description>Start enrollemnt.</description>
+            <description>Start enrollment. The device will emit EnrollStatus signals during the process and return the final FeatureData JSON upon completion.</description>
         </method>
 
         <method name="EnrollStop">
@@ -16,9 +16,9 @@
 
         <method name="IdentifyStart">
             <arg name="identifyInfo" direction="in" type="s">
-                <description>Json format, The biometric authentication incoming feature id list can also be empty; For UKey authentication, extra PIN code is required</description>
+                <description>JSON format. For biometric: {"feature_ids": ["&lt;id1&gt;", "&lt;id2&gt;"]} (optional, empty to match all enrolled features). For UKey: {"ukey": {"pin": "&lt;PIN code&gt;", "serial_number": "&lt;device serial&gt;"}, "rebinding": &lt;bool&gt;} where rebinding indicates whether to re-associate the UKey with the current user.</description>
             </arg>          
-            <description>Performs a new scan and attempts to identify the scanned finger against a collection of previously enrolled fingerprints.Identification is a one-to-many comparison where you do not know the identity of the user that you wish to authenticate.</description>
+            <description>Start identification (one-to-many matching). The device will emit IdentifyStatus signals during the process. Identification compares the scanned biometric against all previously enrolled features without knowing the user identity in advance.</description>
         </method>
 
         <method name="IdentifyStop">
@@ -27,9 +27,9 @@
 
         <method name="IdentifyResultPostProcess">
             <arg name="extraInfo" direction="in" type="s">
-                <description>Extra information in JSON format, containing os_user, result, and optional fail_reason.</description>
+                <description>JSON format with fields: "os_user" (string, the operating system user name), "result" (int, 0 on failure, 1 on success), "fail_reason" (string, error message when result is 0, optional).</description>
             </arg>
-            <description>Perform post-processing after identification result (both success and failure).</description>
+            <description>Perform post-processing after identification result (both success and failure). For virtual drivers, this triggers login log reporting and leave-detection.</description>
         </method>
 
         <method name="GetFeatureIDList">
@@ -43,41 +43,41 @@
         </property>
 
         <property name="DeviceType" type="i" access="read">
-            <description>The device type.</description>
+            <description>The device type. Refer to enum DeviceType in file kas-authentication-i.h. FingerPrint:0, Face:1, FingerVein:2, Iris:3, VoicePrint:4, UKey:5, Virtual_Face:1000, Virtual_Code:1001, Virtual_Code_No_Camera:1002.</description>
         </property>
 
         <property name="DeviceStatus" type="i" access="read">
-            <description>The device status.</description>
+            <description>The device status. Refer to enum DeviceStatus in file kas-authentication-i.h. ERROR:0 device error, BUSY:1 device is busy, IDLE:2 device is idle, DOING_ENROLL:3 device is enrolling, DOING_IDENTIFY:4 device is identifying, DISABLE:5 device is disabled.</description>
         </property>
 
         <property name="DeviceDriver" type="s" access="read">
-            <description>The device driver.</description>
+            <description>The driver name of this device, e.g. "kiran-ukey", "kiran-face".</description>
         </property>
 
         <signal name="EnrollStatus">
             <arg name="data" type="s">
-                <description>Feature data json. Refer to struct FeatureData in file feature-data.h</description>
+                <description>JSON string of feature data, containing: "feature" (base64-encoded binary feature data), "featureID" (string), "featureName" (string), "iid" (string, identification ID), "userName" (string), "idVendor" (string, USB vendor ID), "idProduct" (string, USB product ID), "deviceSerialNumber" (string), "deviceType" (int, refer to enum DeviceType in kas-authentication-i.h), "authType" (int, refer to enum KADAuthType in kas-authentication-i.h).</description>
             </arg>
             <arg name="progress" type="i">
-                <description>A number between 0 and 100 to describe the progress of enrolling fingerprint. 0 is failed </description>
+                <description>A number between 0 and 100 to indicate enrollment progress. 0 means failed, 100 means completed.</description>
             </arg>
             <arg name="result" type="i">
-                <description>Represent the status of the enrollment. Refer to enum DeviceType in file kiran-auth-device-i.h</description>
+                <description>Enrollment result status. Refer to enum EnrollStatus in file kas-authentication-i.h. COMPLETE: enrollment succeeded. FAIL: enrollment failed.</description>
             </arg>
             <arg name="message" type="s">
-                <description>Status description information.</description>
+                <description>Human-readable status description, can be displayed to the user.</description>
             </arg>
         </signal>
 
         <signal name="IdentifyStatus">
             <arg name="feature_id" type="s">
-                <description>Feature ID.</description>
+                <description>Feature ID that was matched, or empty if no match found.</description>
             </arg>
             <arg name="result" type="i">
-                <description>Represent the status of the identification. Refer to enum DeviceType in file kiran-auth-device-i.h.</description>
+                <description>Identification result. Refer to enum IdentifyStatus in file kas-authentication-i.h. MATCH: identification succeeded. NOT_MATCH: no match. RETRY: scan quality issue, may retry. NORMAL: intermediate status.</description>
             </arg>
             <arg name="message" type="s">
-                <description>Status description information.</description>
+                <description>Human-readable status description, can be displayed to the user.</description>
             </arg>            
         </signal>
 

@@ -47,7 +47,7 @@
                 <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
             </arg>
             <arg name="drivers" direction="out" type="s">
-                <description>Json string of drivers information, including driver name, enable status, etc </description>
+                <description>JSON array, each item is an object containing: "driverName" (string, the driver library name), "enable" (bool, whether the driver is enabled).</description>
             </arg>
         </method>
 
@@ -65,7 +65,7 @@
                 <description>The auth type. Refer to KADAuthType in kas-authentication-i.h</description>
             </arg>
             <arg name="devices" direction="out" type="s">
-                <description>Json string of device information, including object path, device name, device ID, etc </description>
+                <description>JSON array, each item is an object containing: "deviceName" (string, driver name), "deviceID" (string, unique device identifier), "objectPath" (string, D-Bus object path of the device).</description>
             </arg>
         </method>
 

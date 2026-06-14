@@ -58,12 +58,12 @@ void DriverLoader::init()
         {
             switch (driver->getType())
             {
-            case DRIVER_TYPE_Face:
-            case DRIVER_TYPE_FingerPrint:
-            case DRIVER_TYPE_FingerVein:
-            case DRIVER_TYPE_Iris:
-            case DRIVER_TYPE_VoicePrint:
-            case DRIVER_TYPE_UKey:
+            case DRIVER_TYPE_FACE:
+            case DRIVER_TYPE_FINGERPRINT:
+            case DRIVER_TYPE_FINGERVEIN:
+            case DRIVER_TYPE_IRIS:
+            case DRIVER_TYPE_VOICEPRINT:
+            case DRIVER_TYPE_UKEY:
             {
                 auto type = driver->getType();
                 auto vidPids = ((PhysicalDriver *)driver.data())->getSupportVidPid();
@@ -72,15 +72,15 @@ void DriverLoader::init()
 
                 KLOG_INFO() << "driver:" << file << "driver name:" << driver->getDriverName() << "type:" << getDriverTypeStr(type) << "support vidpids:" << vidPids;
 
-                // if (type == DRIVER_TYPE_UKey)
+                // if (type == DRIVER_TYPE_UKEY)
                 // {
                 //     KLOG_INFO() << "ukey online serial:" << ((UKeyDriver *)driver.data())->getOnlineSerials();
                 // }
             }
             break;
-            case DRIVER_TYPE_Virtual_Face:
-            case DRIVER_TYPE_Virtual_Code:
-            case DRIVER_TYPE_Virtual_Code_No_Camera:
+            case DRIVER_TYPE_VIRTUAL_FACE:
+            case DRIVER_TYPE_VIRTUAL_CODE:
+            case DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA:
             {
                 m_virtualDrivers.append(file);
             }

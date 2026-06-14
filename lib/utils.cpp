@@ -146,21 +146,21 @@ int32_t Utils::authType2DeviceType(int32_t authType)
     switch (authType)
     {
     case KADAuthType::KAD_AUTH_TYPE_FINGERPRINT:
-        return DeviceType::DEVICE_TYPE_FingerPrint;
+        return DeviceType::DEVICE_TYPE_FINGERPRINT;
     case KADAuthType::KAD_AUTH_TYPE_FACE:
-        return DeviceType::DEVICE_TYPE_Face;
+        return DeviceType::DEVICE_TYPE_FACE;
     case KADAuthType::KAD_AUTH_TYPE_FINGERVEIN:
-        return DeviceType::DEVICE_TYPE_FingerVein;
+        return DeviceType::DEVICE_TYPE_FINGERVEIN;
     case KADAuthType::KAD_AUTH_TYPE_UKEY:
-        return DeviceType::DEVICE_TYPE_UKey;
+        return DeviceType::DEVICE_TYPE_UKEY;
     case KAD_AUTH_TYPE_IRIS:
-        return DeviceType::DEVICE_TYPE_Iris;
+        return DeviceType::DEVICE_TYPE_IRIS;
     case KAD_AUTH_TYPE_VIRTUAL_FACE:
-        return DeviceType::DEVICE_TYPE_Virtual_Face;
+        return DeviceType::DEVICE_TYPE_VIRTUAL_FACE;
     case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE:
-        return DeviceType::DEVICE_TYPE_Virtual_Code;
+        return DeviceType::DEVICE_TYPE_VIRTUAL_CODE;
     case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA:
-        return DeviceType::DEVICE_TYPE_Virtual_Code_No_Camera;
+        return DeviceType::DEVICE_TYPE_VIRTUAL_CODE_NO_CAMERA;
     default:
         KLOG_WARNING() << "Unsupported authType: " << authType;
     }
@@ -171,21 +171,21 @@ int32_t Utils::deviceType2AuthType(int32_t deviceType)
 {
     switch (deviceType)
     {
-    case DeviceType::DEVICE_TYPE_FingerPrint:
+    case DeviceType::DEVICE_TYPE_FINGERPRINT:
         return KADAuthType::KAD_AUTH_TYPE_FINGERPRINT;
-    case DeviceType::DEVICE_TYPE_Face:
+    case DeviceType::DEVICE_TYPE_FACE:
         return KADAuthType::KAD_AUTH_TYPE_FACE;
-    case DeviceType::DEVICE_TYPE_FingerVein:
+    case DeviceType::DEVICE_TYPE_FINGERVEIN:
         return KADAuthType::KAD_AUTH_TYPE_FINGERVEIN;
-    case DeviceType::DEVICE_TYPE_UKey:
+    case DeviceType::DEVICE_TYPE_UKEY:
         return KADAuthType::KAD_AUTH_TYPE_UKEY;
-    case DeviceType::DEVICE_TYPE_Iris:
+    case DeviceType::DEVICE_TYPE_IRIS:
         return KADAuthType::KAD_AUTH_TYPE_IRIS;
-    case DeviceType::DEVICE_TYPE_Virtual_Face:
+    case DeviceType::DEVICE_TYPE_VIRTUAL_FACE:
         return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE;
-    case DeviceType::DEVICE_TYPE_Virtual_Code:
+    case DeviceType::DEVICE_TYPE_VIRTUAL_CODE:
         return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE;
-    case DeviceType::DEVICE_TYPE_Virtual_Code_No_Camera:
+    case DeviceType::DEVICE_TYPE_VIRTUAL_CODE_NO_CAMERA:
         return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA;
     default:
         KLOG_WARNING() << "Unsupported deviceType: " << deviceType;

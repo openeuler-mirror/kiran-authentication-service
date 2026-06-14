@@ -38,7 +38,7 @@ QString KiranCodeDriver::getErrorMsg(int errorNum)
     return getKiranErrorMsg(errorNum);
 }
 
-DriverType KiranCodeDriver::getType() { return DRIVER_TYPE_Virtual_Code; }
+DriverType KiranCodeDriver::getType() { return DRIVER_TYPE_VIRTUAL_CODE; }
 
 int KiranCodeDriver::identify(const QString &extraInfo)
 {

@@ -93,7 +93,7 @@ bool Manager::genDevice(const QString& driverName, const QString& vendorId, cons
         // TODO: 创建设备
         switch (driver->getType())
         {
-        case DRIVER_TYPE_UKey:  // ukey
+        case DRIVER_TYPE_UKEY:  // ukey
         {
             auto device = UkeyDevicePtr(new UkeyDevice(vendorId,
                                                        productId,
@@ -106,12 +106,12 @@ bool Manager::genDevice(const QString& driverName, const QString& vendorId, cons
             break;
         }
 
-        case DRIVER_TYPE_FingerPrint:   // 指纹
-        case DRIVER_TYPE_Face:          // 人脸
-        case DRIVER_TYPE_FingerVein:    // 指静脉
-        case DRIVER_TYPE_Iris:          // 虹膜
-        case DRIVER_TYPE_VoicePrint:    // 声纹
-        case DRIVER_TYPE_Virtual_Face:  // 虚拟人脸
+        case DRIVER_TYPE_FINGERPRINT:   // 指纹
+        case DRIVER_TYPE_FACE:          // 人脸
+        case DRIVER_TYPE_FINGERVEIN:    // 指静脉
+        case DRIVER_TYPE_IRIS:          // 虹膜
+        case DRIVER_TYPE_VOICEPRINT:    // 声纹
+        case DRIVER_TYPE_VIRTUAL_FACE:  // 虚拟人脸
         default:
         {
             break;
@@ -133,13 +133,13 @@ bool Manager::genVirtualDevices()
             DevicePtr device;
             switch (driver->getType())
             {
-            case DRIVER_TYPE_Virtual_Face:  // 虚拟人脸
+            case DRIVER_TYPE_VIRTUAL_FACE:  // 虚拟人脸
                 device = VirtualFaceDevicePtr(new VirtualFaceDevice(driver));
                 break;
-            case DRIVER_TYPE_Virtual_Code:  // 虚拟验证码
+            case DRIVER_TYPE_VIRTUAL_CODE:  // 虚拟验证码
                 device = VirtualCodeDevicePtr(new VirtualCodeDevice(driver));
                 break;
-            case DRIVER_TYPE_Virtual_Code_No_Camera:  // 虚拟验证码（无摄像头）
+            case DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA:  // 虚拟验证码（无摄像头）
                 device = VirtualCodeNoCameraDevicePtr(new VirtualCodeNoCameraDevice(driver));
                 break;
             }

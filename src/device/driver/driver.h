@@ -22,28 +22,37 @@
 // 设备类型
 enum DriverType
 {
-    DRIVER_TYPE_FingerPrint,   // 指纹
-    DRIVER_TYPE_Face,          // 人脸
-    DRIVER_TYPE_FingerVein,    // 指静脉
-    DRIVER_TYPE_Iris,          // 虹膜
-    DRIVER_TYPE_VoicePrint,    // 声纹
-    DRIVER_TYPE_UKey,          // ukey
-    DRIVER_TYPE_Virtual_Face,  // 虚拟人脸
-    DRIVER_TYPE_Virtual_Code,  // 虚拟验证码
-    DRIVER_TYPE_Virtual_Code_No_Camera,  // 虚拟验证码（无摄像头）
+    // 指纹
+    DRIVER_TYPE_FINGERPRINT,
+    // 人脸
+    DRIVER_TYPE_FACE,
+    // 指静脉
+    DRIVER_TYPE_FINGERVEIN,
+    // 虹膜
+    DRIVER_TYPE_IRIS,
+    // 声纹
+    DRIVER_TYPE_VOICEPRINT,
+    // ukey
+    DRIVER_TYPE_UKEY,
+    // 虚拟人脸
+    DRIVER_TYPE_VIRTUAL_FACE,
+    // 虚拟验证码
+    DRIVER_TYPE_VIRTUAL_CODE,
+    // 虚拟验证码（无摄像头）
+    DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA,
 };
 
 inline QString getDriverTypeStr(DriverType type)
 {
-    static const QMap<DriverType, QString> driverTypeMap = {{DRIVER_TYPE_FingerPrint, "FingerPrint"},
-                                                            {DRIVER_TYPE_Face, "Face"},
-                                                            {DRIVER_TYPE_FingerVein, "FingerVein"},
-                                                            {DRIVER_TYPE_Iris, "Iris"},
-                                                            {DRIVER_TYPE_VoicePrint, "VoicePrint"},
-                                                            {DRIVER_TYPE_UKey, "UKey"},
-                                                            {DRIVER_TYPE_Virtual_Face, "VirtualFace"},
-                                                            {DRIVER_TYPE_Virtual_Code, "VirtualCode"},
-                                                            {DRIVER_TYPE_Virtual_Code_No_Camera, "VirtualCodeNoCamera"}};
+    static const QMap<DriverType, QString> driverTypeMap = {{DRIVER_TYPE_FINGERPRINT, "FingerPrint"},
+                                                            {DRIVER_TYPE_FACE, "Face"},
+                                                            {DRIVER_TYPE_FINGERVEIN, "FingerVein"},
+                                                            {DRIVER_TYPE_IRIS, "Iris"},
+                                                            {DRIVER_TYPE_VOICEPRINT, "VoicePrint"},
+                                                            {DRIVER_TYPE_UKEY, "UKey"},
+                                                            {DRIVER_TYPE_VIRTUAL_FACE, "VirtualFace"},
+                                                            {DRIVER_TYPE_VIRTUAL_CODE, "VirtualCode"},
+                                                            {DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA, "VirtualCodeNoCamera"}};
 
     if (driverTypeMap.contains(type))
         return driverTypeMap.value(type);
