@@ -69,12 +69,30 @@ void Manager::init()
     m_driverLoader = QSharedPointer<DriverLoader>(new DriverLoader());
     m_physicalSupportDevices = m_driverLoader->getPhysicalSupportDevices();
 
-    // 程序启动时，udev已经检测到设备，需要手动触发一次
-    auto usbInfoList = UdevMonitor::enumerateDevices();
-    for (auto deviceInfo : usbInfoList)
+    // 程序启动时，udev已经检测到设备，手动枚举已连接的 USB 设备
+    struct udev *udev = udev_new();
+    struct udev_enumerate *enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, "usb");
+    udev_enumerate_scan_devices(enumerate);
+    struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
+    struct udev_list_entry *entry;
+    udev_list_entry_foreach (entry, devices)
     {
-        udevAdded(deviceInfo.idVendor, deviceInfo.idProduct, deviceInfo.busPath);
+        const char *syspath = udev_list_entry_get_name(entry);
+        struct udev_device *dev = udev_device_new_from_syspath(udev, syspath);
+
+        QString idVendor = udev_device_get_sysattr_value(dev, "idVendor");
+        QString idProduct = udev_device_get_sysattr_value(dev, "idProduct");
+        QString devNode = udev_device_get_devnode(dev);
+
+        if (!devNode.isEmpty())
+        {
+            udevAdded(idVendor, idProduct, devNode);
+        }
+        udev_device_unref(dev);
     }
+    udev_enumerate_unref(enumerate);
+    udev_unref(udev);
 
     // udev监控
     m_udevMonitor = QSharedPointer<UdevMonitor>(new UdevMonitor());
@@ -85,41 +103,44 @@ void Manager::init()
     genVirtualDevices();
 }
 
-bool Manager::genDevice(const QString& driverName, const QString& vendorId, const QString& productId, const QString& devNode)
+QString Manager::genDevice(const QString& driverName, const QString& vendorId, const QString& productId, const QString& devNode)
 {
     auto driver = m_driverLoader->loadDriver(driverName);
-    if (driver)
+    if (!driver)
     {
-        // TODO: 创建设备
-        switch (driver->getType())
-        {
-        case DRIVER_TYPE_UKEY:  // ukey
-        {
-            auto device = UkeyDevicePtr(new UkeyDevice(vendorId,
-                                                       productId,
-                                                       driver));
-            if (!device)
-            {
-                return false;
-            }
-            m_devices.insert(device->deviceID(), device);
-            break;
-        }
-
-        case DRIVER_TYPE_FINGERPRINT:   // 指纹
-        case DRIVER_TYPE_FACE:          // 人脸
-        case DRIVER_TYPE_FINGERVEIN:    // 指静脉
-        case DRIVER_TYPE_IRIS:          // 虹膜
-        case DRIVER_TYPE_VOICEPRINT:    // 声纹
-        case DRIVER_TYPE_VIRTUAL_FACE:  // 虚拟人脸
-        default:
-        {
-            break;
-        }
-        }
+        return QString();
     }
 
-    return true;
+    // TODO: 创建设备
+    switch (driver->getType())
+    {
+    case DRIVER_TYPE_UKEY:
+    {
+        auto device = UkeyDevicePtr(new UkeyDevice(vendorId,
+                                                   productId,
+                                                   driver));
+        if (!device)
+        {
+            return QString();
+        }
+        QString deviceID = device->deviceID();
+        m_devices.insert(deviceID, device);
+        return deviceID;
+    }
+
+    case DRIVER_TYPE_FINGERPRINT:
+    case DRIVER_TYPE_FACE:
+    case DRIVER_TYPE_FINGERVEIN:
+    case DRIVER_TYPE_IRIS:
+    case DRIVER_TYPE_VOICEPRINT:
+    case DRIVER_TYPE_VIRTUAL_FACE:
+    default:
+    {
+        break;
+    }
+    }
+
+    return QString();
 }
 
 bool Manager::genVirtualDevices()
@@ -175,8 +196,6 @@ bool Manager::loadRemoteDevices()
 
 void Manager::udevAdded(const QString& vendorId, const QString& productId, const QString& devNode)
 {
-    // KLOG_INFO() << "device detected: " << vendorId << productId << devNode;
-
     auto iter = m_physicalSupportDevices.begin();
     for (; iter != m_physicalSupportDevices.end(); iter++)
     {
@@ -186,64 +205,36 @@ void Manager::udevAdded(const QString& vendorId, const QString& productId, const
             if (device.first == vendorId && device.second == productId)
             {
                 KLOG_INFO() << "device detected: " << vendorId << productId << iter.key();
-                genDevice(iter.key(), vendorId, productId, devNode);
-
+                QString deviceID = genDevice(iter.key(), vendorId, productId, devNode);
+                if (!deviceID.isEmpty())
+                {
+                    m_onlineDevices[devNode] = deviceID;
+                }
                 return;
             }
         }
     }
 }
 
-void Manager::udevDeleted()
+void Manager::udevDeleted(const QString& devNode)
 {
-    QList<DeviceInfo> newUsbInfoList = UdevMonitor::enumerateDevices();
-    QStringList newBusList;
-    Q_FOREACH (auto newUsbInfo, newUsbInfoList)
+    auto it = m_onlineDevices.find(devNode);
+    if (it == m_onlineDevices.end())
     {
-        newBusList << newUsbInfo.busPath;
+        KLOG_WARNING() << "Unknown device removed:" << devNode;
+        return;
     }
 
-    QStringList oldBusList = m_onlinePhysicalDevices.keys();
-    QString deviceID;
-    int deviceType;
-    Q_FOREACH (auto busPath, oldBusList)
+    QString deviceID = it.value();
+    m_onlineDevices.erase(it);
+
+    if (m_devices.contains(deviceID))
     {
-        if (newBusList.contains(busPath))
-        {
-            continue;
-        }
-        KLOG_INFO() << "device removed:" << busPath;
-
-        // AuthDevicePtr oldAuthDevice = m_deviceMap.value(busPath);
-        // deviceID = oldAuthDevice->deviceID();
-        // deviceType = oldAuthDevice->deviceType();
-        // int removeCount = m_deviceMap.remove(busPath);
-
-        // Q_EMIT m_dbusAdaptor->DeviceDeleted(deviceType, deviceID);
-
-        // QMapIterator<DeviceInfo, int> i(m_retreyCreateDeviceMap);
-        // while (i.hasNext())
-        // {
-        //     i.next();
-        //     if (i.key().busPath == busPath)
-        //     {
-        //         m_retreyCreateDeviceMap.remove(i.key());
-        //     }
-        // }
-        // KLOG_DEBUG() << QString("device delete: bus:%1 deviceID:%2 deviceType:%3").arg(busPath).arg(deviceID).arg(deviceType);
-        // break;
+        m_devices.remove(deviceID);
     }
+
+    KLOG_INFO() << "device removed:" << devNode << "deviceID:" << deviceID;
 }
-
-// QStringList Manager::getDeviceIdsByType(int type)
-// {
-//     return QStringList();
-// }
-
-// QString Manager::getDeviceInfo(QString deviceId)
-// {
-//     return QString();
-// }
 
 QString Manager::GetDevices()
 {

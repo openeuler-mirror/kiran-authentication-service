@@ -18,8 +18,6 @@
 #include <QSharedPointer>
 #include <QSocketNotifier>
 
-#include "kas-authentication-i.h"
-
 namespace Kiran
 {
 class UdevMonitor : public QObject
@@ -29,8 +27,6 @@ public:
     explicit UdevMonitor(QObject *parent = nullptr);
     ~UdevMonitor();
 
-    static QList<DeviceInfo> enumerateDevices();
-
 private Q_SLOTS:
     void onSocketNotifierRead(int socket);
 
@@ -38,7 +34,7 @@ Q_SIGNALS:
     void deviceAdded(const QString &idVendor,
                      const QString &idProduct,
                      const QString &devNode);
-    void deviceDeleted();
+    void deviceDeleted(const QString &devNode);
 
 private:
     void init();

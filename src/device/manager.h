@@ -41,7 +41,7 @@ public:
 
     void init();
 
-    bool genDevice(const QString &driverName, const QString &vendorId, const QString &productId, const QString &devNode);
+    QString genDevice(const QString &driverName, const QString &vendorId, const QString &productId, const QString &devNode);
     bool genVirtualDevices();
 
     QString getOnlineDevicesInfo();                                               // 获取当前已上线设备信息（含远程设备）（json：type、name）
@@ -50,9 +50,7 @@ public:
     void udevAdded(const QString &vendorId,
                    const QString &productId,
                    const QString &devNode);  // udev发现本地设备
-    void udevDeleted();
-    // QStringList getDeviceIdsByType(int type);  // 通过设备类型获取设备id
-    // QString getDeviceInfo(QString deviceId);   // 通过设备id获取设备信息（json：type、name）
+    void udevDeleted(const QString &devNode);
 
     QString GetDevices();
     QString GetDevicesByType(int device_type);
@@ -72,6 +70,6 @@ private:
     QSharedPointer<DriverLoader> m_driverLoader;
     QMap<QString, QVector<QPair<QString, QString>>> m_physicalSupportDevices;  // key-driverName value-vid/pid
 
-    QMap<QString, QVector<QPair<QString, QString>>> m_onlinePhysicalDevices;
+    QMap<QString, QString> m_onlineDevices;  // key=devNode(busPath), value=deviceID(UUID)
 };
 }  // namespace Kiran
