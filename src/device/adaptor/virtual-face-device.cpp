@@ -22,7 +22,7 @@ namespace Kiran
 {
 VirtualFaceDevice::VirtualFaceDevice(DriverPtr driver, QObject* parent) : Device(driver, parent)
 {
-    m_driver = driver.staticCast<VirtualFaceDriver>();
+    m_driver = std::static_pointer_cast<VirtualFaceDriver>(driver);
     connect(&m_identifyWatcher, &QFutureWatcher<int>::finished, this, [this]() {
         const int ret = m_identifyWatcher.result();
         const bool stopped = m_identifyStopRequested;
@@ -37,7 +37,7 @@ VirtualFaceDevice::VirtualFaceDevice(DriverPtr driver, QObject* parent) : Device
 
         if (0 != ret)
         {
-            QString msg = m_driver->getErrorMsg(ret);
+            QString msg = QString::fromStdString(m_driver->getErrorMsg(ret));
             KLOG_ERROR() << "identify fail:" << msg;
             Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_NOT_MATCH, msg);
         }
@@ -70,7 +70,7 @@ void VirtualFaceDevice::EnrollStop()
 
 void VirtualFaceDevice::IdentifyStart(const QString& extraInfo)
 {
-    KLOG_INFO() << "VirtualFaceDevice IdentifyStart, " << m_driver->getDriverName();
+    KLOG_INFO() << "VirtualFaceDevice IdentifyStart, " << QString::fromStdString(m_driver->getDriverName());
     KLOG_INFO() << "extraInfo:" << extraInfo;
 
     if (DEVICE_STATUS_IDLE != deviceStatus())
@@ -86,7 +86,7 @@ void VirtualFaceDevice::IdentifyStart(const QString& extraInfo)
     auto driver = m_driver;
     auto info = extraInfo;
     m_identifyWatcher.setFuture(QtConcurrent::run([driver, info]() -> int {
-        return driver->identify(info);
+        return driver->identify(info.toStdString());
     }));
 }
 
@@ -109,7 +109,7 @@ void VirtualFaceDevice::IdentifyResultPostProcess(const QString& extraInfo)
 {
     KLOG_INFO() << "VirtualFaceDevice identifyResultPostProcess, extraInfo:" << extraInfo;
     // 识别结果后处理（如上报日志、开启人走监测等）
-    m_driver->identifyResultPostProcess(extraInfo);
+    m_driver->identifyResultPostProcess(extraInfo.toStdString());
 }
 
 }  // namespace Kiran

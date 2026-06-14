@@ -30,7 +30,6 @@ target_include_directories(
           ${PROJECT_BINARY_DIR}
           ${PROJECT_SOURCE_DIR}
           ${PROJECT_SOURCE_DIR}/include
-          ${PROJECT_SOURCE_DIR}/src/device/driver
           ${KLOG_QT5_INCLUDE_DIRS}
           ${KIRAN_INCLUDE_DIRS})
 

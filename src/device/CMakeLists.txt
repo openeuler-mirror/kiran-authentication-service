@@ -36,7 +36,7 @@ qt5_add_dbus_adaptor(
 qt5_add_dbus_adaptor(
   AUTH_DEVICE_ADAPTOR_SRCS
   ${CMAKE_SOURCE_DIR}/data/dbus/com.kylinsec.Kiran.AuthDevice.Device.xml
-  ${CMAKE_SOURCE_DIR}/src/device/device/device.h
+  ${CMAKE_SOURCE_DIR}/src/device/adaptor/device.h
   Kiran::Device
   auth_device_adaptor
   AuthDeviceAdaptor)
@@ -63,8 +63,8 @@ target_link_libraries(
 set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH
                                                 "${KAS_INSTALL_DEP_LIBDIR}")
 
-# 安装 driver 文件夹，用于提供给其他开发者使用
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/driver
+# 安装 driver 接口文件，用于提供给其他开发者使用
+install(FILES ${PROJECT_SOURCE_DIR}/include/driver-i.h
         DESTINATION ${KAS_INSTALL_INCLUDE})
 
 install(FILES ${QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})

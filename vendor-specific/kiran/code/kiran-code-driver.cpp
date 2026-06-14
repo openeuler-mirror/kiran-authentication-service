@@ -22,7 +22,7 @@
 #include "kiran-define.h"
 
 KiranCodeDriver::KiranCodeDriver(QObject *parent)
-    : VirtualCodeDriver(parent), KiranDriverBase(parent), m_enableScreenRecorder(false)
+    : QObject(parent), VirtualCodeDriver(), KiranDriverBase(parent), m_enableScreenRecorder(false)
 {
     loadTranslator("kiran-code");
 }
@@ -31,23 +31,23 @@ KiranCodeDriver::~KiranCodeDriver()
 {
 }
 
-QString KiranCodeDriver::getDriverName() { return "virtual-code-kiran"; }
+std::string KiranCodeDriver::getDriverName() { return "virtual-code-kiran"; }
 
-QString KiranCodeDriver::getErrorMsg(int errorNum)
+std::string KiranCodeDriver::getErrorMsg(int errorNum)
 {
-    return getKiranErrorMsg(errorNum);
+    return getKiranErrorMsg(errorNum).toStdString();
 }
 
 DriverType KiranCodeDriver::getType() { return DRIVER_TYPE_VIRTUAL_CODE; }
 
-int KiranCodeDriver::identify(const QString &extraInfo)
+int KiranCodeDriver::identify(const std::string &extraInfo)
 {
-    return verifyAuthorizationCode(extraInfo);
+    return verifyAuthorizationCode(QString::fromStdString(extraInfo));
 }
 
-void KiranCodeDriver::identifyResultPostProcess(const QString &extraInfo)
+void KiranCodeDriver::identifyResultPostProcess(const std::string &extraInfo)
 {
-    QJsonDocument extraInfoJsonDoc = QJsonDocument::fromJson(extraInfo.toUtf8());
+    QJsonDocument extraInfoJsonDoc = QJsonDocument::fromJson(QString::fromStdString(extraInfo).toUtf8());
     QJsonObject jsonObj = extraInfoJsonDoc.object();
 
     int result = jsonObj.value("result").toInt(0);
@@ -107,9 +107,10 @@ int KiranCodeDriver::verifyAuthorizationCode(const QString &extraInfo)
     return KIRAN_SUCCESS;
 }
 
-QList<int> KiranCodeDriver::getSupportedAuthTypes()
+std::vector<int> KiranCodeDriver::getSupportedAuthTypes()
 {
-    return getSupportedAuthTypesFromService();
+    QList<int> qtList = getSupportedAuthTypesFromService();
+    return std::vector<int>(qtList.begin(), qtList.end());
 }
 
 extern "C" Driver *createDriver() { return new KiranCodeDriver(); }

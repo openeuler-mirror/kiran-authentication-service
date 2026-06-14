@@ -15,7 +15,7 @@
 #pragma once
 
 #include "device.h"
-#include "driver/ukey-driver.h"
+#include "driver-i.h"
 #include "lib/feature-data.h"
 
 namespace Kiran

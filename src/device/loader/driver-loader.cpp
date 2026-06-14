@@ -21,9 +21,7 @@
 
 #include "config.h"
 #include "driver-loader.h"
-#include "driver/driver.h"
-#include "driver/physical-driver.h"
-#include "driver/ukey-driver.h"
+#include "driver-i.h"
 
 namespace Kiran
 {
@@ -66,16 +64,25 @@ void DriverLoader::init()
             case DRIVER_TYPE_UKEY:
             {
                 auto type = driver->getType();
-                auto vidPids = ((PhysicalDriver *)driver.data())->getSupportVidPid();
+                auto stdVidPids = static_cast<PhysicalDriver *>(driver.get())->getSupportVidPid();
+                QVector<QPair<QString, QString>> vidPids;
+                for (const auto &pair : stdVidPids)
+                {
+                    vidPids.append(qMakePair(
+                        QString::fromStdString(pair.first),
+                        QString::fromStdString(pair.second)));
+                }
                 m_physicalSupportDevices[file] = vidPids;
-                m_physicalDriverInfos[file] = PhysicalDriverInfo{file, driver->getDriverName(), type, vidPids};
+                m_physicalDriverInfos[file] = PhysicalDriverInfo{
+                    file,
+                    QString::fromStdString(driver->getDriverName()),
+                    type,
+                    vidPids};
 
-                KLOG_INFO() << "driver:" << file << "driver name:" << driver->getDriverName() << "type:" << getDriverTypeStr(type) << "support vidpids:" << vidPids;
-
-                // if (type == DRIVER_TYPE_UKEY)
-                // {
-                //     KLOG_INFO() << "ukey online serial:" << ((UKeyDriver *)driver.data())->getOnlineSerials();
-                // }
+                KLOG_INFO() << "driver:" << file
+                            << "driver name:" << QString::fromStdString(driver->getDriverName())
+                            << "type:" << getDriverTypeStr(type)
+                            << "support vidpids:" << vidPids;
             }
             break;
             case DRIVER_TYPE_VIRTUAL_FACE:

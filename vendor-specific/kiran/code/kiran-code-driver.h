@@ -19,23 +19,23 @@
 #include <QSharedPointer>
 
 #include "kiran-driver-base.h"
-#include "src/device/driver/virtual-code-driver.h"
+#include "driver-i.h"
 
-class KiranCodeDriver : public VirtualCodeDriver, public KiranDriverBase
+class KiranCodeDriver : public QObject, public VirtualCodeDriver, public KiranDriverBase
 {
     Q_OBJECT
 public:
     explicit KiranCodeDriver(QObject *parent = nullptr);
     ~KiranCodeDriver();
 
-    QString getDriverName() override;
-    QString getErrorMsg(int errorNum) override;
+    std::string getDriverName() override;
+    std::string getErrorMsg(int errorNum) override;
     DriverType getType() override;
 
-    int identify(const QString &extraInfo) override;
-    void identifyResultPostProcess(const QString &extraInfo) override;
+    int identify(const std::string &extraInfo) override;
+    void identifyResultPostProcess(const std::string &extraInfo) override;
 
-    QList<int> getSupportedAuthTypes() override;
+    std::vector<int> getSupportedAuthTypes() override;
 
     int verifyAuthorizationCode(const QString &extraInfo);
 

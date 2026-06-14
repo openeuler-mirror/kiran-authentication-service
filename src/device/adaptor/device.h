@@ -21,7 +21,7 @@
 #include <QObject>
 #include <QSharedPointer>
 
-#include "driver/driver.h"
+#include "driver-i.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-data.h"  // for dbus xml
 
@@ -30,6 +30,7 @@ class AuthDeviceAdaptor;
 namespace Kiran
 {
 typedef void *Handle;
+
 class Device : public QObject, protected QDBusContext
 {
     Q_OBJECT
@@ -38,21 +39,68 @@ class Device : public QObject, protected QDBusContext
     Q_PROPERTY(int DeviceType READ deviceType)
     Q_PROPERTY(int DeviceStatus READ deviceStatus)
 public:
+    /**
+     * @brief 构造设备对象
+     * @param driver 底层驱动智能指针
+     * @param parent 父 QObject，可为空
+     */
     explicit Device(DriverPtr driver, QObject *parent = nullptr);
+
     virtual ~Device();
 
+    /**
+     * @brief 获取设备类型
+     * @return DeviceType 枚举值
+     */
     virtual DeviceType deviceType() = 0;
-    QString driverName() { return m_driver->getDriverName(); }
+
+    /** @brief 获取驱动名称 */
+    QString driverName() { return QString::fromStdString(m_driver->getDriverName()); }
+
+    /** @brief 获取 DBus 对象路径 */
     QDBusObjectPath getObjectPath() { return m_objectPath; };
 
+    /** @brief 获取设备唯一标识（UUID） */
     QString deviceID() { return m_devId; };
+
+    /**
+     * @brief 启动录入流程
+     * @param extraInfo 附加信息（JSON 字符串）
+     */
     virtual void EnrollStart(const QString &extraInfo) = 0;
+
+    /**
+     * @brief 停止录入流程
+     */
     virtual void EnrollStop() = 0;
+
+    /**
+     * @brief 启动识别（认证）流程
+     * @param extraInfo 附加信息（JSON 字符串）
+     */
     virtual void IdentifyStart(const QString &extraInfo) = 0;
+
+    /**
+     * @brief 停止识别流程
+     */
     virtual void IdentifyStop() = 0;
+
+    /**
+     * @brief 获取已录入的特征 ID 列表
+     * @return 特征 ID 字符串列表
+     */
     virtual QStringList GetFeatureIDList() = 0;
+
+    /** @brief 获取当前设备状态 */
     int deviceStatus() { return m_status; };
 
+    /**
+     * @brief 识别结果后处理（无论成功失败）
+     *
+     * 子类可重写以实现日志上报、人走监测等后处理逻辑。
+     *
+     * @param extraInfo 附加信息（JSON 字符串）
+     */
     virtual void IdentifyResultPostProcess(const QString &extraInfo) {};
 
     // signals:
@@ -66,15 +114,20 @@ private Q_SLOTS:
     void onNameLost(const QString &serviceName);
 
 public:
+    /** 设备唯一标识（UUID） */
     QString m_devId;
+    /** 底层驱动智能指针 */
     DriverPtr m_driver;
+    /** 设备状态，参见 DeviceStatusx */
     int m_status;
 
     QSharedPointer<AuthDeviceAdaptor> m_dbusAdaptor;
+    /** DBus 注册对象路径 */
     QDBusObjectPath m_objectPath;
     QSharedPointer<QDBusServiceWatcher> m_serviceWatcher;
 };
 
+/** 设备对象智能指针类型 */
 typedef QSharedPointer<Device> DevicePtr;
 
 }  // namespace Kiran

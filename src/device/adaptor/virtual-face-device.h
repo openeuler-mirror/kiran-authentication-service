@@ -15,19 +15,19 @@
 #pragma once
 
 #include <QFutureWatcher>
-
 #include "device.h"
-#include "driver/virtual-code-driver.h"
+#include "driver-i.h"
 
 namespace Kiran
 {
-class VirtualCodeBaseDevice : public Device
+class VirtualFaceDevice : public Device
 {
     Q_OBJECT
 public:
-    VirtualCodeBaseDevice(DriverPtr driver, QObject *parent = nullptr);
-    ~VirtualCodeBaseDevice();
+    VirtualFaceDevice(DriverPtr driver, QObject *parent = nullptr);
+    ~VirtualFaceDevice();
 
+    DeviceType deviceType() override;
     void EnrollStart(const QString &extraInfo) override;
     void EnrollStop() override;
     void IdentifyStart(const QString &extraInfo) override;
@@ -36,12 +36,11 @@ public:
 
     void IdentifyResultPostProcess(const QString &extraInfo) override;
 
-    virtual DeviceType deviceType() = 0;
-
-protected:
-    VirtualCodeDriverPtr m_driver;
+private:
+    VirtualFaceDriverPtr m_driver;
     QFutureWatcher<int> m_identifyWatcher;
     bool m_identifyStopRequested{false};
 };
+typedef QSharedPointer<VirtualFaceDevice> VirtualFaceDevicePtr;
 
 }  // namespace Kiran

@@ -18,23 +18,23 @@
 #include <QSharedPointer>
 
 #include "kiran-driver-base.h"
-#include "src/device/driver/virtual-face-driver.h"
+#include "driver-i.h"
 
-class KiranFaceDriver : public VirtualFaceDriver, public KiranDriverBase
+class KiranFaceDriver : public QObject, public VirtualFaceDriver, public KiranDriverBase
 {
     Q_OBJECT
 public:
     explicit KiranFaceDriver(QObject *parent = nullptr);
     ~KiranFaceDriver();
 
-    QString getDriverName() override;
-    QString getErrorMsg(int errorNum) override;
+    std::string getDriverName() override;
+    std::string getErrorMsg(int errorNum) override;
     DriverType getType() override;
 
-    int identify(const QString &extraInfo) override;
-    void identifyResultPostProcess(const QString &extraInfo) override;
+    int identify(const std::string &extraInfo) override;
+    void identifyResultPostProcess(const std::string &extraInfo) override;
 
-    QList<int> getSupportedAuthTypes() override;
+    std::vector<int> getSupportedAuthTypes() override;
 
 private:
     int startSearch(const QString &extraInfo);

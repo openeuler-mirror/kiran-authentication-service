@@ -16,7 +16,7 @@
 #include <QDBusMessage>
 
 #include "auth_device_adaptor.h"
-#include "driver/ukey-driver.h"
+#include "driver-i.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-data.h"
 #include "lib/feature-db.h"
@@ -35,7 +35,7 @@ UkeyDevice::UkeyDevice(const QString& vid, const QString& pid, DriverPtr driver,
 {
     KLOG_INFO() << "UkeyDevice::UkeyDevice"
                 << "vid:" << vid << "pid:" << pid << "deviceID:" << deviceID();
-    m_driver = driver.staticCast<UKeyDriver>();
+    m_driver = std::static_pointer_cast<UKeyDriver>(driver);
     m_idVendor = vid;
     m_idProduct = pid;
 }
@@ -72,7 +72,8 @@ void UkeyDevice::EnrollStart(const QString& extraInfo)
     // 如果传过来的序列号为空，则使用插入设备的第一个序列号
     if (serialNumber.isEmpty())
     {
-        serialNumber = m_driver->getOnlineSerials().first();
+        auto serials = m_driver->getOnlineSerials();
+        serialNumber = serials.empty() ? QString() : QString::fromStdString(serials.front());
     }
 
     do
@@ -92,13 +93,15 @@ void UkeyDevice::EnrollStart(const QString& extraInfo)
         }
 
         QByteArray pubKey;
-        int ret = m_driver->enroll(pin, pubKey, serialNumber);
+        std::vector<uint8_t> stdPubKey;
+        int ret = m_driver->enroll(pin.toStdString(), stdPubKey, serialNumber.toStdString());
         if (ret != 0)
         {
             notifyEnrollProcess(ENROLL_PROCESS_FAIL, ret);
         }
         else
         {
+            pubKey = QByteArray(reinterpret_cast<const char *>(stdPubKey.data()), stdPubKey.size());
             // 特征存储
             // NOTE: 这里没有传featureName、IID、userID
             auto type = deviceType();
@@ -152,7 +155,8 @@ void UkeyDevice::IdentifyStart(const QString& extraInfo)
     QString serialNumber = Utils::getValueFromJsonString(extraInfo, AUTH_DEVICE_JSON_KEY_SERIAL_NUMBER).toString();
     if (serialNumber.isEmpty())
     {
-        serialNumber = m_driver->getOnlineSerials().first();
+        auto serials = m_driver->getOnlineSerials();
+        serialNumber = serials.empty() ? QString() : QString::fromStdString(serials.front());
     }
 
     // 对于UKey而言，一个UKey设备只能绑定到一个用户（设备内私钥只有一份，公钥是否可以生成多个？），所以featuresThatNeedToIdentify大小应该为1
@@ -199,7 +203,9 @@ void UkeyDevice::IdentifyStart(const QString& extraInfo)
         for (; j < featuresThatNeedToIdentify.count(); j++)
         {
             feature = featuresThatNeedToIdentify.value(j);
-            ret = m_driver->identify(pin, feature, serialNumber);
+            std::vector<uint8_t> stdFeature(reinterpret_cast<const uint8_t *>(feature.constData()),
+                                            reinterpret_cast<const uint8_t *>(feature.constData()) + feature.size());
+            ret = m_driver->identify(pin.toStdString(), stdFeature, serialNumber.toStdString());
             if (0 == ret)
             {
                 break;
@@ -207,7 +213,7 @@ void UkeyDevice::IdentifyStart(const QString& extraInfo)
         }
         if (0 != ret)
         {
-            KLOG_ERROR() << "identify fail:" << m_driver->getErrorMsg(ret);
+            KLOG_ERROR() << "identify fail:" << QString::fromStdString(m_driver->getErrorMsg(ret));
             notifyIdentifyProcess(IDENTIFY_PROCESS_NO_MATCH, ret);
         }
         else
@@ -232,7 +238,8 @@ void UkeyDevice::IdentifyStop()
 
 QStringList UkeyDevice::GetFeatureIDList()
 {
-    auto serialNumber = m_driver->getOnlineSerials().first();
+    auto serials = m_driver->getOnlineSerials();
+    QString serialNumber = serials.empty() ? QString() : QString::fromStdString(serials.front());
 
     QStringList featureIDs = FeatureDB::getInstance()->getFeatureID(m_idVendor, m_idProduct, deviceType(), serialNumber);
     return featureIDs;
@@ -245,7 +252,7 @@ void UkeyDevice::notifyEnrollProcess(EnrollProcess process, int error, const Fea
     reason = getPinErrorReson(error);
     if (error != SAR_OK)
     {
-        KLOG_DEBUG() << "Ukey Error Reason:" << m_driver->getErrorMsg(error);
+        KLOG_DEBUG() << "Ukey Error Reason:" << QString::fromStdString(m_driver->getErrorMsg(error));
     }
 
     QString message = tr("Binding user failed!");

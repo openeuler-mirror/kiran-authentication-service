@@ -19,9 +19,9 @@
 #include <QObject>
 #include <QSharedPointer>
 
-#include "device/device.h"
-#include "driver-loader.h"
-#include "udev-monitor.h"
+#include "adaptor/device.h"
+#include "loader/driver-loader.h"
+#include "loader/udev-monitor.h"
 
 class AuthDeviceManagerAdaptor;
 

@@ -15,11 +15,11 @@
 #include <qt5-log-i.h>
 
 #include "auth_device_manager_adaptor.h"
-#include "device/device.h"
-#include "device/ukey-device.h"
-#include "device/virtual-code-device.h"
-#include "device/virtual-code-no-camera-device.h"
-#include "device/virtual-face-device.h"
+#include "adaptor/device.h"
+#include "adaptor/ukey-device.h"
+#include "adaptor/virtual-code-device.h"
+#include "adaptor/virtual-code-no-camera-device.h"
+#include "adaptor/virtual-face-device.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
 #include "manager.h"
@@ -338,11 +338,13 @@ QString Manager::GetSupportedAuthTypes()
     {
         if (device && device->m_driver)
         {
-            QList<int> driverTypes = device->m_driver->getSupportedAuthTypes();
+            std::vector<int> driverTypes = device->m_driver->getSupportedAuthTypes();
             for (int type : driverTypes)
             {
                 if (!authTypes.contains(type))
+                {
                     authTypes << type;
+                }
             }
         }
     }

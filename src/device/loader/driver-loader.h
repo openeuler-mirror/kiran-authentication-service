@@ -16,15 +16,42 @@
 
 #pragma once
 
+#include <QMap>
 #include <QObject>
+#include <QString>
+#include <QVector>
 
-#include "driver/driver.h"
+#include "driver-i.h"
+
+inline QString getDriverTypeStr(DriverType type)
+{
+    static const QMap<DriverType, QString> driverTypeMap = {
+        {DRIVER_TYPE_FINGERPRINT, "FingerPrint"},
+        {DRIVER_TYPE_FACE, "Face"},
+        {DRIVER_TYPE_FINGERVEIN, "FingerVein"},
+        {DRIVER_TYPE_IRIS, "Iris"},
+        {DRIVER_TYPE_VOICEPRINT, "VoicePrint"},
+        {DRIVER_TYPE_UKEY, "UKey"},
+        {DRIVER_TYPE_VIRTUAL_FACE, "VirtualFace"},
+        {DRIVER_TYPE_VIRTUAL_CODE, "VirtualCode"},
+        {DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA, "VirtualCodeNoCamera"}};
+
+    if (driverTypeMap.contains(type))
+    {
+        return driverTypeMap.value(type);
+    }
+    else
+    {
+        qWarning() << "Unknown driver type:" << static_cast<int>(type);
+        return "Unknown";
+    }
+}
 
 namespace Kiran
 {
 struct PhysicalDriverInfo
 {
-    // 驱动
+    // 驱动路径
     QString driverPath;
     // 驱动名称
     QString name;

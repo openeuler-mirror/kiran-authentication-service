@@ -21,7 +21,8 @@
 #include "kiran-define.h"
 #include "kiran-face-driver.h"
 
-KiranFaceDriver::KiranFaceDriver(QObject *parent) : VirtualFaceDriver(parent), KiranDriverBase(parent)
+KiranFaceDriver::KiranFaceDriver(QObject *parent)
+    : QObject(parent), VirtualFaceDriver(), KiranDriverBase(parent)
 {
     loadTranslator("kiran-face");
 }
@@ -30,23 +31,23 @@ KiranFaceDriver::~KiranFaceDriver()
 {
 }
 
-QString KiranFaceDriver::getDriverName() { return "virtual-face-kiran"; }
+std::string KiranFaceDriver::getDriverName() { return "virtual-face-kiran"; }
 
-QString KiranFaceDriver::getErrorMsg(int errorNum)
+std::string KiranFaceDriver::getErrorMsg(int errorNum)
 {
-    return getKiranErrorMsg(errorNum);
+    return getKiranErrorMsg(errorNum).toStdString();
 }
 
 DriverType KiranFaceDriver::getType() { return DRIVER_TYPE_VIRTUAL_FACE; }
 
-int KiranFaceDriver::identify(const QString &extraInfo)
+int KiranFaceDriver::identify(const std::string &extraInfo)
 {
-    return startSearch(extraInfo);
+    return startSearch(QString::fromStdString(extraInfo));
 }
 
-void KiranFaceDriver::identifyResultPostProcess(const QString &extraInfo)
+void KiranFaceDriver::identifyResultPostProcess(const std::string &extraInfo)
 {
-    QJsonDocument extraInfoJsonDoc = QJsonDocument::fromJson(extraInfo.toUtf8());
+    QJsonDocument extraInfoJsonDoc = QJsonDocument::fromJson(QString::fromStdString(extraInfo).toUtf8());
     QJsonObject jsonObj = extraInfoJsonDoc.object();
 
     int result = jsonObj.value("result").toInt(0);
@@ -139,9 +140,10 @@ int KiranFaceDriver::startSearch(const QString &extraInfo)
     return KIRAN_SUCCESS;
 }
 
-QList<int> KiranFaceDriver::getSupportedAuthTypes()
+std::vector<int> KiranFaceDriver::getSupportedAuthTypes()
 {
-    return getSupportedAuthTypesFromService();
+    QList<int> qtList = getSupportedAuthTypesFromService();
+    return std::vector<int>(qtList.begin(), qtList.end());
 }
 
 extern "C" Driver *createDriver() { return new KiranFaceDriver(); }
