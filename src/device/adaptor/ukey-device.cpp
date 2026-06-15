@@ -101,7 +101,7 @@ void UkeyDevice::doEnrollStart(const QString& extraInfo)
         }
         else
         {
-            pubKey = QByteArray(reinterpret_cast<const char *>(stdPubKey.data()), stdPubKey.size());
+            pubKey = QByteArray(reinterpret_cast<const char*>(stdPubKey.data()), stdPubKey.size());
             // 特征存储
             // NOTE: 这里没有传featureName、IID、userID
             auto type = deviceType();
@@ -203,8 +203,8 @@ void UkeyDevice::doIdentifyStart(const QString& extraInfo)
         for (; j < featuresThatNeedToIdentify.count(); j++)
         {
             feature = featuresThatNeedToIdentify.value(j);
-            std::vector<uint8_t> stdFeature(reinterpret_cast<const uint8_t *>(feature.constData()),
-                                            reinterpret_cast<const uint8_t *>(feature.constData()) + feature.size());
+            std::vector<uint8_t> stdFeature(reinterpret_cast<const uint8_t*>(feature.constData()),
+                                            reinterpret_cast<const uint8_t*>(feature.constData()) + feature.size());
             ret = m_driver->identify(pin.toStdString(), stdFeature, serialNumber.toStdString());
             if (0 == ret)
             {

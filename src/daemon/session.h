@@ -57,6 +57,7 @@ public:
         AUTH_CODE_STEP_SELECT,     // 等待用户选择：申请验证码还是输入验证码
         AUTH_CODE_STEP_INPUT_CODE  // 等待用户输入验证码
     };
+
 public:
     // 如果只允许对特定用户进行认证，则创建对象时需要指定用户名
     Session(uint32_t sessionID,
@@ -113,7 +114,7 @@ private:
     virtual void interrupt();
     virtual void cancel();
     virtual void end();
-    virtual void onEnrollStatus(const QString &data, int progress, int result, const QString &message){};
+    virtual void onEnrollStatus(const QString &data, int progress, int result, const QString &message) {};
     virtual void onIdentifyStatus(const QString &bid, int result, const QString &message);
 
 private:

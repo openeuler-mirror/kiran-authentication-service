@@ -14,12 +14,12 @@
 
 #include <qt5-log-i.h>
 
-#include "auth_device_manager_adaptor.h"
 #include "adaptor/device.h"
 #include "adaptor/ukey-device.h"
 #include "adaptor/virtual-code-device.h"
 #include "adaptor/virtual-code-no-camera-device.h"
 #include "adaptor/virtual-face-device.h"
+#include "auth_device_manager_adaptor.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
 #include "manager.h"
@@ -69,16 +69,16 @@ void Manager::init()
     m_driverLoader = QSharedPointer<DriverLoader>(new DriverLoader());
 
     // 程序启动时，udev已经检测到设备，手动枚举已连接的 USB 设备
-    struct udev *udev = udev_new();
-    struct udev_enumerate *enumerate = udev_enumerate_new(udev);
+    struct udev* udev = udev_new();
+    struct udev_enumerate* enumerate = udev_enumerate_new(udev);
     udev_enumerate_add_match_subsystem(enumerate, "usb");
     udev_enumerate_scan_devices(enumerate);
-    struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
-    struct udev_list_entry *entry;
-    udev_list_entry_foreach (entry, devices)
+    struct udev_list_entry* devices = udev_enumerate_get_list_entry(enumerate);
+    struct udev_list_entry* entry;
+    udev_list_entry_foreach(entry, devices)
     {
-        const char *syspath = udev_list_entry_get_name(entry);
-        struct udev_device *dev = udev_device_new_from_syspath(udev, syspath);
+        const char* syspath = udev_list_entry_get_name(entry);
+        struct udev_device* dev = udev_device_new_from_syspath(udev, syspath);
 
         QString idVendor = udev_device_get_sysattr_value(dev, "idVendor");
         QString idProduct = udev_device_get_sysattr_value(dev, "idProduct");

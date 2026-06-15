@@ -73,7 +73,7 @@ public:
     DriverPtr loadDriver(const QString &driverName);
 
     QMap<QString, QVector<QPair<QString, QString>>> getPhysicalSupportDevices() { return m_physicalSupportDevices; };  // 获取物理设备支持信息
-    QStringList getVirtualDrivers() { return m_virtualDrivers; };                                                     // 获取虚拟设备驱动信息
+    QStringList getVirtualDrivers() { return m_virtualDrivers; };                                                      // 获取虚拟设备驱动信息
     QMap<QString, PhysicalDriverInfo> getPhysicalDriverInfos() { return m_physicalDriverInfos; };                      // 获取物理设备驱动信息
 
 private:

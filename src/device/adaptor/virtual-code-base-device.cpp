@@ -24,7 +24,8 @@ VirtualCodeBaseDevice::VirtualCodeBaseDevice(DriverPtr driver, QObject *parent)
     : Device(driver, parent)
 {
     m_driver = std::static_pointer_cast<VirtualCodeDriver>(driver);
-    connect(&m_identifyWatcher, &QFutureWatcher<int>::finished, this, [this]() {
+    connect(&m_identifyWatcher, &QFutureWatcher<int>::finished, this, [this]()
+            {
         const int ret = m_identifyWatcher.result();
         const bool stopped = m_identifyStopRequested;
         m_identifyStopRequested = false;
@@ -46,8 +47,7 @@ VirtualCodeBaseDevice::VirtualCodeBaseDevice(DriverPtr driver, QObject *parent)
         {
             KLOG_INFO() << "identify success";
             Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_MATCH, tr("identify success"));
-        }
-    });
+        } });
 }
 
 VirtualCodeBaseDevice::~VirtualCodeBaseDevice() {}
@@ -78,9 +78,8 @@ void VirtualCodeBaseDevice::doIdentifyStart(const QString &extraInfo)
     m_identifyStopRequested = false;
     auto driver = m_driver;
     auto info = extraInfo;
-    m_identifyWatcher.setFuture(QtConcurrent::run([driver, info]() -> int {
-        return driver->identify(info.toStdString());
-    }));
+    m_identifyWatcher.setFuture(QtConcurrent::run([driver, info]() -> int
+                                                  { return driver->identify(info.toStdString()); }));
 }
 
 void VirtualCodeBaseDevice::IdentifyStop()

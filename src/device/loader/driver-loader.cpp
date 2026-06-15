@@ -20,8 +20,8 @@
 #include <QLibrary>
 
 #include "config.h"
-#include "driver-loader.h"
 #include "driver-i.h"
+#include "driver-loader.h"
 
 namespace Kiran
 {
@@ -141,8 +141,7 @@ DriverPtr DriverLoader::loadDriver(const QString &driverName)
                                 {
                                     libPtr->unload();
                                     delete libPtr;
-                                }
-                            });
+                                } });
     if (!driver)
     {
         libPtr->unload();

@@ -52,59 +52,72 @@ public:
 
 // struct -> QJsonObject
 template <typename T>
-inline QJsonObject structToJson(const T &obj) {
-  QJsonObject json;
-  const QMetaObject *metaObj = &T::staticMetaObject;
-  for (int i = metaObj->propertyOffset(); i < metaObj->propertyCount(); ++i) {
-    QMetaProperty prop = metaObj->property(i);
-    QVariant value = prop.readOnGadget(&obj);
+inline QJsonObject structToJson(const T &obj)
+{
+    QJsonObject json;
+    const QMetaObject *metaObj = &T::staticMetaObject;
+    for (int i = metaObj->propertyOffset(); i < metaObj->propertyCount(); ++i)
+    {
+        QMetaProperty prop = metaObj->property(i);
+        QVariant value = prop.readOnGadget(&obj);
 
-    // 仅对 QByteArray 做 base64
-    if (prop.type() == QVariant::ByteArray) {
-      QByteArray ba = value.toByteArray();
-      json[prop.name()] = QString::fromUtf8(ba.toBase64());
-    } else {
-      json[prop.name()] = QJsonValue::fromVariant(value);
+        // 仅对 QByteArray 做 base64
+        if (prop.type() == QVariant::ByteArray)
+        {
+            QByteArray ba = value.toByteArray();
+            json[prop.name()] = QString::fromUtf8(ba.toBase64());
+        }
+        else
+        {
+            json[prop.name()] = QJsonValue::fromVariant(value);
+        }
     }
-  }
-  return json;
+    return json;
 }
 
 // QJsonObject -> struct
 template <typename T>
-inline T jsonToStruct(const QJsonObject &json) {
-  T obj;
-  const QMetaObject *metaObj = &T::staticMetaObject;
-  for (int i = metaObj->propertyOffset(); i < metaObj->propertyCount(); ++i) {
-    QMetaProperty prop = metaObj->property(i);
-    if (!json.contains(prop.name())) continue;
+inline T jsonToStruct(const QJsonObject &json)
+{
+    T obj;
+    const QMetaObject *metaObj = &T::staticMetaObject;
+    for (int i = metaObj->propertyOffset(); i < metaObj->propertyCount(); ++i)
+    {
+        QMetaProperty prop = metaObj->property(i);
+        if (!json.contains(prop.name())) continue;
 
-    QVariant value = json[prop.name()].toVariant();
+        QVariant value = json[prop.name()].toVariant();
 
-    if (prop.type() == QVariant::ByteArray) {
-      QByteArray ba = QByteArray::fromBase64(value.toString().toUtf8());
-      prop.writeOnGadget(&obj, ba);
-    } else {
-      prop.writeOnGadget(&obj, value);
+        if (prop.type() == QVariant::ByteArray)
+        {
+            QByteArray ba = QByteArray::fromBase64(value.toString().toUtf8());
+            prop.writeOnGadget(&obj, ba);
+        }
+        else
+        {
+            prop.writeOnGadget(&obj, value);
+        }
     }
-  }
-  return obj;
+    return obj;
 }
 
 // 结构体 → JSON 字符串
 template <typename T>
 inline QString structToJsonString(
-    const T &obj, QJsonDocument::JsonFormat format = QJsonDocument::Compact) {
-  return QString::fromUtf8(QJsonDocument(structToJson(obj)).toJson(format));
+    const T &obj, QJsonDocument::JsonFormat format = QJsonDocument::Compact)
+{
+    return QString::fromUtf8(QJsonDocument(structToJson(obj)).toJson(format));
 }
 
 // JSON 字符串 → 结构体
 template <typename T>
-inline T jsonStringToStruct(const QString &jsonStr) {
-  QJsonParseError err;
-  QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8(), &err);
-  if (err.error != QJsonParseError::NoError || !doc.isObject()) {
-    return T();  // 返回默认构造的对象
-  }
-  return jsonToStruct<T>(doc.object());
+inline T jsonStringToStruct(const QString &jsonStr)
+{
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8(), &err);
+    if (err.error != QJsonParseError::NoError || !doc.isObject())
+    {
+        return T();  // 返回默认构造的对象
+    }
+    return jsonToStruct<T>(doc.object());
 }

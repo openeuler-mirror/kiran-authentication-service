@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include <functional>
 #include <QSharedPointer>
 #include <QTime>
 #include <QVariantMap>
+#include <functional>
 
 #include "lib/feature-data.h"
 

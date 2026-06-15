@@ -94,7 +94,7 @@ public:
 };
 
 using DriverPtr = std::shared_ptr<Driver>;
-typedef Driver* (*CreateDriverFunc)();
+typedef Driver *(*CreateDriverFunc)();
 
 /**
  * @brief 虚拟人脸驱动抽象基类
@@ -181,8 +181,8 @@ public:
      * @return 0 成功，非 0 错误码
      */
     virtual int identify(const std::string &pin,
-                        const std::vector<uint8_t> &pubKey,
-                        const std::string &serialNumber) = 0;
+                         const std::vector<uint8_t> &pubKey,
+                         const std::string &serialNumber) = 0;
 };
 
 using UKeyDriverPtr = std::shared_ptr<UKeyDriver>;
