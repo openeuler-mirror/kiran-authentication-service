@@ -48,7 +48,7 @@ DeviceType UkeyDevice::deviceType()
     return DEVICE_TYPE_UKEY;
 }
 
-void UkeyDevice::EnrollStart(const QString& extraInfo)
+void UkeyDevice::doEnrollStart(const QString& extraInfo)
 {
     QString message;
     if (DEVICE_STATUS_IDLE != deviceStatus())
@@ -128,7 +128,7 @@ void UkeyDevice::EnrollStop()
     }
 }
 
-void UkeyDevice::IdentifyStart(const QString& extraInfo)
+void UkeyDevice::doIdentifyStart(const QString& extraInfo)
 {
     KLOG_INFO() << "UkeyDevice IdentifyStart";
     KLOG_INFO() << "extraInfo:" << extraInfo;

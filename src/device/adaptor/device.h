@@ -64,24 +64,30 @@ public:
     QString deviceID() { return m_devId; };
 
     /**
-     * @brief 启动录入流程
+     * @brief 启动录入流程（D-Bus 入口）
+     *
+     * 自动监控调用方服务，异常断连时触发 Stop。
+     *
      * @param extraInfo 附加信息（JSON 字符串）
      */
-    virtual void EnrollStart(const QString &extraInfo) = 0;
+    void EnrollStart(const QString &extraInfo);
 
     /**
-     * @brief 停止录入流程
+     * @brief 停止录入流程（D-Bus 入口）
      */
     virtual void EnrollStop() = 0;
 
     /**
-     * @brief 启动识别（认证）流程
+     * @brief 启动识别/认证流程（D-Bus 入口）
+     *
+     * 自动监控调用方服务，异常断连时触发 Stop。
+     *
      * @param extraInfo 附加信息（JSON 字符串）
      */
-    virtual void IdentifyStart(const QString &extraInfo) = 0;
+    void IdentifyStart(const QString &extraInfo);
 
     /**
-     * @brief 停止识别流程
+     * @brief 停止识别流程（D-Bus 入口）
      */
     virtual void IdentifyStop() = 0;
 
@@ -91,6 +97,20 @@ public:
      */
     virtual QStringList GetFeatureIDList() = 0;
 
+protected:
+    /**
+     * @brief 启动录入流程（子类实现）
+     * @param extraInfo 附加信息（JSON 字符串）
+     */
+    virtual void doEnrollStart(const QString &extraInfo) = 0;
+
+    /**
+     * @brief 启动识别/认证流程（子类实现）
+     * @param extraInfo 附加信息（JSON 字符串）
+     */
+    virtual void doIdentifyStart(const QString &extraInfo) = 0;
+
+public:
     /** @brief 获取当前设备状态 */
     int deviceStatus() { return m_status; };
 

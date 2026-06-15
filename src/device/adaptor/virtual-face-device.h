@@ -28,9 +28,9 @@ public:
     ~VirtualFaceDevice();
 
     DeviceType deviceType() override;
-    void EnrollStart(const QString &extraInfo) override;
+    void doEnrollStart(const QString &extraInfo) override;
     void EnrollStop() override;
-    void IdentifyStart(const QString &extraInfo) override;
+    void doIdentifyStart(const QString &extraInfo) override;
     void IdentifyStop() override;
     QStringList GetFeatureIDList() override;
 

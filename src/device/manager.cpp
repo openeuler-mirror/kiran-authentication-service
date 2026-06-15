@@ -67,7 +67,6 @@ void Manager::init()
 
     // 驱动载入
     m_driverLoader = QSharedPointer<DriverLoader>(new DriverLoader());
-    m_physicalSupportDevices = m_driverLoader->getPhysicalSupportDevices();
 
     // 程序启动时，udev已经检测到设备，手动枚举已连接的 USB 设备
     struct udev *udev = udev_new();
@@ -87,7 +86,7 @@ void Manager::init()
 
         if (!devNode.isEmpty())
         {
-            udevAdded(idVendor, idProduct, devNode);
+            onDeviceAdded(idVendor, idProduct, devNode);
         }
         udev_device_unref(dev);
     }
@@ -96,8 +95,8 @@ void Manager::init()
 
     // udev监控
     m_udevMonitor = QSharedPointer<UdevMonitor>(new UdevMonitor());
-    connect(m_udevMonitor.data(), &UdevMonitor::deviceAdded, this, &Manager::udevAdded);
-    connect(m_udevMonitor.data(), &UdevMonitor::deviceDeleted, this, &Manager::udevDeleted);
+    connect(m_udevMonitor.data(), &UdevMonitor::deviceAdded, this, &Manager::onDeviceAdded);
+    connect(m_udevMonitor.data(), &UdevMonitor::deviceDeleted, this, &Manager::onDeviceDeleted);
 
     // 虚拟驱动，在程序启动时载入
     genVirtualDevices();
@@ -145,7 +144,7 @@ QString Manager::genDevice(const QString& driverName, const QString& vendorId, c
 
 bool Manager::genVirtualDevices()
 {
-    QStringList virtualDrivers = m_driverLoader->getVirualDrivers();
+    QStringList virtualDrivers = m_driverLoader->getVirtualDrivers();
     for (QString driverName : virtualDrivers)
     {
         DriverPtr driver = m_driverLoader->loadDriver(driverName);
@@ -186,7 +185,7 @@ QString Manager::getOnlineDevicesInfo()
 
 QMap<QString, QVector<QPair<QString, QString>>> Manager::getPhysicalSupportDevices()
 {
-    return m_physicalSupportDevices;
+    return m_driverLoader->getPhysicalSupportDevices();
 }
 
 bool Manager::loadRemoteDevices()
@@ -194,10 +193,11 @@ bool Manager::loadRemoteDevices()
     return false;
 }
 
-void Manager::udevAdded(const QString& vendorId, const QString& productId, const QString& devNode)
+void Manager::onDeviceAdded(const QString& vendorId, const QString& productId, const QString& devNode)
 {
-    auto iter = m_physicalSupportDevices.begin();
-    for (; iter != m_physicalSupportDevices.end(); iter++)
+    auto supportDevices = m_driverLoader->getPhysicalSupportDevices();
+    auto iter = supportDevices.begin();
+    for (; iter != supportDevices.end(); iter++)
     {
         auto& devices = iter.value();
         for (auto& device : devices)
@@ -216,7 +216,7 @@ void Manager::udevAdded(const QString& vendorId, const QString& productId, const
     }
 }
 
-void Manager::udevDeleted(const QString& devNode)
+void Manager::onDeviceDeleted(const QString& devNode)
 {
     auto it = m_onlineDevices.find(devNode);
     if (it == m_onlineDevices.end())
@@ -255,14 +255,14 @@ QString Manager::GetDevices()
     return QString(jsonDoc.toJson(QJsonDocument::Compact));
 }
 
-QString Manager::GetDevicesByType(int device_type)
+QString Manager::GetDevicesByType(int deviceType)
 {
     auto devices = m_devices.values();
     QJsonDocument jsonDoc;
     QJsonArray jsonArray;
     for (auto& device : devices)
     {
-        if (device->deviceType() == device_type)
+        if (device->deviceType() == deviceType)
         {
             QJsonObject jsonObj{
                 {"deviceName", device->driverName()},
@@ -275,12 +275,12 @@ QString Manager::GetDevicesByType(int device_type)
     return QString(jsonDoc.toJson(QJsonDocument::Compact));
 }
 
-QDBusObjectPath Manager::GetDevice(const QString& device_id)
+QDBusObjectPath Manager::GetDevice(const QString& deviceId)
 {
     QDBusObjectPath objectPath;
-    if (m_devices.contains(device_id))
+    if (m_devices.contains(deviceId))
     {
-        objectPath = m_devices.value(device_id)->getObjectPath();
+        objectPath = m_devices.value(deviceId)->getObjectPath();
     }
     return objectPath;
 }
@@ -290,7 +290,7 @@ QStringList Manager::GetAllFeatureIDs()
     return QStringList();
 }
 
-QString Manager::GetDriversByType(int device_type)
+QString Manager::GetDriversByType(int deviceType)
 {
     QJsonDocument jsonDoc;
     QJsonArray jsonArray;
@@ -298,7 +298,7 @@ QString Manager::GetDriversByType(int device_type)
     auto driverInfos = m_driverLoader->getPhysicalDriverInfos();
     for (auto& driverInfo : driverInfos)
     {
-        if (driverInfo.type == device_type)
+        if (driverInfo.type == deviceType)
         {
             QJsonObject jsonObj{
                 {"driverName", driverInfo.name},
@@ -310,14 +310,14 @@ QString Manager::GetDriversByType(int device_type)
     return QString(jsonDoc.toJson(QJsonDocument::Compact));
 }
 
-void Manager::SetEnableDriver(const QString& driver_name, bool enable)
+void Manager::SetEnableDriver(const QString& driverName, bool enable)
 {
 }
 
-void Manager::Remove(const QString& feature_id)
+void Manager::Remove(const QString& featureId)
 {
-    // FeatureData featureData = FeatureDB::getInstance()->getFeatureData(feature_id);
-    bool result = FeatureDB::getInstance()->deleteFeature(feature_id);
+    // FeatureData featureData = FeatureDB::getInstance()->getFeatureData(featureId);
+    bool result = FeatureDB::getInstance()->deleteFeature(featureId);
 
     // NOTE: 是否需要重置ukey设备
 }

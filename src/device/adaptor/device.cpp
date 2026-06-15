@@ -65,6 +65,18 @@ void Device::initServiceWatcher()
     connect(m_serviceWatcher.data(), &QDBusServiceWatcher::serviceUnregistered, this, &Device::onNameLost);
 }
 
+void Device::EnrollStart(const QString &extraInfo)
+{
+    m_serviceWatcher->addWatchedService(message().service());
+    doEnrollStart(extraInfo);
+}
+
+void Device::IdentifyStart(const QString &extraInfo)
+{
+    m_serviceWatcher->addWatchedService(message().service());
+    doIdentifyStart(extraInfo);
+}
+
 void Device::onNameLost(const QString& serviceName)
 {
     KLOG_DEBUG() << "NameLost: " << serviceName;

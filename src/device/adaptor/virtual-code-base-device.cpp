@@ -52,7 +52,7 @@ VirtualCodeBaseDevice::VirtualCodeBaseDevice(DriverPtr driver, QObject *parent)
 
 VirtualCodeBaseDevice::~VirtualCodeBaseDevice() {}
 
-void VirtualCodeBaseDevice::EnrollStart(const QString &extraInfo)
+void VirtualCodeBaseDevice::doEnrollStart(const QString &extraInfo)
 {
     return;  // 虚拟设备在管理后台注册
 }
@@ -62,7 +62,7 @@ void VirtualCodeBaseDevice::EnrollStop()
     return;  // 虚拟设备在管理后台注册
 }
 
-void VirtualCodeBaseDevice::IdentifyStart(const QString &extraInfo)
+void VirtualCodeBaseDevice::doIdentifyStart(const QString &extraInfo)
 {
     KLOG_INFO() << "VirtualCodeBaseDevice IdentifyStart" << QString::fromStdString(m_driver->getDriverName());
 

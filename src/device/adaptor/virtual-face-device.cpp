@@ -58,7 +58,7 @@ DeviceType VirtualFaceDevice::deviceType()
     return DEVICE_TYPE_VIRTUAL_FACE;
 }
 
-void VirtualFaceDevice::EnrollStart(const QString& extraInfo)
+void VirtualFaceDevice::doEnrollStart(const QString& extraInfo)
 {
     return;  // 虚拟设备在管理后台注册
 }
@@ -68,7 +68,7 @@ void VirtualFaceDevice::EnrollStop()
     return;  // 虚拟设备在管理后台注册
 }
 
-void VirtualFaceDevice::IdentifyStart(const QString& extraInfo)
+void VirtualFaceDevice::doIdentifyStart(const QString& extraInfo)
 {
     KLOG_INFO() << "VirtualFaceDevice IdentifyStart, " << QString::fromStdString(m_driver->getDriverName());
     KLOG_INFO() << "extraInfo:" << extraInfo;

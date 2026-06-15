@@ -79,28 +79,22 @@ public:
      * @return 认证类型列表
      */
     virtual std::vector<int> getSupportedAuthTypes() = 0;
+
+    /**
+     * @brief 获取驱动支持的厂商 ID / 产品 ID 列表
+     *
+     * 物理设备驱动应重写此方法；虚拟驱动无需重写，默认返回空列表。
+     *
+     * @return vid/pid 键值对列表
+     */
+    virtual std::vector<std::pair<std::string, std::string>> getSupportVidPid()
+    {
+        return {};
+    }
 };
 
 using DriverPtr = std::shared_ptr<Driver>;
 typedef Driver* (*CreateDriverFunc)();
-
-/**
- * @brief 物理设备驱动抽象基类
- */
-class PhysicalDriver : public Driver
-{
-public:
-    PhysicalDriver() = default;
-    virtual ~PhysicalDriver() = default;
-
-    /**
-     * @brief 获取驱动支持的厂商 ID / 产品 ID 列表
-     * @return vid/pid 键值对列表
-     */
-    virtual std::vector<std::pair<std::string, std::string>> getSupportVidPid() = 0;
-};
-
-using PhysicalDriverPtr = std::shared_ptr<PhysicalDriver>;
 
 /**
  * @brief 虚拟人脸驱动抽象基类
@@ -155,7 +149,7 @@ using VirtualCodeDriverPtr = std::shared_ptr<VirtualCodeDriver>;
 /**
  * @brief UKey 驱动抽象基类
  */
-class UKeyDriver : public PhysicalDriver
+class UKeyDriver : public Driver
 {
 public:
     UKeyDriver() = default;

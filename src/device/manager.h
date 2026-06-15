@@ -47,18 +47,18 @@ public:
     QString getOnlineDevicesInfo();                                               // 获取当前已上线设备信息（含远程设备）（json：type、name）
     QMap<QString, QVector<QPair<QString, QString>>> getPhysicalSupportDevices();  // 获取物理设备支持信息
     bool loadRemoteDevices();                                                     // 加载远程设备
-    void udevAdded(const QString &vendorId,
-                   const QString &productId,
-                   const QString &devNode);  // udev发现本地设备
-    void udevDeleted(const QString &devNode);
+    void onDeviceAdded(const QString &vendorId,
+                       const QString &productId,
+                       const QString &devNode);
+    void onDeviceDeleted(const QString &devNode);
 
     QString GetDevices();
-    QString GetDevicesByType(int device_type);
-    QDBusObjectPath GetDevice(const QString &device_id);
+    QString GetDevicesByType(int deviceType);
+    QDBusObjectPath GetDevice(const QString &deviceId);
     QStringList GetAllFeatureIDs();
-    QString GetDriversByType(int device_type);
-    void SetEnableDriver(const QString &driver_name, bool enable);
-    void Remove(const QString &feature_id);
+    QString GetDriversByType(int deviceType);
+    void SetEnableDriver(const QString &driverName, bool enable);
+    void Remove(const QString &featureId);
     QString GetSupportedAuthTypes();
 
 private:
@@ -68,7 +68,6 @@ private:
     QMap<QString, DevicePtr> m_devices;  // key: dev uuid
     QSharedPointer<UdevMonitor> m_udevMonitor;
     QSharedPointer<DriverLoader> m_driverLoader;
-    QMap<QString, QVector<QPair<QString, QString>>> m_physicalSupportDevices;  // key-driverName value-vid/pid
 
     QMap<QString, QString> m_onlineDevices;  // key=devNode(busPath), value=deviceID(UUID)
 };

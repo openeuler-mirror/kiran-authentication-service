@@ -49,59 +49,69 @@ void DriverLoader::init()
         soFiles.append(it.next());  // 获取文件的绝对路径
     }
     KLOG_INFO() << "find driver so:" << soFiles;
-    for (auto &file : soFiles)
+
+    for (const auto &file : soFiles)
     {
         auto driver = loadDriver(file);
-        if (driver)
+        if (!driver)
         {
-            switch (driver->getType())
-            {
-            case DRIVER_TYPE_FACE:
-            case DRIVER_TYPE_FINGERPRINT:
-            case DRIVER_TYPE_FINGERVEIN:
-            case DRIVER_TYPE_IRIS:
-            case DRIVER_TYPE_VOICEPRINT:
-            case DRIVER_TYPE_UKEY:
-            {
-                auto type = driver->getType();
-                auto stdVidPids = static_cast<PhysicalDriver *>(driver.get())->getSupportVidPid();
-                QVector<QPair<QString, QString>> vidPids;
-                for (const auto &pair : stdVidPids)
-                {
-                    vidPids.append(qMakePair(
-                        QString::fromStdString(pair.first),
-                        QString::fromStdString(pair.second)));
-                }
-                m_physicalSupportDevices[file] = vidPids;
-                m_physicalDriverInfos[file] = PhysicalDriverInfo{
-                    file,
-                    QString::fromStdString(driver->getDriverName()),
-                    type,
-                    vidPids};
+            continue;
+        }
 
-                KLOG_INFO() << "driver:" << file
-                            << "driver name:" << QString::fromStdString(driver->getDriverName())
-                            << "type:" << getDriverTypeStr(type)
-                            << "support vidpids:" << vidPids;
-            }
+        switch (driver->getType())
+        {
+        case DRIVER_TYPE_FACE:
+        case DRIVER_TYPE_FINGERPRINT:
+        case DRIVER_TYPE_FINGERVEIN:
+        case DRIVER_TYPE_IRIS:
+        case DRIVER_TYPE_VOICEPRINT:
+        case DRIVER_TYPE_UKEY:
+            setupPhysicalDriver(file, driver);
             break;
-            case DRIVER_TYPE_VIRTUAL_FACE:
-            case DRIVER_TYPE_VIRTUAL_CODE:
-            case DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA:
-            {
-                m_virtualDrivers.append(file);
-            }
-
+        case DRIVER_TYPE_VIRTUAL_FACE:
+        case DRIVER_TYPE_VIRTUAL_CODE:
+        case DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA:
+            m_virtualDrivers.append(file);
             break;
-            default:
-                break;
-            }
+        default:
+            break;
         }
     }
 }
 
+void DriverLoader::setupPhysicalDriver(const QString &file, const DriverPtr &driver)
+{
+    auto type = driver->getType();
+    auto stdVidPids = driver->getSupportVidPid();
+
+    QVector<QPair<QString, QString>> vidPids;
+    for (const auto &pair : stdVidPids)
+    {
+        vidPids.append(qMakePair(
+            QString::fromStdString(pair.first),
+            QString::fromStdString(pair.second)));
+    }
+
+    m_physicalSupportDevices[file] = vidPids;
+    m_physicalDriverInfos[file] = PhysicalDriverInfo{
+        file,
+        QString::fromStdString(driver->getDriverName()),
+        type,
+        vidPids};
+
+    KLOG_INFO() << "driver:" << file
+                << "driver name:" << QString::fromStdString(driver->getDriverName())
+                << "type:" << getDriverTypeStr(type)
+                << "support vidpids:" << vidPids;
+}
+
 DriverPtr DriverLoader::loadDriver(const QString &driverName)
 {
+    if (m_loadedDrivers.contains(driverName))
+    {
+        return m_loadedDrivers[driverName];
+    }
+
     auto libPtr = new QLibrary(driverName);
     if (!libPtr)
     {
@@ -140,6 +150,7 @@ DriverPtr DriverLoader::loadDriver(const QString &driverName)
         return DriverPtr();
     }
 
+    m_loadedDrivers[driverName] = driver;
     return driver;
 }
 

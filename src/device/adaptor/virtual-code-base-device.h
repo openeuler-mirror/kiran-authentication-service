@@ -38,7 +38,7 @@ public:
      * @brief 启动录入流程
      * @param extraInfo 附加信息（JSON 字符串）
      */
-    void EnrollStart(const QString &extraInfo) override;
+    void doEnrollStart(const QString &extraInfo) override;
 
     /**
      * @brief 停止录入流程
@@ -49,7 +49,7 @@ public:
      * @brief 启动识别（认证）流程
      * @param extraInfo 附加信息（JSON 字符串）
      */
-    void IdentifyStart(const QString &extraInfo) override;
+    void doIdentifyStart(const QString &extraInfo) override;
 
     /**
      * @brief 停止识别流程
