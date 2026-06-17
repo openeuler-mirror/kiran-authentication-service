@@ -16,14 +16,14 @@
 #include <QtConcurrent/QtConcurrent>
 
 #include "auth_device_adaptor.h"
-#include "virtual-code-base-device.h"
+#include "soft-code-base-device.h"
 
 namespace Kiran
 {
-VirtualCodeBaseDevice::VirtualCodeBaseDevice(DriverPtr driver, QObject *parent)
+SoftCodeBaseDevice::SoftCodeBaseDevice(DriverPtr driver, QObject *parent)
     : Device(driver, parent)
 {
-    m_driver = std::static_pointer_cast<VirtualCodeDriver>(driver);
+    m_driver = std::static_pointer_cast<SoftCodeDriver>(driver);
     connect(&m_identifyWatcher, &QFutureWatcher<int>::finished, this, [this]()
             {
         const int ret = m_identifyWatcher.result();
@@ -33,7 +33,7 @@ VirtualCodeBaseDevice::VirtualCodeBaseDevice(DriverPtr driver, QObject *parent)
 
         if (stopped)
         {
-            KLOG_INFO() << "VirtualCodeBaseDevice Identify finished but stop requested, ignore result";
+            KLOG_INFO() << "SoftCodeBaseDevice Identify finished but stop requested, ignore result";
             return;
         }
 
@@ -50,21 +50,21 @@ VirtualCodeBaseDevice::VirtualCodeBaseDevice(DriverPtr driver, QObject *parent)
         } });
 }
 
-VirtualCodeBaseDevice::~VirtualCodeBaseDevice() {}
+SoftCodeBaseDevice::~SoftCodeBaseDevice() {}
 
-void VirtualCodeBaseDevice::doEnrollStart(const QString &extraInfo)
+void SoftCodeBaseDevice::doEnrollStart(const QString &extraInfo)
 {
-    return;  // 虚拟设备在管理后台注册
+    return;  // 软设备在管理后台注册
 }
 
-void VirtualCodeBaseDevice::EnrollStop()
+void SoftCodeBaseDevice::EnrollStop()
 {
-    return;  // 虚拟设备在管理后台注册
+    return;  // 软设备在管理后台注册
 }
 
-void VirtualCodeBaseDevice::doIdentifyStart(const QString &extraInfo)
+void SoftCodeBaseDevice::doIdentifyStart(const QString &extraInfo)
 {
-    KLOG_INFO() << "VirtualCodeBaseDevice IdentifyStart" << QString::fromStdString(m_driver->getDriverName());
+    KLOG_INFO() << "SoftCodeBaseDevice IdentifyStart" << QString::fromStdString(m_driver->getDriverName());
 
     if (DEVICE_STATUS_IDLE != deviceStatus())
     {
@@ -82,7 +82,7 @@ void VirtualCodeBaseDevice::doIdentifyStart(const QString &extraInfo)
                                                   { return driver->identify(info.toStdString()); }));
 }
 
-void VirtualCodeBaseDevice::IdentifyStop()
+void SoftCodeBaseDevice::IdentifyStop()
 {
     if (DEVICE_STATUS_DOING_IDENTIFY == deviceStatus())
     {
@@ -90,14 +90,14 @@ void VirtualCodeBaseDevice::IdentifyStop()
     }
 }
 
-QStringList VirtualCodeBaseDevice::GetFeatureIDList()
+QStringList SoftCodeBaseDevice::GetFeatureIDList()
 {
     return QStringList();
 }
 
-void VirtualCodeBaseDevice::IdentifyResultPostProcess(const QString &extraInfo)
+void SoftCodeBaseDevice::IdentifyResultPostProcess(const QString &extraInfo)
 {
-    KLOG_INFO() << "VirtualCodeBaseDevice identifyResultPostProcess, extraInfo:" << extraInfo;
+    KLOG_INFO() << "SoftCodeBaseDevice identifyResultPostProcess, extraInfo:" << extraInfo;
     // 识别结果后处理（如上报日志、开启人走监测等）
     m_driver->identifyResultPostProcess(extraInfo.toStdString());
 }

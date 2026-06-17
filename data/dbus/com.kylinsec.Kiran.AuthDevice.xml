@@ -60,7 +60,7 @@
 
         <method name="GetSupportedAuthTypes">
             <arg name="auth_types" direction="out" type="s">
-                <description>JSON array of integers (KADAuthType values) supported by currently loaded drivers. Each value is a bitmask: PASSWORD:1, FINGERPRINT:2, FACE:4, UKEY:8, FINGERVEIN:16, IRIS:32, VIRTUAL_FACE:64, VIRTUAL_CODE:128, VIRTUAL_CODE_NO_CAMERA:256.</description>
+                <description>JSON array of integers (KADAuthType values) supported by currently loaded drivers. Each value is a bitmask: PASSWORD:1, FINGERPRINT:2, FACE:4, UKEY:8, FINGERVEIN:16, IRIS:32, SOFT_FACE:64, SOFT_CODE:128, SOFT_CODE_NO_CAMERA:256.</description>
             </arg>
         </method>
 

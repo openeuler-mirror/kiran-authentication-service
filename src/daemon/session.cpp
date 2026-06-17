@@ -116,8 +116,8 @@ void Session::ResponsePrompt(const QString &text)
     RETURN_IF_FALSE(m_waitForResponseFunc);
     m_waitForResponseFunc(text);
 
-    // VIRTUAL_CODE_NO_CAMERA 存在两步认证，第一步选择验证方式后不需要清除 m_waitForResponseFunc，用于处理第二阶段的返回
-    if (!(m_authType == KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA && m_authCodeStep == AUTH_CODE_STEP_INPUT_CODE))
+    // SOFT_CODE_NO_CAMERA 存在两步认证，第一步选择验证方式后不需要清除 m_waitForResponseFunc，用于处理第二阶段的返回
+    if (!(m_authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA && m_authCodeStep == AUTH_CODE_STEP_INPUT_CODE))
     {
         m_waitForResponseFunc = nullptr;
     }
@@ -304,10 +304,10 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 {
     KLOG_INFO() << m_sessionID << "verify identify status:" << bid << result << message;
 
-    // 虚拟设备认证类型，无论成功失败都要上报登录日志
-    if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE ||
-        this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE ||
-        this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA)
+    // 软驱动认证类型，无论成功失败都要上报登录日志
+    if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_FACE ||
+        this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE ||
+        this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA)
     {
         QString osUser;
         int loginResult = 0;  // 1=成功，0=失败
@@ -318,14 +318,14 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
             this->m_verifyInfo.m_authenticatedUserName = this->getSpecifiedUser();
             osUser = this->m_verifyInfo.m_authenticatedUserName;
             loginResult = 1;
-            KLOG_INFO() << m_sessionID << "virtual device authentication successfully, authenticated user name:" << osUser;
+            KLOG_INFO() << m_sessionID << "soft device authentication successfully, authenticated user name:" << osUser;
         }
         else
         {
             // 认证失败
             osUser = this->getSpecifiedUser();
             loginResult = 0;
-            KLOG_INFO() << m_sessionID << "virtual device authentication failed, user name:" << osUser;
+            KLOG_INFO() << m_sessionID << "soft device authentication failed, user name:" << osUser;
         }
 
         // 构造 JSON 字符串，包含 os_user、result、fail_reason
@@ -353,7 +353,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     }
     else if (result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH)
     {
-        if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_FACE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA)
+        if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_FACE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA)
         {
             Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
             this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
@@ -392,14 +392,14 @@ void Session::startPhaseAuth()
     case KAD_AUTH_TYPE_PASSWORD:
         startPasswdAuth();
         break;
-    case KAD_AUTH_TYPE_VIRTUAL_FACE:
-        startVirtualFaceAuth();
+    case KAD_AUTH_TYPE_SOFT_FACE:
+        startSoftFaceAuth();
         break;
-    case KAD_AUTH_TYPE_VIRTUAL_CODE:
-        startVirtualCodeAuth();
+    case KAD_AUTH_TYPE_SOFT_CODE:
+        startSoftCodeAuth();
         break;
-    case KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA:
-        startVirtualCodeNoCameraAuth();
+    case KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA:
+        startSoftCodeNoCameraAuth();
         break;
     default:
         startGeneralAuth();
@@ -452,19 +452,19 @@ QString Session::getMachineCode()
     return machineCode;
 }
 
-void Session::startVirtualFaceAuth()
+void Session::startSoftFaceAuth()
 {
     // 传输用户名和机器码
     QString machineCode = getMachineCode();
     QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}});
 
-    KLOG_INFO() << m_sessionID << "start virtual face auth for user:" << m_userName << "machine code:" << machineCode;
+    KLOG_INFO() << m_sessionID << "start soft face auth for user:" << m_userName << "machine code:" << machineCode;
     Q_EMIT this->AuthMessage(tr("Please look at the camera"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
 
     startGeneralAuth(jsonDoc.toJson());
 }
 
-void Session::startVirtualCodeAuth()
+void Session::startSoftCodeAuth()
 {
     m_waitForResponseFunc = [this](const QString &response)
     {
@@ -478,7 +478,7 @@ void Session::startVirtualCodeAuth()
     Q_EMIT this->AuthPrompt(tr("please input authorization code."), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
 }
 
-void Session::startVirtualCodeNoCameraAuth()
+void Session::startSoftCodeNoCameraAuth()
 {
     m_authCodeStep = AUTH_CODE_STEP_SELECT;
     m_gencodeProcess = nullptr;

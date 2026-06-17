@@ -63,27 +63,27 @@
     </message>
 </context>
 <context>
-    <name>Kiran::VirtualCodeBaseDevice</name>
+    <name>Kiran::SoftCodeBaseDevice</name>
     <message>
-        <location filename="../src/device/adaptor/virtual-code-base-device.cpp" line="48"/>
+        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="48"/>
         <source>identify success</source>
         <translation>认证成功</translation>
     </message>
     <message>
-        <location filename="../src/device/adaptor/virtual-code-base-device.cpp" line="71"/>
+        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="71"/>
         <source>Device Busy</source>
         <translation>设备忙</translation>
     </message>
 </context>
 <context>
-    <name>Kiran::VirtualFaceDevice</name>
+    <name>Kiran::SoftFaceDevice</name>
     <message>
-        <location filename="../src/device/adaptor/virtual-face-device.cpp" line="78"/>
+        <location filename="../src/device/adaptor/soft-face-device.cpp" line="78"/>
         <source>Device Busy</source>
         <translation>设备忙</translation>
     </message>
     <message>
-        <location filename="../src/device/adaptor/virtual-face-device.cpp" line="47"/>
+        <location filename="../src/device/adaptor/soft-face-device.cpp" line="47"/>
         <source>identify success</source>
         <translation>认证成功</translation>
     </message>

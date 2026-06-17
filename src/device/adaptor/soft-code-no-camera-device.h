@@ -16,19 +16,20 @@
 
 #include <QSharedPointer>
 
-#include "virtual-code-base-device.h"
+#include "soft-code-base-device.h"
 
 namespace Kiran
 {
-class VirtualCodeNoCameraDevice : public VirtualCodeBaseDevice
+class SoftCodeNoCameraDevice : public SoftCodeBaseDevice
 {
     Q_OBJECT
 public:
-    VirtualCodeNoCameraDevice(DriverPtr driver, QObject *parent = nullptr);
-    ~VirtualCodeNoCameraDevice();
+    SoftCodeNoCameraDevice(DriverPtr driver, QObject *parent = nullptr);
+    ~SoftCodeNoCameraDevice();
 
     DeviceType deviceType() override;
+    SoftDeviceType softDeviceType() override;
 };
-typedef QSharedPointer<VirtualCodeNoCameraDevice> VirtualCodeNoCameraDevicePtr;
+typedef QSharedPointer<SoftCodeNoCameraDevice> SoftCodeNoCameraDevicePtr;
 
 }  // namespace Kiran

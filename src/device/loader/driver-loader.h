@@ -32,9 +32,7 @@ inline QString getDriverTypeStr(DriverType type)
         {DRIVER_TYPE_IRIS, "Iris"},
         {DRIVER_TYPE_VOICEPRINT, "VoicePrint"},
         {DRIVER_TYPE_UKEY, "UKey"},
-        {DRIVER_TYPE_VIRTUAL_FACE, "VirtualFace"},
-        {DRIVER_TYPE_VIRTUAL_CODE, "VirtualCode"},
-        {DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA, "VirtualCodeNoCamera"}};
+        {DRIVER_TYPE_SOFT, "Soft"}};
 
     if (driverTypeMap.contains(type))
     {
@@ -73,14 +71,14 @@ public:
     DriverPtr loadDriver(const QString &driverName);
 
     QMap<QString, QVector<QPair<QString, QString>>> getPhysicalSupportDevices() { return m_physicalSupportDevices; };  // 获取物理设备支持信息
-    QStringList getVirtualDrivers() { return m_virtualDrivers; };                                                      // 获取虚拟设备驱动信息
+    QStringList getSoftDrivers() { return m_softDrivers; };                                                            // 获取软驱动列表
     QMap<QString, PhysicalDriverInfo> getPhysicalDriverInfos() { return m_physicalDriverInfos; };                      // 获取物理设备驱动信息
 
 private:
     void setupPhysicalDriver(const QString &file, const DriverPtr &driver);
 
     QMap<QString, DriverPtr> m_loadedDrivers;
-    QStringList m_virtualDrivers;
+    QStringList m_softDrivers;
     QMap<QString, QVector<QPair<QString, QString>>> m_physicalSupportDevices;
     QMap<QString, PhysicalDriverInfo> m_physicalDriverInfos;
 };

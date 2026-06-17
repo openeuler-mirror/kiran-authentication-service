@@ -43,8 +43,8 @@ void AuthenticationTerminal::notifySupportAuthType()
     }
 
     // 当前业务需求，这两种不支持命令行认证
-    tempAuthTypeList.removeAll(KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE);
-    tempAuthTypeList.removeAll(KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE);
+    tempAuthTypeList.removeAll(KADAuthType::KAD_AUTH_TYPE_SOFT_FACE);
+    tempAuthTypeList.removeAll(KADAuthType::KAD_AUTH_TYPE_SOFT_CODE);
     if (tempAuthTypeList.isEmpty())
     {
         tempAuthTypeList << KADAuthType::KAD_AUTH_TYPE_PASSWORD;
@@ -109,9 +109,9 @@ int32_t AuthenticationTerminal::requestAuthType()
             authType == KADAuthType::KAD_AUTH_TYPE_UKEY ||
             authType == KADAuthType::KAD_AUTH_TYPE_FACE ||
             authType == KADAuthType::KAD_AUTH_TYPE_IRIS ||
-            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE ||
-            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE ||
-            authType == KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA)
+            authType == KADAuthType::KAD_AUTH_TYPE_SOFT_FACE ||
+            authType == KADAuthType::KAD_AUTH_TYPE_SOFT_CODE ||
+            authType == KADAuthType::KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA)
         {
             return authType;
         }

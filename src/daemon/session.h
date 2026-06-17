@@ -121,9 +121,9 @@ private:
     void startPhaseAuth();
     void startUkeyAuth();
     QString getMachineCode();
-    void startVirtualFaceAuth();
-    void startVirtualCodeAuth();
-    void startVirtualCodeNoCameraAuth();
+    void startSoftFaceAuth();
+    void startSoftCodeAuth();
+    void startSoftCodeNoCameraAuth();
     void startPasswdAuth();
     void startGeneralAuth(const QString &extraInfo = QString());
 

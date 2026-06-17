@@ -20,14 +20,15 @@
 
 namespace Kiran
 {
-class VirtualFaceDevice : public Device
+class SoftFaceDevice : public Device
 {
     Q_OBJECT
 public:
-    VirtualFaceDevice(DriverPtr driver, QObject *parent = nullptr);
-    ~VirtualFaceDevice();
+    SoftFaceDevice(DriverPtr driver, QObject *parent = nullptr);
+    ~SoftFaceDevice();
 
     DeviceType deviceType() override;
+    SoftDeviceType softDeviceType() override;
     void doEnrollStart(const QString &extraInfo) override;
     void EnrollStop() override;
     void doIdentifyStart(const QString &extraInfo) override;
@@ -37,10 +38,10 @@ public:
     void IdentifyResultPostProcess(const QString &extraInfo) override;
 
 private:
-    VirtualFaceDriverPtr m_driver;
+    SoftFaceDriverPtr m_driver;
     QFutureWatcher<int> m_identifyWatcher;
     bool m_identifyStopRequested{false};
 };
-typedef QSharedPointer<VirtualFaceDevice> VirtualFaceDevicePtr;
+typedef QSharedPointer<SoftFaceDevice> SoftFaceDevicePtr;
 
 }  // namespace Kiran

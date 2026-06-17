@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-// 设备类型
+// 驱动分类
 enum DriverType
 {
     // 指纹
@@ -35,12 +35,21 @@ enum DriverType
     DRIVER_TYPE_VOICEPRINT,
     // ukey
     DRIVER_TYPE_UKEY,
-    // 虚拟人脸
-    DRIVER_TYPE_VIRTUAL_FACE,
-    // 虚拟验证码
-    DRIVER_TYPE_VIRTUAL_CODE,
-    // 虚拟验证码（无摄像头）
-    DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA,
+    // 软驱动
+    DRIVER_TYPE_SOFT,
+};
+
+// 软驱动子类型
+enum SoftDriverType
+{
+    // 非软驱动（物理设备）/ 默认值
+    SOFT_DRIVER_TYPE_NONE = 0,
+    // 软人脸
+    SOFT_DRIVER_TYPE_FACE = 1,
+    // 软验证码
+    SOFT_DRIVER_TYPE_CODE,
+    // 软验证码（无摄像头）
+    SOFT_DRIVER_TYPE_CODE_NO_CAMERA,
 };
 
 /**
@@ -75,6 +84,19 @@ public:
     virtual DriverType getType() = 0;
 
     /**
+     * @brief 获取软驱动子类型
+     *
+     * 仅当 getType() 返回 DRIVER_TYPE_SOFT 时有效。
+     * 物理设备驱动无需重写，默认返回 SOFT_DRIVER_TYPE_NONE。
+     *
+     * @return SoftDriverType 枚举值
+     */
+    virtual SoftDriverType getSoftType()
+    {
+        return SOFT_DRIVER_TYPE_NONE;
+    }
+
+    /**
      * @brief 获取驱动支持的外部认证类型列表（KADAuthType 枚举值）
      * @return 认证类型列表
      */
@@ -83,7 +105,7 @@ public:
     /**
      * @brief 获取驱动支持的厂商 ID / 产品 ID 列表
      *
-     * 物理设备驱动应重写此方法；虚拟驱动无需重写，默认返回空列表。
+     * 物理设备驱动应重写此方法；软驱动无需重写，默认返回空列表。
      *
      * @return vid/pid 键值对列表
      */
@@ -97,13 +119,13 @@ using DriverPtr = std::shared_ptr<Driver>;
 typedef Driver *(*CreateDriverFunc)();
 
 /**
- * @brief 虚拟人脸驱动抽象基类
+ * @brief 软人脸驱动抽象基类
  */
-class VirtualFaceDriver : public Driver
+class SoftFaceDriver : public Driver
 {
 public:
-    VirtualFaceDriver() = default;
-    virtual ~VirtualFaceDriver() = default;
+    SoftFaceDriver() = default;
+    virtual ~SoftFaceDriver() = default;
 
     /**
      * @brief 执行识别
@@ -119,16 +141,16 @@ public:
     virtual void identifyResultPostProcess(const std::string &extraInfo) = 0;
 };
 
-using VirtualFaceDriverPtr = std::shared_ptr<VirtualFaceDriver>;
+using SoftFaceDriverPtr = std::shared_ptr<SoftFaceDriver>;
 
 /**
- * @brief 虚拟验证码驱动抽象基类
+ * @brief 软验证码驱动抽象基类
  */
-class VirtualCodeDriver : public Driver
+class SoftCodeDriver : public Driver
 {
 public:
-    VirtualCodeDriver() = default;
-    virtual ~VirtualCodeDriver() = default;
+    SoftCodeDriver() = default;
+    virtual ~SoftCodeDriver() = default;
 
     /**
      * @brief 执行识别
@@ -144,7 +166,7 @@ public:
     virtual void identifyResultPostProcess(const std::string &extraInfo) = 0;
 };
 
-using VirtualCodeDriverPtr = std::shared_ptr<VirtualCodeDriver>;
+using SoftCodeDriverPtr = std::shared_ptr<SoftCodeDriver>;
 
 /**
  * @brief UKey 驱动抽象基类

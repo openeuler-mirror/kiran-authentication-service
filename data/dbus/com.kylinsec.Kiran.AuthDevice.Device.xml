@@ -29,7 +29,7 @@
             <arg name="extraInfo" direction="in" type="s">
                 <description>JSON format with fields: "os_user" (string, the operating system user name), "result" (int, 0 on failure, 1 on success), "fail_reason" (string, error message when result is 0, optional).</description>
             </arg>
-            <description>Perform post-processing after identification result (both success and failure). For virtual drivers, this triggers login log reporting and leave-detection.</description>
+            <description>Perform post-processing after identification result (both success and failure). For soft drivers, this triggers login log reporting and leave-detection.</description>
         </method>
 
         <method name="GetFeatureIDList">
@@ -43,7 +43,11 @@
         </property>
 
         <property name="DeviceType" type="i" access="read">
-            <description>The device type. Refer to enum DeviceType in file kas-authentication-i.h. FingerPrint:0, Face:1, FingerVein:2, Iris:3, VoicePrint:4, UKey:5, Virtual_Face:1000, Virtual_Code:1001, Virtual_Code_No_Camera:1002.</description>
+            <description>The device type. Refer to enum DeviceType in file kas-authentication-i.h. FingerPrint:0, Face:1, FingerVein:2, Iris:3, VoicePrint:4, UKey:5, Soft:1000.</description>
+        </property>
+
+        <property name="SoftDeviceType" type="i" access="read">
+            <description>The soft device sub-type. Only meaningful when DeviceType returns Soft(1000). Refer to enum SoftDeviceType in file kas-authentication-i.h. None:0, Face:1, Code:2, CodeNoCamera:3.</description>
         </property>
 
         <property name="DeviceStatus" type="i" access="read">

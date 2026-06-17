@@ -23,17 +23,19 @@ class AuthDevice
 {
 private:
     friend QList<AuthDevice> authDevicesfromJson(const QString& json);
-    AuthDevice(const QString& id, const QString& name, const QString& obj);
+    AuthDevice(const QString& id, const QString& name, const QString& obj, int softDeviceType);
 
 public:
     QString id() const { return m_id; }
     QString name() const { return m_name; }
     QString objectPath() const { return m_objectPath; }
+    int softDeviceType() const { return m_softDeviceType; }
 
 private:
     QString m_id;
     QString m_name;
     QString m_objectPath;
+    int m_softDeviceType;
 };
 QList<AuthDevice> authDevicesfromJson(const QString& json);
 }  // namespace Kiran

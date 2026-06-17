@@ -178,19 +178,26 @@ QSharedPointer<AuthDeviceProxy> DeviceAdaptorFactory::getDBusDeviceProxy(int aut
         }
     }
 
-    // 如果未找到推荐设备，则随机选择一个
+    // 如果未找到推荐设备，则按类型匹配
     if (deviceObjectPath.path().isEmpty())
     {
-        KLOG_DEBUG() << "Prepare to randomly select a auth device." << Utils::authType2DeviceType(authType);
+        KLOG_DEBUG() << "Prepare to select a auth device, deviceType:" << Utils::authType2DeviceType(authType);
         QString devicesJson = this->m_authDeviceManagerProxy->GetDevicesByType(Utils::authType2DeviceType(authType));
         auto devices = authDevicesfromJson(devicesJson);
-        if (!devices.isEmpty())
+
+        // 软设备类型需按 SoftDeviceType 进一步精确匹配
+        int32_t expectedSoftDeviceType = Utils::authType2SoftDeviceType(authType);
+        for (const auto &dev : devices)
         {
-            auto randomDevice = devices.at(0);
-            KLOG_INFO() << "Found auth device:" << randomDevice.id() << randomDevice.name() << randomDevice.objectPath();
-            deviceObjectPath.setPath(randomDevice.objectPath());
+            if (expectedSoftDeviceType == SOFT_DEVICE_TYPE_NONE || dev.softDeviceType() == expectedSoftDeviceType)
+            {
+                KLOG_INFO() << "Found auth device:" << dev.id() << dev.name() << dev.objectPath();
+                deviceObjectPath.setPath(dev.objectPath());
+                break;
+            }
         }
-        else
+
+        if (deviceObjectPath.path().isEmpty())
         {
             KLOG_WARNING("Not found available %s device.", Utils::authTypeEnum2Str(authType).toStdString().c_str());
         }

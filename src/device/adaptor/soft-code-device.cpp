@@ -12,23 +12,25 @@
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
 
-#pragma once
-
-#include <QSharedPointer>
-
-#include "virtual-code-base-device.h"
+#include "soft-code-device.h"
 
 namespace Kiran
 {
-class VirtualCodeDevice : public VirtualCodeBaseDevice
+SoftCodeDevice::SoftCodeDevice(DriverPtr driver, QObject *parent)
+    : SoftCodeBaseDevice(driver, parent)
 {
-    Q_OBJECT
-public:
-    VirtualCodeDevice(DriverPtr driver, QObject *parent = nullptr);
-    ~VirtualCodeDevice();
+}
 
-    DeviceType deviceType() override;
-};
-typedef QSharedPointer<VirtualCodeDevice> VirtualCodeDevicePtr;
+SoftCodeDevice::~SoftCodeDevice() {}
+
+DeviceType SoftCodeDevice::deviceType()
+{
+    return DEVICE_TYPE_SOFT;
+}
+
+SoftDeviceType SoftCodeDevice::softDeviceType()
+{
+    return SOFT_DEVICE_TYPE_CODE;
+}
 
 }  // namespace Kiran

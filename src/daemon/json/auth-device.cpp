@@ -20,10 +20,11 @@
 
 namespace Kiran
 {
-AuthDevice::AuthDevice(const QString& id, const QString& name, const QString& obj)
+AuthDevice::AuthDevice(const QString& id, const QString& name, const QString& obj, int softDeviceType)
     : m_id(id),
       m_name(name),
-      m_objectPath(obj)
+      m_objectPath(obj),
+      m_softDeviceType(softDeviceType)
 {
 }
 
@@ -50,8 +51,9 @@ QList<AuthDevice> authDevicesfromJson(const QString& json)
         QString id = object.value("deviceID").toString();
         QString name = object.value("deviceName").toString();
         QString obj = object.value("objectPath").toString();
+        int softDeviceType = object.value("softDeviceType").toInt(0);
 
-        list << AuthDevice(id, name, obj);
+        list << AuthDevice(id, name, obj, softDeviceType);
     }
     return list;
 }

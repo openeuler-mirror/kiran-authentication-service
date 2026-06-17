@@ -15,10 +15,10 @@
 #include <qt5-log-i.h>
 
 #include "adaptor/device.h"
+#include "adaptor/soft-code-device.h"
+#include "adaptor/soft-code-no-camera-device.h"
+#include "adaptor/soft-face-device.h"
 #include "adaptor/ukey-device.h"
-#include "adaptor/virtual-code-device.h"
-#include "adaptor/virtual-code-no-camera-device.h"
-#include "adaptor/virtual-face-device.h"
 #include "auth_device_manager_adaptor.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
@@ -98,8 +98,8 @@ void Manager::init()
     connect(m_udevMonitor.data(), &UdevMonitor::deviceAdded, this, &Manager::onDeviceAdded);
     connect(m_udevMonitor.data(), &UdevMonitor::deviceDeleted, this, &Manager::onDeviceDeleted);
 
-    // 虚拟驱动，在程序启动时载入
-    genVirtualDevices();
+    // 软驱动，在程序启动时载入
+    genSoftDevices();
 }
 
 QString Manager::genDevice(const QString& driverName, const QString& vendorId, const QString& productId, const QString& devNode)
@@ -132,7 +132,7 @@ QString Manager::genDevice(const QString& driverName, const QString& vendorId, c
     case DRIVER_TYPE_FINGERVEIN:
     case DRIVER_TYPE_IRIS:
     case DRIVER_TYPE_VOICEPRINT:
-    case DRIVER_TYPE_VIRTUAL_FACE:
+    case DRIVER_TYPE_SOFT:
     default:
     {
         break;
@@ -142,26 +142,31 @@ QString Manager::genDevice(const QString& driverName, const QString& vendorId, c
     return QString();
 }
 
-bool Manager::genVirtualDevices()
+bool Manager::genSoftDevices()
 {
-    QStringList virtualDrivers = m_driverLoader->getVirtualDrivers();
-    for (QString driverName : virtualDrivers)
+    QStringList softDrivers = m_driverLoader->getSoftDrivers();
+    for (QString driverName : softDrivers)
     {
         DriverPtr driver = m_driverLoader->loadDriver(driverName);
         if (driver)
         {
             DevicePtr device;
-            switch (driver->getType())
+            if (driver->getType() == DRIVER_TYPE_SOFT)
             {
-            case DRIVER_TYPE_VIRTUAL_FACE:  // 虚拟人脸
-                device = VirtualFaceDevicePtr(new VirtualFaceDevice(driver));
-                break;
-            case DRIVER_TYPE_VIRTUAL_CODE:  // 虚拟验证码
-                device = VirtualCodeDevicePtr(new VirtualCodeDevice(driver));
-                break;
-            case DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA:  // 虚拟验证码（无摄像头）
-                device = VirtualCodeNoCameraDevicePtr(new VirtualCodeNoCameraDevice(driver));
-                break;
+                switch (driver->getSoftType())
+                {
+                case SOFT_DRIVER_TYPE_FACE:
+                    device = SoftFaceDevicePtr(new SoftFaceDevice(driver));
+                    break;
+                case SOFT_DRIVER_TYPE_CODE:
+                    device = SoftCodeDevicePtr(new SoftCodeDevice(driver));
+                    break;
+                case SOFT_DRIVER_TYPE_CODE_NO_CAMERA:
+                    device = SoftCodeNoCameraDevicePtr(new SoftCodeNoCameraDevice(driver));
+                    break;
+                default:
+                    break;
+                }
             }
             if (device)
             {
@@ -169,7 +174,7 @@ bool Manager::genVirtualDevices()
             }
         }
     }
-    KLOG_INFO() << "gen Virtual Devices result: ";
+    KLOG_INFO() << "gen Soft Devices result: ";
     for (auto device : m_devices)
     {
         KLOG_INFO() << device->driverName() << device->deviceType() << device->deviceID();
@@ -245,6 +250,7 @@ QString Manager::GetDevices()
     {
         QJsonObject jsonObj{
             {"deviceType", device->deviceType()},
+            {"softDeviceType", (int)device->softDeviceType()},
             {"deviceName", device->driverName()},
             {"deviceID", device->deviceID()},
             {"objectPath", device->getObjectPath().path()}};
@@ -267,7 +273,8 @@ QString Manager::GetDevicesByType(int deviceType)
             QJsonObject jsonObj{
                 {"deviceName", device->driverName()},
                 {"deviceID", device->deviceID()},
-                {"objectPath", device->getObjectPath().path()}};
+                {"objectPath", device->getObjectPath().path()},
+                {"softDeviceType", (int)device->softDeviceType()}};
             jsonArray.append(jsonObj);
         }
     }

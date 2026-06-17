@@ -140,17 +140,17 @@
     </message>
     <message>
         <location filename="../lib/utils.cpp" line="224"/>
-        <source>virtual face</source>
+        <source>soft face</source>
         <translation>人脸</translation>
     </message>
     <message>
         <location filename="../lib/utils.cpp" line="225"/>
-        <source>virtual code</source>
+        <source>soft code</source>
         <translation>授权码</translation>
     </message>
     <message>
         <location filename="../lib/utils.cpp" line="226"/>
-        <source>virtual code no camera</source>
+        <source>soft code no camera</source>
         <translation>授权码(无摄像头)</translation>
     </message>
 </context>

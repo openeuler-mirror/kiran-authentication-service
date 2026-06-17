@@ -21,18 +21,18 @@
 
 namespace Kiran
 {
-class VirtualCodeBaseDevice : public Device
+class SoftCodeBaseDevice : public Device
 {
     Q_OBJECT
 public:
     /**
-     * @brief 构造虚拟验证码设备
-     * @param driver 底层 VirtualCodeDriver 智能指针
+     * @brief 构造软验证码设备
+     * @param driver 底层 SoftCodeDriver 智能指针
      * @param parent 父 QObject，可为空
      */
-    VirtualCodeBaseDevice(DriverPtr driver, QObject *parent = nullptr);
+    SoftCodeBaseDevice(DriverPtr driver, QObject *parent = nullptr);
 
-    ~VirtualCodeBaseDevice();
+    ~SoftCodeBaseDevice();
 
     /**
      * @brief 启动录入流程
@@ -71,16 +71,16 @@ public:
     /**
      * @brief 获取设备类型
      *
-     * 子类需返回 DRIVER_TYPE_VIRTUAL_CODE 或
-     * DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA。
+     * 子类需返回 DRIVER_TYPE_SOFT(deviceType()) + SoftDeviceType(softDeviceType())
+     * 来区分具体类型。
      *
      * @return DeviceType 枚举值
      */
     virtual DeviceType deviceType() = 0;
 
 protected:
-    /** 虚拟验证码驱动智能指针 */
-    VirtualCodeDriverPtr m_driver;
+    /** 软验证码驱动智能指针 */
+    SoftCodeDriverPtr m_driver;
     /** 异步识别 FutureWatcher */
     QFutureWatcher<int> m_identifyWatcher;
     /** 识别是否被请求停止 */

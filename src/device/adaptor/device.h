@@ -37,6 +37,7 @@ class Device : public QObject, protected QDBusContext
     Q_PROPERTY(QString DeviceID READ deviceID CONSTANT)
     Q_PROPERTY(QString DeviceDriver READ driverName CONSTANT)
     Q_PROPERTY(int DeviceType READ deviceType)
+    Q_PROPERTY(int SoftDeviceType READ softDeviceType)
     Q_PROPERTY(int DeviceStatus READ deviceStatus)
 public:
     /**
@@ -53,6 +54,19 @@ public:
      * @return DeviceType 枚举值
      */
     virtual DeviceType deviceType() = 0;
+
+    /**
+     * @brief 获取软设备子类型
+     *
+     * 仅当 deviceType() 返回 DEVICE_TYPE_SOFT 时有效。
+     * 物理设备无需重写，默认返回 SOFT_DEVICE_TYPE_NONE。
+     *
+     * @return SoftDeviceType 枚举值
+     */
+    virtual SoftDeviceType softDeviceType()
+    {
+        return SOFT_DEVICE_TYPE_NONE;
+    }
 
     /** @brief 获取驱动名称 */
     QString driverName() { return QString::fromStdString(m_driver->getDriverName()); }

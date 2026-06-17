@@ -16,13 +16,13 @@
 #include <QtConcurrent/QtConcurrent>
 
 #include "auth_device_adaptor.h"
-#include "virtual-face-device.h"
+#include "soft-face-device.h"
 
 namespace Kiran
 {
-VirtualFaceDevice::VirtualFaceDevice(DriverPtr driver, QObject* parent) : Device(driver, parent)
+SoftFaceDevice::SoftFaceDevice(DriverPtr driver, QObject* parent) : Device(driver, parent)
 {
-    m_driver = std::static_pointer_cast<VirtualFaceDriver>(driver);
+    m_driver = std::static_pointer_cast<SoftFaceDriver>(driver);
     connect(&m_identifyWatcher, &QFutureWatcher<int>::finished, this, [this]()
             {
         const int ret = m_identifyWatcher.result();
@@ -32,7 +32,7 @@ VirtualFaceDevice::VirtualFaceDevice(DriverPtr driver, QObject* parent) : Device
 
         if (stopped)
         {
-            KLOG_INFO() << "VirtualFaceDevice Identify finished but stop requested, ignore result";
+            KLOG_INFO() << "SoftFaceDevice Identify finished but stop requested, ignore result";
             return;
         }
 
@@ -49,28 +49,33 @@ VirtualFaceDevice::VirtualFaceDevice(DriverPtr driver, QObject* parent) : Device
         } });
 }
 
-VirtualFaceDevice::~VirtualFaceDevice()
+SoftFaceDevice::~SoftFaceDevice()
 {
 }
 
-DeviceType VirtualFaceDevice::deviceType()
+DeviceType SoftFaceDevice::deviceType()
 {
-    return DEVICE_TYPE_VIRTUAL_FACE;
+    return DEVICE_TYPE_SOFT;
 }
 
-void VirtualFaceDevice::doEnrollStart(const QString& extraInfo)
+SoftDeviceType SoftFaceDevice::softDeviceType()
 {
-    return;  // 虚拟设备在管理后台注册
+    return SOFT_DEVICE_TYPE_FACE;
 }
 
-void VirtualFaceDevice::EnrollStop()
+void SoftFaceDevice::doEnrollStart(const QString& extraInfo)
 {
-    return;  // 虚拟设备在管理后台注册
+    return;  // 软设备在管理后台注册
 }
 
-void VirtualFaceDevice::doIdentifyStart(const QString& extraInfo)
+void SoftFaceDevice::EnrollStop()
 {
-    KLOG_INFO() << "VirtualFaceDevice IdentifyStart, " << QString::fromStdString(m_driver->getDriverName());
+    return;  // 软设备在管理后台注册
+}
+
+void SoftFaceDevice::doIdentifyStart(const QString& extraInfo)
+{
+    KLOG_INFO() << "SoftFaceDevice IdentifyStart, " << QString::fromStdString(m_driver->getDriverName());
     KLOG_INFO() << "extraInfo:" << extraInfo;
 
     if (DEVICE_STATUS_IDLE != deviceStatus())
@@ -89,7 +94,7 @@ void VirtualFaceDevice::doIdentifyStart(const QString& extraInfo)
                                                   { return driver->identify(info.toStdString()); }));
 }
 
-void VirtualFaceDevice::IdentifyStop()
+void SoftFaceDevice::IdentifyStop()
 {
     if (DEVICE_STATUS_DOING_IDENTIFY == deviceStatus())
     {
@@ -99,14 +104,14 @@ void VirtualFaceDevice::IdentifyStop()
     }
 }
 
-QStringList VirtualFaceDevice::GetFeatureIDList()
+QStringList SoftFaceDevice::GetFeatureIDList()
 {
     return QStringList();
 }
 
-void VirtualFaceDevice::IdentifyResultPostProcess(const QString& extraInfo)
+void SoftFaceDevice::IdentifyResultPostProcess(const QString& extraInfo)
 {
-    KLOG_INFO() << "VirtualFaceDevice identifyResultPostProcess, extraInfo:" << extraInfo;
+    KLOG_INFO() << "SoftFaceDevice identifyResultPostProcess, extraInfo:" << extraInfo;
     // 识别结果后处理（如上报日志、开启人走监测等）
     m_driver->identifyResultPostProcess(extraInfo.toStdString());
 }

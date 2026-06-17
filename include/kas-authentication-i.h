@@ -58,9 +58,9 @@
 #define AUTH_TYPE_STR_FACE "face"
 #define AUTH_TYPE_STR_IRIS "iris"
 #define AUTH_TYPE_STR_UKEY "ukey"
-#define AUTH_TYPE_STR_VIRTUAL_FACE "virtual face"
-#define AUTH_TYPE_STR_VIRTUAL_CODE "virtual code"
-#define AUTH_TYPE_STR_VIRTUAL_CODE_NO_CAMERA "virtual code no camera"
+#define AUTH_TYPE_STR_SOFT_FACE "soft face"
+#define AUTH_TYPE_STR_SOFT_CODE "soft code"
+#define AUTH_TYPE_STR_SOFT_CODE_NO_CAMERA "soft code no camera"
 
 /* ------------ 认证场景定义 ----------------- */
 #define AUTH_APPLICATION_STR_LOGIN "login"
@@ -165,12 +165,21 @@ enum DeviceType
     // ukey
     DEVICE_TYPE_UKEY,
     // ...预留，未来可能增加其他物理设备...
-    // 虚拟人脸
-    DEVICE_TYPE_VIRTUAL_FACE = 1000,
-    // 验证码
-    DEVICE_TYPE_VIRTUAL_CODE,
-    // 验证码（无摄像头）
-    DEVICE_TYPE_VIRTUAL_CODE_NO_CAMERA,
+    // 软驱动
+    DEVICE_TYPE_SOFT = 1000,
+};
+
+// 软设备子类型
+enum SoftDeviceType
+{
+    // 非软设备（物理设备）/ 默认值
+    SOFT_DEVICE_TYPE_NONE = 0,
+    // 软人脸
+    SOFT_DEVICE_TYPE_FACE = 1,
+    // 软验证码
+    SOFT_DEVICE_TYPE_CODE,
+    // 软验证码（无摄像头）
+    SOFT_DEVICE_TYPE_CODE_NO_CAMERA,
 };
 
 // 设备状态
@@ -236,12 +245,12 @@ enum KADAuthType
     KAD_AUTH_TYPE_FINGERVEIN = (1 << 4),
     // 虹膜
     KAD_AUTH_TYPE_IRIS = (1 << 5),
-    // 虚拟人脸
-    KAD_AUTH_TYPE_VIRTUAL_FACE = (1 << 6),
-    // 授权码（有摄像头）
-    KAD_AUTH_TYPE_VIRTUAL_CODE = (1 << 7),
-    // 授权码（无摄像头）
-    KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA = (1 << 8),
+    // 软人脸
+    KAD_AUTH_TYPE_SOFT_FACE = (1 << 6),
+    // 软授权码（有摄像头）
+    KAD_AUTH_TYPE_SOFT_CODE = (1 << 7),
+    // 软授权码（无摄像头）
+    KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA = (1 << 8),
     KAD_AUTH_TYPE_LAST = (1 << 9),
 };
 

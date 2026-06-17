@@ -101,12 +101,12 @@ QString Utils::authTypeEnum2Str(int authType)
         return QStringLiteral(AUTH_TYPE_STR_FINGERVEIN);
     case KADAuthType::KAD_AUTH_TYPE_IRIS:
         return QStringLiteral(AUTH_TYPE_STR_IRIS);
-    case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE:
-        return QStringLiteral(AUTH_TYPE_STR_VIRTUAL_FACE);
-    case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE:
-        return QStringLiteral(AUTH_TYPE_STR_VIRTUAL_CODE);
-    case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA:
-        return QStringLiteral(AUTH_TYPE_STR_VIRTUAL_CODE_NO_CAMERA);
+    case KADAuthType::KAD_AUTH_TYPE_SOFT_FACE:
+        return QStringLiteral(AUTH_TYPE_STR_SOFT_FACE);
+    case KADAuthType::KAD_AUTH_TYPE_SOFT_CODE:
+        return QStringLiteral(AUTH_TYPE_STR_SOFT_CODE);
+    case KADAuthType::KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA:
+        return QStringLiteral(AUTH_TYPE_STR_SOFT_CODE_NO_CAMERA);
     default:
         KLOG_WARNING() << "Unknown authType: " << authType;
     }
@@ -129,12 +129,12 @@ int Utils::authTypeStr2Enum(const QString& authType)
         return KADAuthType::KAD_AUTH_TYPE_FINGERVEIN;
     case CONNECT(AUTH_TYPE_STR_IRIS, _hash):
         return KADAuthType::KAD_AUTH_TYPE_IRIS;
-    case CONNECT(AUTH_TYPE_STR_VIRTUAL_FACE, _hash):
-        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE;
-    case CONNECT(AUTH_TYPE_STR_VIRTUAL_CODE, _hash):
-        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE;
-    case CONNECT(AUTH_TYPE_STR_VIRTUAL_CODE_NO_CAMERA, _hash):
-        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA;
+    case CONNECT(AUTH_TYPE_STR_SOFT_FACE, _hash):
+        return KADAuthType::KAD_AUTH_TYPE_SOFT_FACE;
+    case CONNECT(AUTH_TYPE_STR_SOFT_CODE, _hash):
+        return KADAuthType::KAD_AUTH_TYPE_SOFT_CODE;
+    case CONNECT(AUTH_TYPE_STR_SOFT_CODE_NO_CAMERA, _hash):
+        return KADAuthType::KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA;
     default:
         KLOG_WARNING() << "Unknown authType: " << authType;
     }
@@ -155,42 +155,29 @@ int32_t Utils::authType2DeviceType(int32_t authType)
         return DeviceType::DEVICE_TYPE_UKEY;
     case KAD_AUTH_TYPE_IRIS:
         return DeviceType::DEVICE_TYPE_IRIS;
-    case KAD_AUTH_TYPE_VIRTUAL_FACE:
-        return DeviceType::DEVICE_TYPE_VIRTUAL_FACE;
-    case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE:
-        return DeviceType::DEVICE_TYPE_VIRTUAL_CODE;
-    case KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA:
-        return DeviceType::DEVICE_TYPE_VIRTUAL_CODE_NO_CAMERA;
+    case KAD_AUTH_TYPE_SOFT_FACE:
+    case KADAuthType::KAD_AUTH_TYPE_SOFT_CODE:
+    case KADAuthType::KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA:
+        return DeviceType::DEVICE_TYPE_SOFT;
     default:
         KLOG_WARNING() << "Unsupported authType: " << authType;
     }
     return -1;
 }
 
-int32_t Utils::deviceType2AuthType(int32_t deviceType)
+int32_t Utils::authType2SoftDeviceType(int32_t authType)
 {
-    switch (deviceType)
+    switch (authType)
     {
-    case DeviceType::DEVICE_TYPE_FINGERPRINT:
-        return KADAuthType::KAD_AUTH_TYPE_FINGERPRINT;
-    case DeviceType::DEVICE_TYPE_FACE:
-        return KADAuthType::KAD_AUTH_TYPE_FACE;
-    case DeviceType::DEVICE_TYPE_FINGERVEIN:
-        return KADAuthType::KAD_AUTH_TYPE_FINGERVEIN;
-    case DeviceType::DEVICE_TYPE_UKEY:
-        return KADAuthType::KAD_AUTH_TYPE_UKEY;
-    case DeviceType::DEVICE_TYPE_IRIS:
-        return KADAuthType::KAD_AUTH_TYPE_IRIS;
-    case DeviceType::DEVICE_TYPE_VIRTUAL_FACE:
-        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_FACE;
-    case DeviceType::DEVICE_TYPE_VIRTUAL_CODE:
-        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE;
-    case DeviceType::DEVICE_TYPE_VIRTUAL_CODE_NO_CAMERA:
-        return KADAuthType::KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA;
+    case KADAuthType::KAD_AUTH_TYPE_SOFT_FACE:
+        return SoftDeviceType::SOFT_DEVICE_TYPE_FACE;
+    case KADAuthType::KAD_AUTH_TYPE_SOFT_CODE:
+        return SoftDeviceType::SOFT_DEVICE_TYPE_CODE;
+    case KADAuthType::KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA:
+        return SoftDeviceType::SOFT_DEVICE_TYPE_CODE_NO_CAMERA;
     default:
-        KLOG_WARNING() << "Unsupported deviceType: " << deviceType;
+        return SoftDeviceType::SOFT_DEVICE_TYPE_NONE;
     }
-    return KADAuthType::KAD_AUTH_TYPE_NONE;
 }
 
 QStringList Utils::authOrderEnum2Str(const QList<int>& authOrder)
@@ -221,9 +208,9 @@ QString Utils::authTypeEnum2LocaleStr(int authType)
                                             {KAD_AUTH_TYPE_FINGERVEIN, QCoreApplication::tr("fingervein")},
                                             {KAD_AUTH_TYPE_IRIS, QCoreApplication::tr("iris")},
                                             {KAD_AUTH_TYPE_UKEY, QCoreApplication::tr("ukey")},
-                                            {KAD_AUTH_TYPE_VIRTUAL_FACE, QCoreApplication::tr("virtual face")},
-                                            {KAD_AUTH_TYPE_VIRTUAL_CODE, QCoreApplication::tr("virtual code")},
-                                            {KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA, QCoreApplication::tr("virtual code no camera")}};
+                                            {KAD_AUTH_TYPE_SOFT_FACE, QCoreApplication::tr("soft face")},
+                                            {KAD_AUTH_TYPE_SOFT_CODE, QCoreApplication::tr("soft code")},
+                                            {KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA, QCoreApplication::tr("soft code no camera")}};
 
     auto iter = localeAuthTypeMap.find(authType);
     if (iter == localeAuthTypeMap.end())

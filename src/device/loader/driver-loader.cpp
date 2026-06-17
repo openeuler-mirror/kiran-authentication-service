@@ -68,10 +68,8 @@ void DriverLoader::init()
         case DRIVER_TYPE_UKEY:
             setupPhysicalDriver(file, driver);
             break;
-        case DRIVER_TYPE_VIRTUAL_FACE:
-        case DRIVER_TYPE_VIRTUAL_CODE:
-        case DRIVER_TYPE_VIRTUAL_CODE_NO_CAMERA:
-            m_virtualDrivers.append(file);
+        case DRIVER_TYPE_SOFT:
+            m_softDrivers.append(file);
             break;
         default:
             break;
