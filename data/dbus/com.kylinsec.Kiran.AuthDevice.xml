@@ -5,16 +5,16 @@
 
         <method name="GetDevices">
             <arg name="devices" direction="out" type="s">
-                <description>The json string is an array that every item contains device type, name, device Id and objectPath.</description>
+                <description>JSON array, each item is an object containing: "deviceType" (int, refer to DeviceType in kas-authentication-i.h), "deviceName" (string, the driver name), "deviceID" (string, unique device identifier), "objectPath" (string, D-Bus object path of this device).</description>
             </arg>
         </method>
 
         <method name="GetDevicesByType">
             <arg name="device_type" direction="in" type="i">
-                <description>The device type.</description>
+                <description>The device type. Refer to enum DeviceType in file kas-authentication-i.h.</description>
             </arg>
             <arg name="devices" direction="out" type="s">
-                <description>The json string is an array that every item contains name and deviceId ,objectPath.</description>
+                <description>JSON array, each item is an object containing: "deviceName" (string, the driver name), "deviceID" (string, unique device identifier), "objectPath" (string, D-Bus object path of this device).</description>
             </arg>
         </method>
 
@@ -35,17 +35,17 @@
 
         <method name="Remove">
             <arg name="feature_id" direction="in" type="s">
-                <description>The feature is uniquely identified by feature ID.</description>
+                <description>The feature is uniquely identified by feature ID (the FeatureData.featureID value that was returned during enrollment).</description>
             </arg>
-            <description>Remove feature or ukey data according to feature ID</description>
+            <description>Remove an enrolled feature or UKey binding data from the database by feature ID.</description>
         </method>
         
         <method name="GetDriversByType">
             <arg name="device_type" direction="in" type="i">
-                <description>Get drive information according to device type. Refer to enum DeviceType in file kiran-auth-device-i.h</description>
+                <description>Get driver information according to device type. Refer to enum DeviceType in file kas-authentication-i.h.</description>
             </arg>
             <arg name="drivers_info" direction="out" type="s">
-                <description>The string array in json format returns the driver list information.</description>
+                <description>JSON array, each item is an object containing: "driverName" (string, the driver library name), "enable" (bool, whether the driver is enabled).</description>
             </arg>
         </method>    
 
@@ -56,8 +56,14 @@
             <arg name="enable" direction="in" type="b">
                 <description>Enable drive or not.</description>
             </arg>            
-        </method>        
-         
+        </method>
+
+        <method name="GetSupportedAuthTypes">
+            <arg name="auth_types" direction="out" type="s">
+                <description>JSON array of integers (KADAuthType values) supported by currently loaded drivers. Each value is a bitmask: PASSWORD:1, FINGERPRINT:2, FACE:4, UKEY:8, FINGERVEIN:16, IRIS:32, SOFT_FACE:64, SOFT_CODE:128, SOFT_CODE_NO_CAMERA:256.</description>
+            </arg>
+        </method>
+
         <signal name="DeviceAdded">
             <arg name="device_type" type="i">
                 <description>The device type.</description>

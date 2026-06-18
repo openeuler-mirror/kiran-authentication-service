@@ -4,7 +4,7 @@
 <context>
     <name>Kiran::Authentication</name>
     <message>
-        <location filename="../src/pam/authentication.cpp" line="128"/>
+        <location filename="../plugins/pam/authentication.cpp" line="123"/>
         <source>Too many authentication failures, so the authentication mode is locked.</source>
         <translation>错误次数过多，认证模式已被禁用。</translation>
     </message>
@@ -12,12 +12,12 @@
 <context>
     <name>Kiran::AuthenticationTerminal</name>
     <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="80"/>
+        <location filename="../plugins/pam/authentication-terminal.cpp" line="83"/>
         <source>Select Authentication type (%1): </source>
         <translation>请选择认证类型（%1）： </translation>
     </message>
     <message>
-        <location filename="../src/pam/authentication-terminal.cpp" line="97"/>
+        <location filename="../plugins/pam/authentication-terminal.cpp" line="100"/>
         <source>The authentication type is invalid. Please select a new one</source>
         <translation>该认证类型无效，请重新选择</translation>
     </message>
@@ -56,17 +56,17 @@
     </message>
     <message>
         <location filename="../lib/utils.cpp" line="224"/>
-        <source>virtual face</source>
+        <source>soft face</source>
         <translation>人脸</translation>
     </message>
     <message>
         <location filename="../lib/utils.cpp" line="225"/>
-        <source>virtual code</source>
+        <source>soft code</source>
         <translation>授权码</translation>
     </message>
     <message>
         <location filename="../lib/utils.cpp" line="226"/>
-        <source>virtual code no camera</source>
+        <source>soft code no camera</source>
         <translation>授权码(无摄像头)</translation>
     </message>
 </context>

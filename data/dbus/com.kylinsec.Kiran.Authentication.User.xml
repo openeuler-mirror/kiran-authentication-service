@@ -21,7 +21,7 @@
         <method name="GetIdentifications">
             <arg type="i" name="auth_type" direction="in" />
             <arg type="s" name="identifications" direction="out">
-                <description>The json string is an array that every item contains identification name, data_id and iid.</description>
+                <description>JSON array, each item is an object containing: "iid" (string, identification ID), "data_id" (string, the FeatureData.featureID), "name" (string, user-assigned name e.g. "fingerprint 1").</description>
             </arg>
         </method>
 
@@ -30,12 +30,12 @@
                 <description>The authentication type being or to be performed. Refer to enum AuthType in file kas-authentication-i.h.</description>
             </arg>
             <arg name="name" direction="in" type="s">
-                <description>The identification name. For example fingerprint 1, fingerprint 2, etc.</description>
+                <description>The identification name. For example "fingerprint 1", "fingerprint 2".</description>
             </arg>
             <arg name="extra_info" direction="in" type="s">
-                <description>For additional information, use JSON format, such as Ukey with PIN code information</description>
+                <description>Additional information in JSON format. For UKey: {"ukey": {"pin": "&lt;PIN&gt;", "serial_number": "&lt;serial&gt;"}}. For biometric: pass "{}". This is forwarded to the device driver's EnrollStart method.</description>
             </arg>
-            <description>Use the selected default device to enroll.</description>
+            <description>Start enrollment using the default device for the given auth type. The EnrollStatus signal will be emitted during the enrollment process.</description>
         </method>
 
         <method name="EnrollStop">
@@ -56,32 +56,38 @@
 
         <signal name="EnrollStatus">
             <arg name="iid" type="s">
-                <description>identification ID,It is only valid if the entry is completed and successful</description>
+                <description>Identification ID, uniquely identifies the enrolled feature. It is only valid when isComplete is true and enrollment succeeded. Empty if enrollment failed or still in progress.</description>
             </arg>
             <arg name="isComplete" type="b">
-                <description>Complete or not</description>
+                <description>Whether the enrollment process has completed (either success or failure). false means enrollment is still in progress.</description>
             </arg>
             <arg name="progress" type="i">
-                <description>A number between 1 and 100 to describe the progress of enrolling fingerprint.</description>
+                <description>A number between 0 and 100 describing the enrollment progress.</description>
             </arg>
             <arg name="message" type="s">
-                <description>Status description information.</description>
+                <description>Human-readable status description. Can be displayed to the user as progress or error information.</description>
             </arg>
         </signal>
 
         <signal name="IdentificationChanged">
-            <arg name="iid" type="s" />
-            <description>Send this signal when the authentication is changed.</description>
+            <arg name="iid" type="s">
+                <description>The identification ID of the feature that was modified.</description>
+            </arg>
+            <description>Emitted when an identification's attribute (e.g. name) is changed.</description>
         </signal>
 
         <signal name="IdentificationAdded">
-            <arg name="iid" type="s" />
-            <description>Send this signal when the authentication is added.</description>
+            <arg name="iid" type="s">
+                <description>The identification ID of the newly enrolled feature.</description>
+            </arg>
+            <description>Emitted when a new feature is enrolled and added to the user's identifications.</description>
         </signal>
 
         <signal name="IdentificationDeleted">
-            <arg name="iid" type="s" />
-            <description>Send this signal when the authentication is deleted.</description>
+            <arg name="iid" type="s">
+                <description>The identification ID of the feature that was removed.</description>
+            </arg>
+            <description>Emitted when a feature is deleted from the user's identifications.</description>
         </signal>
 
     </interface>

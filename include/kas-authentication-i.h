@@ -58,9 +58,9 @@
 #define AUTH_TYPE_STR_FACE "face"
 #define AUTH_TYPE_STR_IRIS "iris"
 #define AUTH_TYPE_STR_UKEY "ukey"
-#define AUTH_TYPE_STR_VIRTUAL_FACE "virtual face"
-#define AUTH_TYPE_STR_VIRTUAL_CODE "virtual code"
-#define AUTH_TYPE_STR_VIRTUAL_CODE_NO_CAMERA "virtual code no camera"
+#define AUTH_TYPE_STR_SOFT_FACE "soft face"
+#define AUTH_TYPE_STR_SOFT_CODE "soft code"
+#define AUTH_TYPE_STR_SOFT_CODE_NO_CAMERA "soft code no camera"
 
 /* ------------ 认证场景定义 ----------------- */
 #define AUTH_APPLICATION_STR_LOGIN "login"
@@ -152,37 +152,67 @@ enum IdentifyProcess
 // 设备类型
 enum DeviceType
 {
-    DEVICE_TYPE_FingerPrint,          // 指纹
-    DEVICE_TYPE_Face,                 // 人脸
-    DEVICE_TYPE_FingerVein,           // 指静脉
-    DEVICE_TYPE_Iris,                 // 虹膜
-    DEVICE_TYPE_VoicePrint,           // 声纹
-    DEVICE_TYPE_UKey,                 // ukey
-                                      // ...预留，未来可能增加其他物理设备...
-    DEVICE_TYPE_Virtual_Face = 1000,  // 虚拟人脸
-    DEVICE_TYPE_Virtual_Code,         // 验证码
-    DEVICE_TYPE_Virtual_Code_No_Camera, // 验证码（无摄像头）
+    // 指纹
+    DEVICE_TYPE_FINGERPRINT,
+    // 人脸
+    DEVICE_TYPE_FACE,
+    // 指静脉
+    DEVICE_TYPE_FINGERVEIN,
+    // 虹膜
+    DEVICE_TYPE_IRIS,
+    // 声纹
+    DEVICE_TYPE_VOICEPRINT,
+    // ukey
+    DEVICE_TYPE_UKEY,
+    // ...预留，未来可能增加其他物理设备...
+    // 软驱动
+    DEVICE_TYPE_SOFT = 1000,
+};
+
+// 软设备子类型
+enum SoftDeviceType
+{
+    // 非软设备（物理设备）/ 默认值
+    SOFT_DEVICE_TYPE_NONE = 0,
+    // 软人脸
+    SOFT_DEVICE_TYPE_FACE = 1,
+    // 软验证码
+    SOFT_DEVICE_TYPE_CODE,
+    // 软验证码（无摄像头）
+    SOFT_DEVICE_TYPE_CODE_NO_CAMERA,
 };
 
 // 设备状态
 enum DeviceStatusx
 {
-    DEVICE_STATUS_ERROR,           // 设备发生错误
-    DEVICE_STATUS_BUSY,            // 设备忙碌
-    DEVICE_STATUS_IDLE,            // 设备空闲
-    DEVICE_STATUS_DOING_ENROLL,    // 设备正在录入中
-    DEVICE_STATUS_DOING_IDENTIFY,  // 设备正在验证中
-    DEVICE_STATUS_DISABLE,         // 设备被禁用
+    // 设备发生错误
+    DEVICE_STATUS_ERROR,
+    // 设备忙碌
+    DEVICE_STATUS_BUSY,
+    // 设备空闲
+    DEVICE_STATUS_IDLE,
+    // 设备正在录入中
+    DEVICE_STATUS_DOING_ENROLL,
+    // 设备正在验证中
+    DEVICE_STATUS_DOING_IDENTIFY,
+    // 设备被禁用
+    DEVICE_STATUS_DISABLE,
 };
 
 enum GeneralResult
 {
-    GENERAL_RESULT_UNSUPPORT = -1,        // 此接口不支持
-    GENERAL_RESULT_OK = 0,                // 成功
-    GENERAL_RESULT_FAIL = 1,              // 失败
-    GENERAL_RESULT_TIMEOUT = 2,           // 超时
-    GENERAL_RESULT_NO_FOUND_DEVICE = 3,   // 设备不存在
-    GENERAL_RESULT_OPEN_DEVICE_FAIL = 4,  // 打开设备失败
+    // 此接口不支持
+    GENERAL_RESULT_UNSUPPORT = -1,
+    // 成功
+    GENERAL_RESULT_OK = 0,
+    // 失败
+    GENERAL_RESULT_FAIL = 1,
+    // 超时
+    GENERAL_RESULT_TIMEOUT = 2,
+    // 设备不存在
+    GENERAL_RESULT_NO_FOUND_DEVICE = 3,
+    // 打开设备失败
+    GENERAL_RESULT_OPEN_DEVICE_FAIL = 4,
 };
 
 // 认证模式
@@ -215,12 +245,12 @@ enum KADAuthType
     KAD_AUTH_TYPE_FINGERVEIN = (1 << 4),
     // 虹膜
     KAD_AUTH_TYPE_IRIS = (1 << 5),
-    // 虚拟人脸
-    KAD_AUTH_TYPE_VIRTUAL_FACE = (1 << 6),
-    // 授权码（有摄像头）
-    KAD_AUTH_TYPE_VIRTUAL_CODE = (1 << 7),
-    // 授权码（无摄像头）
-    KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA = (1 << 8),
+    // 软人脸
+    KAD_AUTH_TYPE_SOFT_FACE = (1 << 6),
+    // 软授权码（有摄像头）
+    KAD_AUTH_TYPE_SOFT_CODE = (1 << 7),
+    // 软授权码（无摄像头）
+    KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA = (1 << 8),
     KAD_AUTH_TYPE_LAST = (1 << 9),
 };
 

@@ -51,12 +51,12 @@ static const QMap<KADAuthType, QString> AuthTypeGroupMap = {
      "FingerVein"},
     {KAD_AUTH_TYPE_IRIS,
      "Iris"},
-    {KAD_AUTH_TYPE_VIRTUAL_FACE,
-     "VirtualFace"},
-    {KAD_AUTH_TYPE_VIRTUAL_CODE,
-     "VirtualCode"},
-    {KAD_AUTH_TYPE_VIRTUAL_CODE_NO_CAMERA,
-     "VirtualCodeNoCamera"}};
+    {KAD_AUTH_TYPE_SOFT_FACE,
+     "SoftFace"},
+    {KAD_AUTH_TYPE_SOFT_CODE,
+     "SoftCode"},
+    {KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA,
+     "SoftCodeNoCamera"}};
 
 static const QMap<KADAuthApplication, QString> AuthAppKeyMap = {
     {KAD_AUTH_APPLICATION_LOGIN,

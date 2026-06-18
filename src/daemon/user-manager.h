@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include <QSharedPointer>
 #include <QFileSystemWatcher>
 #include <QObject>
+#include <QSharedPointer>
 
 #include "user.h"
 

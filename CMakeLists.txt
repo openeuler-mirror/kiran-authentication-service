@@ -4,28 +4,13 @@ project(kiran-authentication-service VERSION 2.6)
 
 include(GNUInstallDirs)
 
-option(ENABLE_CZHT_VIRTUAL_DRIVER "Enable czht virtual driver" OFF)
-option(ENABLE_KIRAN_FACE_DRIVER "Enable Kiran face driver" OFF)
-
-# 将 CMake option 传递给 C++ 预处理器
-if(ENABLE_CZHT_VIRTUAL_DRIVER)
-  add_definitions(-DENABLE_CZHT_VIRTUAL_DRIVER)
-endif()
-if(ENABLE_KIRAN_FACE_DRIVER)
-  add_definitions(-DENABLE_KIRAN_FACE_DRIVER)
-endif()
-
-# 互斥检查：czht 和 kiran 不能同时启用
-if(ENABLE_CZHT_VIRTUAL_DRIVER AND ENABLE_KIRAN_FACE_DRIVER)
-  message(FATAL_ERROR "ENABLE_CZHT_VIRTUAL_DRIVER and ENABLE_KIRAN_FACE_DRIVER are mutually exclusive. Enable only one of them.")
-endif()
-
 set(KAS_INSTALL_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME})
 set(KAS_INSTALL_INCLUDE ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${PROJECT_NAME})
 set(KAS_INSTALL_TRANSLATIONDIR ${KAS_INSTALL_DATADIR}/translations)
 set(KAS_INSTALL_SYSCONFDIR ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME})
 set(KAS_INSTALL_DEP_LIBDIR ${CMAKE_INSTALL_FULL_LIBDIR}/${PROJECT_NAME}/lib64)
 set(KAS_AUTH_DRIVERSDIR ${CMAKE_INSTALL_FULL_LIBDIR}/${PROJECT_NAME}/drivers)
+set(SOFT_DRIVERS_INSTALL_DIR ${KAS_AUTH_DRIVERSDIR}/soft)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
@@ -56,6 +41,8 @@ file(GLOB_RECURSE COMMON_CPP_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_subdirectory(data)
 add_subdirectory(lib)
 add_subdirectory(src)
+
+add_subdirectory(plugins/pam)
 
 install(FILES include/kas-authentication-i.h
         DESTINATION ${KAS_INSTALL_INCLUDE}/)
