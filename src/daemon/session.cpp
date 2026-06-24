@@ -15,6 +15,7 @@
 #include <qt5-log-i.h>
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
+#include <QDateTime>
 #include <QEventLoop>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -328,10 +329,12 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
             KLOG_INFO() << m_sessionID << "soft device authentication failed, user name:" << osUser;
         }
 
-        // 构造 JSON 字符串，包含 os_user、result、fail_reason
+        // 构造 JSON 字符串 (C6: ReportLoginLog schema)
         QJsonObject jsonObj;
         jsonObj.insert("os_user", osUser);
-        jsonObj.insert("result", loginResult);
+        jsonObj.insert("user_name", this->m_userName);
+        jsonObj.insert("result", loginResult ? QStringLiteral("accept") : QStringLiteral("reject"));
+        jsonObj.insert("logged_at", QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
         if (loginResult == 0)
         {
             jsonObj.insert("fail_reason", message);
