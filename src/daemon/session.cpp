@@ -200,13 +200,28 @@ void Session::SetAuthType(int authType)
 
 void Session::StartAuth()
 {
-    if (this->m_verifyInfo.m_requestID > 0)
+    if (this->m_verifyInfo.m_requestID != -1)
     {
-        KLOG_WARNING() << m_sessionID << "auth is in process,start auth failed";
+        KLOG_WARNING() << m_sessionID << "StartAuth rejected: device request still active"
+                       << "requestID=" << this->m_verifyInfo.m_requestID
+                       << "authType=" << this->m_authType
+                       << "inAuth=" << this->m_verifyInfo.m_inAuth;
         DBUS_ERROR_REPLY_AND_RET(QDBusError::AccessDenied, KADErrorCode::ERROR_USER_IDENTIFIYING);
     }
 
-    KLOG_INFO() << m_sessionID << "start auth";
+    if (this->m_verifyInfo.m_inAuth)
+    {
+        KLOG_WARNING() << m_sessionID << "StartAuth rejected: auth already in process"
+                       << "requestID=" << this->m_verifyInfo.m_requestID
+                       << "authType=" << this->m_authType
+                       << "inAuth=" << this->m_verifyInfo.m_inAuth;
+        DBUS_ERROR_REPLY_AND_RET(QDBusError::AccessDenied, KADErrorCode::ERROR_USER_IDENTIFIYING);
+    }
+
+    KLOG_INFO() << m_sessionID << "StartAuth"
+                << "user=" << m_userName
+                << "authType=" << this->m_authType
+                << "authMode=" << this->m_authMode;
     this->m_verifyInfo.m_inAuth = true;
     this->m_verifyInfo.m_dbusMessage = this->message();
     this->startPhaseAuth();
@@ -214,7 +229,10 @@ void Session::StartAuth()
 
 void Session::StopAuth()
 {
-    KLOG_DEBUG() << m_sessionID << "stop auth";
+    KLOG_INFO() << m_sessionID << "StopAuth"
+                << "requestID=" << this->m_verifyInfo.m_requestID
+                << "authType=" << this->m_authType
+                << "inAuth=" << this->m_verifyInfo.m_inAuth;
 
     if (m_gencodeProcess && m_gencodeProcess->state() != QProcess::NotRunning)
     {
@@ -277,10 +295,10 @@ QString Session::getSpecifiedUser()
 void Session::queued(QSharedPointer<DeviceRequest> request)
 {
     this->m_verifyInfo.m_requestID = request->reqID;
-    KLOG_INFO() << m_sessionID << "session (request id:" << request->reqID << ") queued";
-    KLOG_INFO() << "auth type:" << m_authType << "auth type locale:" << Utils::authTypeEnum2LocaleStr(m_authType);
-    auto tips = QString(tr("Please wait while the %1 request is processed")).arg(Utils::authTypeEnum2LocaleStr(m_authType));
-    Q_EMIT this->AuthMessage(tips, KAD_MESSAGE_TYPE_INFO);
+    KLOG_INFO() << m_sessionID << "session (request id:" << request->reqID << ") queued"
+                << "authType=" << m_authType
+                << "authTypeLocale=" << Utils::authTypeEnum2LocaleStr(m_authType);
+    // 认证排队属于内部调度，不向 greeter 展示「录入请求正在处理」类提示，避免覆盖真实错误原因
 }
 
 void Session::interrupt()
@@ -303,7 +321,13 @@ void Session::end()
 
 void Session::onIdentifyStatus(const QString &bid, int result, const QString &message)
 {
-    KLOG_INFO() << m_sessionID << "verify identify status:" << bid << result << message;
+    KLOG_INFO() << m_sessionID << "onIdentifyStatus"
+                << "bid=" << bid
+                << "result=" << result
+                << "message=" << message
+                << "authType=" << this->m_verifyInfo.authType
+                << "requestID=" << this->m_verifyInfo.m_requestID
+                << "inAuth=" << this->m_verifyInfo.m_inAuth;
 
     // 软驱动认证类型，无论成功失败都要上报登录日志
     if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_FACE ||
@@ -381,10 +405,14 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
 
 void Session::startPhaseAuth()
 {
-    KLOG_INFO() << m_sessionID << "start phase auth for auth type:" << this->m_authType;
+    KLOG_INFO() << m_sessionID << "startPhaseAuth"
+                << "authType=" << this->m_authType
+                << "requestID=" << this->m_verifyInfo.m_requestID
+                << "inAuth=" << this->m_verifyInfo.m_inAuth;
     m_waitForResponseFunc = nullptr;
 
     // 开始阶段认证前,通知认证类型状态变更
+    KLOG_INFO() << m_sessionID << "emit AuthTypeChanged authType=" << this->m_authType;
     emit this->m_dbusAdaptor->AuthTypeChanged(this->m_authType);
 
     switch (this->m_authType)
@@ -641,8 +669,11 @@ void Session::finishAuth(SessionAuthResult authResult)
 {
     auto authResultEnum = QMetaEnum::fromType<Session::SessionAuthResult>();
     auto authResultKey = authResultEnum.valueToKey(authResult);
-    KLOG_DEBUG() << m_sessionID << "finish auth\n"
-                 << "auth result:" << (authResultKey ? authResultKey : "NULL");
+    KLOG_INFO() << m_sessionID << "finishAuth"
+                << "authType=" << this->m_authType
+                << "authResult=" << (authResultKey ? authResultKey : "NULL")
+                << "requestID=" << this->m_verifyInfo.m_requestID
+                << "inAuth=" << this->m_verifyInfo.m_inAuth;
 
     const QString &authenticatedUserName = this->m_verifyInfo.m_authenticatedUserName;
     bool isSuccess = (authResult == SESSION_AUTH_MATCH) || (authResult == SESSION_AUTH_PASSWD_AUTH_IGNORE);
@@ -688,10 +719,14 @@ void Session::finishAuth(SessionAuthResult authResult)
 
         if (recordFailure)
         {
+            KLOG_INFO() << m_sessionID << "finishAuth emit AuthFailed"
+                        << "authResult=" << (authResultKey ? authResultKey : "NULL");
             Q_EMIT this->AuthFailed();
         }
         else
         {
+            KLOG_INFO() << m_sessionID << "finishAuth emit AuthUnavail"
+                        << "authResult=" << (authResultKey ? authResultKey : "NULL");
             Q_EMIT this->AuthUnavail();
         }
     }

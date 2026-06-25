@@ -20,6 +20,7 @@
 #include <QPair>
 #include <QTextCodec>
 #include <functional>
+#include <memory>
 
 #include "pam-handle.h"
 #include "task-pool.h"
@@ -54,28 +55,29 @@ QString PAMHandle::getItemDirect(int itemType)
 
 QString PAMHandle::getItem(int itemType)
 {
-    QFutureInterface<QString> futureInterface;
-    futureInterface.reportStarted();
+    auto futurePtr = std::make_shared<QFutureInterface<QString>>();
+    futurePtr->reportStarted();
 
-    this->m_taskPool->pushTask([this, itemType, &futureInterface]()
+    this->m_taskPool->pushTask([this, itemType, futurePtr]()
                                {
                                    auto value = this->getItemDirect(itemType);
-                                   futureInterface.reportFinished(&value); });
-    auto future = futureInterface.future();
-    return future.result();
+                                   futurePtr->reportFinished(&value);
+                               });
+    return futurePtr->future().result();
 }
 
 void PAMHandle::setItem(int itemType, const QString &value)
 {
-    QFutureInterface<bool> futureInterface;
-    futureInterface.reportStarted();
+    auto futurePtr = std::make_shared<QFutureInterface<bool>>();
+    futurePtr->reportStarted();
 
-    this->m_taskPool->pushTask([this, itemType, &value, &futureInterface]()
+    this->m_taskPool->pushTask([this, itemType, value, futurePtr]()
                                {
                                    pam_set_item((pam_handle_t *)this->getPamh(), itemType, value.toStdString().c_str());
-                                   futureInterface.reportResult(true);
-                                   futureInterface.reportFinished(); });
-    futureInterface.future().result();
+                                   futurePtr->reportResult(true);
+                                   futurePtr->reportFinished();
+                               });
+    futurePtr->future().result();
     return;
 }
 
@@ -86,23 +88,26 @@ void PAMHandle::syslogDirect(int priority, const QString &log)
 
 void PAMHandle::syslog(int priority, const QString &log)
 {
-    QFutureInterface<bool> futureInterface;
-    futureInterface.reportStarted();
+    auto futurePtr = std::make_shared<QFutureInterface<bool>>();
+    futurePtr->reportStarted();
 
-    this->m_taskPool->pushTask([this, priority, &log, &futureInterface]()
+    this->m_taskPool->pushTask([this, priority, log, futurePtr]()
                                {
                                    pam_syslog((const pam_handle_t *)this->getPamh(), priority, "%s", log.toStdString().c_str());
-                                   futureInterface.reportResult(true);
-                                   futureInterface.reportFinished(); });
-    futureInterface.future().result();
+                                   futurePtr->reportResult(true);
+                                   futurePtr->reportFinished();
+                               });
+    futurePtr->future().result();
     return;
 }
 
 void PAMHandle::finish(int result)
 {
     auto taskPool = this->m_taskPool;
-    this->m_taskPool->pushTask([this, taskPool, result]()
-                               { taskPool->stopTask(result); });
+    this->m_taskPool->pushTask([taskPool, result]()
+                               {
+                                   taskPool->stopTask(result);
+                               });
     return;
 }
 
@@ -130,14 +135,14 @@ int32_t PAMHandle::sendTextMessage(const QString &message)
 
 int32_t PAMHandle::send(const QString &request, int32_t requestType, QString &response)
 {
-    QFutureInterface<QPairIS> futureInterface;
-    futureInterface.reportStarted();
+    auto futurePtr = std::make_shared<QFutureInterface<QPairIS>>();
+    futurePtr->reportStarted();
 
     // 跟locale的编码保持一致，以免出现乱码问题
     auto requestLocale = QTextCodec::codecForLocale()->fromUnicode(request);
 
     this->m_taskPool->pushTask(
-        [this, &requestLocale, requestType, &futureInterface]()
+        [this, requestLocale, requestType, futurePtr]()
         {
             pam_message *pamRequest = new pam_message{
                 .msg_style = requestType,
@@ -155,16 +160,16 @@ int32_t PAMHandle::send(const QString &request, int32_t requestType, QString &re
             auto retval = this->send((const struct pam_message **)&pamRequest, &pamResponse);
             if (retval != PAM_SUCCESS)
             {
-                futureInterface.reportResult(qMakePair(int(retval), QString()));
+                futurePtr->reportResult(qMakePair(int(retval), QString()));
             }
             else
             {
-                futureInterface.reportResult(qMakePair(int(PAM_SUCCESS), QString(pamResponse->resp)));
+                futurePtr->reportResult(qMakePair(int(PAM_SUCCESS), QString(pamResponse->resp)));
             }
+            futurePtr->reportFinished();
         });
 
-    auto future = futureInterface.future();
-    auto result = future.result();
+    auto result = futurePtr->future().result();
     RETURN_VAL_IF_TRUE(result.first != PAM_SUCCESS, result.first);
     response = result.second;
     return PAM_SUCCESS;

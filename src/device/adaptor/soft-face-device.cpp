@@ -30,6 +30,11 @@ SoftFaceDevice::SoftFaceDevice(DriverPtr driver, QObject* parent) : Device(drive
         m_identifyStopRequested = false;
         m_status = DEVICE_STATUS_IDLE;
 
+        KLOG_INFO() << "SoftFaceDevice: Identify finished"
+                    << "ret=" << ret
+                    << "stopRequested=" << stopped
+                    << "deviceID=" << m_devId;
+
         if (stopped)
         {
             KLOG_INFO() << "SoftFaceDevice Identify finished but stop requested, ignore result";
@@ -39,12 +44,15 @@ SoftFaceDevice::SoftFaceDevice(DriverPtr driver, QObject* parent) : Device(drive
         if (0 != ret)
         {
             QString msg = QString::fromStdString(m_driver->getErrorMsg(ret));
-            KLOG_ERROR() << "identify fail:" << msg;
+            KLOG_ERROR() << "SoftFaceDevice identify fail:"
+                         << "code=" << ret
+                         << "msg=" << msg
+                         << "deviceID=" << m_devId;
             Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_NOT_MATCH, msg);
         }
         else
         {
-            KLOG_INFO() << "identify success";
+            KLOG_INFO() << "SoftFaceDevice identify success, deviceID=" << m_devId;
             Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_MATCH, tr("identify success"));
         } });
 }
@@ -75,12 +83,18 @@ void SoftFaceDevice::EnrollStop()
 
 void SoftFaceDevice::doIdentifyStart(const QString& extraInfo)
 {
-    KLOG_INFO() << "SoftFaceDevice IdentifyStart, " << QString::fromStdString(m_driver->getDriverName());
-    KLOG_INFO() << "extraInfo:" << extraInfo;
+    KLOG_INFO() << "SoftFaceDevice IdentifyStart"
+                << "driver=" << QString::fromStdString(m_driver->getDriverName())
+                << "deviceID=" << m_devId
+                << "status=" << deviceStatus()
+                << "extraInfo=" << extraInfo;
 
     if (DEVICE_STATUS_IDLE != deviceStatus())
     {
         QString message = tr("Device Busy");
+        KLOG_WARNING() << "SoftFaceDevice IdentifyStart rejected: device busy"
+                       << "deviceID=" << m_devId
+                       << "status=" << deviceStatus();
         Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_NOT_MATCH, message);
         KLOG_INFO() << QString("%1, deviceID:%2").arg("Device Busy").arg(m_devId);
         return;
@@ -90,17 +104,23 @@ void SoftFaceDevice::doIdentifyStart(const QString& extraInfo)
     m_identifyStopRequested = false;
     auto driver = m_driver;
     auto info = extraInfo;
+    KLOG_INFO() << "SoftFaceDevice: launching identify thread, deviceID=" << m_devId;
     m_identifyWatcher.setFuture(QtConcurrent::run([driver, info]() -> int
                                                   { return driver->identify(info.toStdString()); }));
 }
 
 void SoftFaceDevice::IdentifyStop()
 {
+    KLOG_INFO() << "SoftFaceDevice IdentifyStop"
+                << "deviceID=" << m_devId
+                << "status=" << deviceStatus()
+                << "stopRequestedBefore=" << m_identifyStopRequested;
     if (DEVICE_STATUS_DOING_IDENTIFY == deviceStatus())
     {
         // driver 接口当前不支持真正的中断，这里只标记停止并让 DBus 调用立即返回；
         // 识别线程完成后会丢弃结果，避免阻塞切换到密码的 prompt。
         m_identifyStopRequested = true;
+        KLOG_INFO() << "SoftFaceDevice IdentifyStop: marked stop requested, deviceID=" << m_devId;
     }
 }
 

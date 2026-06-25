@@ -71,7 +71,10 @@ int32_t AuthenticationController::run()
     while (this->isRunning)
     {
         QMutexLocker locker(&this->m_mutex);
-        this->m_waitCondition.wait(&this->m_mutex);
+        if (this->m_tasks.isEmpty())
+        {
+            this->m_waitCondition.wait(&this->m_mutex);
+        }
         for (auto& task : this->m_tasks)
         {
             task();
