@@ -177,6 +177,12 @@ void Session::onAuthCodeSelectResponse(const QString &response)
 
 void Session::onAuthCodeInputResponse(const QString &response)
 {
+    if (response.trimmed().isEmpty())
+    {
+        Q_EMIT this->AuthMessage(tr("authorization code cannot be empty"), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+        return;
+    }
     QString machineCode = getMachineCode();
     QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}, {"code", response}});
     startGeneralAuth(jsonDoc.toJson());
