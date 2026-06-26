@@ -19,7 +19,10 @@
 #include <QDBusConnection>
 #include <QJsonDocument>
 #include <QMetaType>
+#include <QTimer>
 #include <QTranslator>
+#include <functional>
+#include <memory>
 
 #include "auth_manager_proxy.h"
 #include "auth_session_proxy.h"
@@ -47,7 +50,8 @@ Authentication::~Authentication()
 {
     if (this->m_authSessionProxy && this->m_authManagerProxy)
     {
-        this->m_authManagerProxy->DestroySession(this->m_authSessionProxy->iD());
+        auto reply = this->m_authManagerProxy->DestroySession(this->m_authSessionProxy->iD());
+        reply.waitForFinished();
     }
 }
 
@@ -220,6 +224,7 @@ int Authentication::startAuthPre()
     }
 
     this->notifyAuthType(this->m_authSessionProxy->authType());
+    m_lastNotifiedAuthType = this->m_authSessionProxy->authType();
     auto connected = connect(m_authSessionProxy, &AuthSessionProxy::AuthTypeChanged, this, &Authentication::onAuthTypeChanged);
     return PAM_SUCCESS;
 }
@@ -228,16 +233,84 @@ int Authentication::startAuth()
 {
     this->m_pamHandle->syslog(LOG_DEBUG, "Start authentication.");
 
+    m_pendingAuthMessages.clear();
+    m_pendingAuthPrompts.clear();
+    m_pendingFinishResult = -1;
+    m_inStartAuth = true;
+
     auto reply = this->m_authSessionProxy->StartAuth();
     reply.waitForFinished();
+    m_inStartAuth = false;
+
     if (reply.isError())
     {
+        m_pendingAuthMessages.clear();
+        m_pendingAuthPrompts.clear();
+        m_pendingFinishResult = -1;
         this->m_pamHandle->syslog(LOG_WARNING,
-                                  QString("Call startAuth failed: %1.").arg(reply.error().message()));
+                                  QString("Call startAuth failed: %1, sessionID=%2, authType=%3.")
+                                      .arg(reply.error().message())
+                                      .arg(m_sessionID)
+                                      .arg(this->m_authSessionProxy->authType()));
         return PAM_SYSTEM_ERR;
     }
 
+    this->m_pamHandle->syslog(LOG_DEBUG,
+                              QString("StartAuth succeeded, sessionID=%1").arg(m_sessionID));
+    flushPendingSessionSignals();
     return PAM_SUCCESS;
+}
+
+void Authentication::flushPendingSessionSignals()
+{
+    const auto pendingPrompts = m_pendingAuthPrompts;
+    m_pendingAuthPrompts.clear();
+
+    // 先同步处理缓冲的协议 prompt（与 onAuthMessage 同理，避免 DBus 回调栈上
+    // sendQuestionPrompt 嵌套阻塞与 PAM 主线程互等死锁）。
+    for (const auto& prompt : pendingPrompts)
+    {
+        this->onAuthPrompt(prompt.first, prompt.second);
+    }
+
+    const auto pendingMessages = m_pendingAuthMessages;
+    m_pendingAuthMessages.clear();
+    const int pendingFinish = m_pendingFinishResult;
+    m_pendingFinishResult = -1;
+
+    if (pendingMessages.isEmpty())
+    {
+        if (pendingFinish >= 0)
+        {
+            this->flushPendingSshMessagesBeforeFinish();
+            this->scheduleFinishAuth(pendingFinish);
+        }
+        return;
+    }
+
+    // 逐条异步投递，避免 StartAuth 返回后在 worker 栈上同步 conv 与主 PAM 线程互等
+    auto deliverIndex = std::make_shared<int>(0);
+    auto deliverOne = std::make_shared<std::function<void()>>();
+    *deliverOne = [this, pendingMessages, pendingFinish, deliverIndex, deliverOne]() {
+        if (*deliverIndex < pendingMessages.size())
+        {
+            const auto item = pendingMessages.at(*deliverIndex);
+            ++(*deliverIndex);
+            this->deliverAuthMessage(item.first, item.second);
+            QTimer::singleShot(0, this, [deliverOne]() {
+                (*deliverOne)();
+            });
+            return;
+        }
+        if (pendingFinish >= 0)
+        {
+            this->flushPendingSshMessagesBeforeFinish();
+            this->scheduleFinishAuth(pendingFinish);
+        }
+    };
+    QTimer::singleShot(0, this, [deliverOne]() {
+        (*deliverOne)();
+    });
 }
 
 void Authentication::finishAuth(int result)
@@ -245,6 +318,13 @@ void Authentication::finishAuth(int result)
     this->m_pamHandle->syslog(LOG_DEBUG,
                               QString("Authentication thread ready quit,result:%1").arg(result));
     this->m_pamHandle->finish(result);
+}
+
+void Authentication::scheduleFinishAuth(int result)
+{
+    QTimer::singleShot(0, this, [this, result]() {
+        this->finishAuth(result);
+    });
 }
 
 bool Authentication::initSession()
@@ -312,6 +392,12 @@ void Authentication::flushPendingSshMessagesBeforeFinish()
 
 void Authentication::onAuthPrompt(const QString &text, int type)
 {
+    if (m_inStartAuth)
+    {
+        m_pendingAuthPrompts.append(qMakePair(text, type));
+        return;
+    }
+
     QString prompt = text;
     if (this->isSshService() && !this->m_pendingSshInfoMessages.isEmpty())
     {
@@ -336,7 +422,7 @@ void Authentication::onAuthPrompt(const QString &text, int type)
 
     if (retval != PAM_SUCCESS)
     {
-        this->finishAuth(retval);
+        this->scheduleFinishAuth(retval);
     }
     else
     {
@@ -350,6 +436,24 @@ bool Authentication::isSshService() const
 }
 
 void Authentication::onAuthMessage(const QString &text, int type)
+{
+    if (m_inStartAuth)
+    {
+        m_pendingAuthMessages.append(qMakePair(text, type));
+        return;
+    }
+    this->handleAuthMessage(text, type);
+}
+
+void Authentication::handleAuthMessage(const QString &text, int type)
+{
+    // 统一异步投递到 worker 事件循环，避免 DBus 回调栈上同步 conv 死锁
+    QTimer::singleShot(0, this, [this, text, type]() {
+        this->deliverAuthMessage(text, type);
+    });
+}
+
+void Authentication::deliverAuthMessage(const QString &text, int type)
 {
     if (this->isSshService() &&
         (type == KADMessageType::KAD_MESSAGE_TYPE_INFO || type == KADMessageType::KAD_MESSAGE_TYPE_ERROR))
@@ -385,16 +489,27 @@ void Authentication::onAuthMessage(const QString &text, int type)
 
 void Authentication::onAuthFailed()
 {
-    this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication failed,session ID:%1").arg(m_sessionID));
+    this->m_pamHandle->syslog(LOG_INFO,
+                              QString("Authentication AuthFailed signal,session ID:%1").arg(m_sessionID));
+    if (m_inStartAuth)
+    {
+        m_pendingFinishResult = PAM_AUTH_ERR;
+        return;
+    }
     this->flushPendingSshMessagesBeforeFinish();
-    this->finishAuth(PAM_AUTH_ERR);
+    this->scheduleFinishAuth(PAM_AUTH_ERR);
 }
 
 void Authentication::onAuthUnavail()
 {
     this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication unavail,session ID:%1").arg(m_sessionID));
+    if (m_inStartAuth)
+    {
+        m_pendingFinishResult = PAM_AUTHINFO_UNAVAIL;
+        return;
+    }
     this->flushPendingSshMessagesBeforeFinish();
-    this->finishAuth(PAM_AUTHINFO_UNAVAIL);
+    this->scheduleFinishAuth(PAM_AUTHINFO_UNAVAIL);
 }
 
 void Authentication::onAuthSuccessed(const QString &userName)
@@ -412,11 +527,24 @@ void Authentication::onAuthSuccessed(const QString &userName)
 
     this->m_pamHandle->syslog(LOG_DEBUG, QString("Authentication successed,session ID:%1").arg(m_sessionID));
     this->m_pendingSshInfoMessages.clear();
-    this->finishAuth(PAM_SUCCESS);
+    this->scheduleFinishAuth(PAM_SUCCESS);
 }
 
 void Authentication::onAuthTypeChanged(int authType)
 {
+    if (m_inStartAuth)
+    {
+        return;
+    }
+    if (m_lastNotifiedAuthType == authType)
+    {
+        this->m_pamHandle->syslogDirect(LOG_DEBUG,
+                                  QString("Skip duplicate AuthTypeChanged notify,session ID:%1 authType:%2")
+                                      .arg(m_sessionID)
+                                      .arg(authType));
+        return;
+    }
+    m_lastNotifiedAuthType = authType;
     this->notifyAuthType(authType);
 }
 

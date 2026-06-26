@@ -14,7 +14,9 @@
 
 #pragma once
 
+#include <QList>
 #include <QObject>
+#include <QPair>
 
 #include "pam-handle.h"
 
@@ -47,6 +49,10 @@ private:
     int startAuthPre();
     int startAuth();
     void finishAuth(int result);
+    void scheduleFinishAuth(int result);
+    void handleAuthMessage(const QString &text, int type);
+    void deliverAuthMessage(const QString &text, int type);
+    void flushPendingSessionSignals();
 
     // 告知上层应用当前的认证模式
     virtual void notifyAuthMode() = 0;
@@ -102,5 +108,11 @@ protected:
      * /etc/pam.d/sshd 请使用 requisite/required + default=die，勿用 default=ignore（ignore 会继续密码认证）。
      */
     QStringList m_pendingSshInfoMessages;
+    int m_lastNotifiedAuthType = -1;
+    bool m_inStartAuth = false;
+    QList<QPair<QString, int>> m_pendingAuthMessages;
+    QList<QPair<QString, int>> m_pendingAuthPrompts;
+    // <0 表示无待处理的结束信号
+    int m_pendingFinishResult = -1;
 };
 }  // namespace Kiran

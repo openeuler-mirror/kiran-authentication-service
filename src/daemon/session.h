@@ -159,5 +159,6 @@ private:
     // 处理授权码自动申请
     AuthCodeStep m_authCodeStep;
     QProcess *m_gencodeProcess;
+    qint64 m_authStartMs = 0; /**< StartAuth 时间戳，用于计算认证耗时 */
 };
 }  // namespace Kiran
