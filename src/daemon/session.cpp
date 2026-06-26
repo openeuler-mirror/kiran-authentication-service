@@ -224,6 +224,7 @@ void Session::StartAuth()
                 << "authMode=" << this->m_authMode;
     this->m_verifyInfo.m_inAuth = true;
     this->m_verifyInfo.m_dbusMessage = this->message();
+    m_authStartMs = QDateTime::currentMSecsSinceEpoch();
     this->startPhaseAuth();
 }
 
@@ -329,40 +330,24 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
                 << "requestID=" << this->m_verifyInfo.m_requestID
                 << "inAuth=" << this->m_verifyInfo.m_inAuth;
 
-    // 软驱动认证类型，无论成功失败都要上报登录日志
-    if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_FACE ||
-        this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE ||
-        this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA)
+    // 软驱动认证类型，仅认证成功（MATCH）时上报登录日志
+    // 后端验证失败、设备错误、HMAC 等非 MATCH 场景不上报（无法可靠区分「真实不匹配」与「系统错误」）
+    if (result == IdentifyStatus::IDENTIFY_STATUS_MATCH &&
+        (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_FACE ||
+         this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE ||
+         this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA))
     {
-        QString osUser;
-        int loginResult = 0;  // 1=成功，0=失败
-
-        if (result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
-        {
-            // 认证成功
-            this->m_verifyInfo.m_authenticatedUserName = this->getSpecifiedUser();
-            osUser = this->m_verifyInfo.m_authenticatedUserName;
-            loginResult = 1;
-            KLOG_INFO() << m_sessionID << "soft device authentication successfully, authenticated user name:" << osUser;
-        }
-        else
-        {
-            // 认证失败
-            osUser = this->getSpecifiedUser();
-            loginResult = 0;
-            KLOG_INFO() << m_sessionID << "soft device authentication failed, user name:" << osUser;
-        }
+        this->m_verifyInfo.m_authenticatedUserName = this->getSpecifiedUser();
+        const QString osUser = this->m_verifyInfo.m_authenticatedUserName;
+        KLOG_INFO() << m_sessionID << "soft device authentication successfully, authenticated user name:" << osUser;
 
         // 构造 JSON 字符串 (C6: ReportLoginLog schema)
         QJsonObject jsonObj;
         jsonObj.insert("os_user", osUser);
         jsonObj.insert("user_name", this->m_userName);
-        jsonObj.insert("result", loginResult ? QStringLiteral("accept") : QStringLiteral("reject"));
+        jsonObj.insert("result", QStringLiteral("accept"));
         jsonObj.insert("logged_at", QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
-        if (loginResult == 0)
-        {
-            jsonObj.insert("fail_reason", message);
-        }
+        jsonObj.insert("duration_ms", static_cast<qint64>(QDateTime::currentMSecsSinceEpoch() - m_authStartMs));
         QJsonDocument jsonDoc(jsonObj);
         this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, jsonDoc.toJson());
     }
