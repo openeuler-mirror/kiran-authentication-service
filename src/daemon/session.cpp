@@ -185,6 +185,7 @@ void Session::onAuthCodeInputResponse(const QString &response)
     }
     QString machineCode = getMachineCode();
     QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}, {"code", response}});
+    m_authStartMs = QDateTime::currentMSecsSinceEpoch();
     startGeneralAuth(jsonDoc.toJson());
 }
 
@@ -492,6 +493,7 @@ void Session::startSoftCodeAuth()
     {
         QString machineCode = getMachineCode();
         QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}, {"code", response}});
+        m_authStartMs = QDateTime::currentMSecsSinceEpoch();
         startGeneralAuth(jsonDoc.toJson());
     };
 
