@@ -146,20 +146,15 @@ void Session::onAuthCodeSelectResponse(const QString &response)
 
         if (!m_gencodeProcess->waitForStarted(5000))
         {
-            // 显示错误信息，结束验证
             Q_EMIT this->AuthMessage(tr("Failed to request authorization code, please try again."), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
             this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
             return;
         }
 
-        Q_EMIT this->AuthMessage(tr("Authorization code request successful. Please contact the device administrator to obtain it."), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+        Q_EMIT this->AuthMessage(tr("Requesting authorization code, please wait..."), KADMessageType::KAD_MESSAGE_TYPE_INFO);
         m_authCodeStep = AUTH_CODE_STEP_INPUT_CODE;
-        // 重新设置 m_waitForResponseFunc 以处理下一阶段的输入
-        m_waitForResponseFunc = [this](const QString &response)
-        {
-            onAuthCodeInputResponse(response);
-        };
-        Q_EMIT this->AuthPrompt(tr("please input authorization code:"), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
+        // 暂不设置下一阶段回调，进程退出后由 onGencodeProcessFinished 统一处理成功/失败
+        m_waitForResponseFunc = nullptr;
     }
     else if (choice == 2)
     {
@@ -337,8 +332,8 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
                 << "requestID=" << this->m_verifyInfo.m_requestID
                 << "inAuth=" << this->m_verifyInfo.m_inAuth;
 
-    // 软驱动认证类型，仅认证成功（MATCH）时上报登录日志
-    // 后端验证失败、设备错误、HMAC 等非 MATCH 场景不上报（无法可靠区分「真实不匹配」与「系统错误」）
+    // 软驱动认证类型，成功（MATCH）与失败（NOT_MATCH）均上报登录日志
+    // 成功时 result=accept；失败时 result=reject（由 D-Bus 服务端按在线/离线决定是否持久化）
     if (result == IdentifyStatus::IDENTIFY_STATUS_MATCH &&
         (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_FACE ||
          this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE ||
@@ -374,6 +369,19 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
     {
         if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_FACE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE || this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA)
         {
+            // 离线失败：上报 reject 日志（D-Bus 服务端根据在线/离线决定是否持久化；在线时平台已有记录则跳过）
+            {
+                const QString osUser = this->getSpecifiedUser();
+                QJsonObject jsonObj;
+                jsonObj.insert("os_user", osUser);
+                jsonObj.insert("user_name", this->m_userName);
+                jsonObj.insert("result", QStringLiteral("reject"));
+                jsonObj.insert("fail_reason", message);
+                jsonObj.insert("logged_at", QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
+                jsonObj.insert("duration_ms", static_cast<qint64>(QDateTime::currentMSecsSinceEpoch() - m_authStartMs));
+                QJsonDocument jsonDoc(jsonObj);
+                this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, jsonDoc.toJson());
+            }
             Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
             this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
             return;
@@ -532,18 +540,42 @@ void Session::startSoftCodeNoCameraAuth()
 
 void Session::onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-    if (m_gencodeProcess)
+    if (!m_gencodeProcess || !m_verifyInfo.m_inAuth)
     {
-        if (exitCode != 0 || exitStatus != QProcess::NormalExit)
+        if (m_gencodeProcess)
         {
-            QString errorOutput = QString::fromUtf8(m_gencodeProcess->readAllStandardError());
-            KLOG_WARNING() << m_sessionID << "gencode command failed, exit code:" << exitCode << "error:" << errorOutput;
-            Q_EMIT this->AuthMessage(tr("Failed to request authorization code, please try again. %s").arg(errorOutput), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-            this->finishPhaseAuth(SESSION_AUTH_INTERNAL_ERROR);
+            m_gencodeProcess->deleteLater();
+            m_gencodeProcess = nullptr;
         }
-        m_gencodeProcess->deleteLater();
-        m_gencodeProcess = nullptr;
+        return;
     }
+
+    if (exitCode != 0 || exitStatus != QProcess::NormalExit)
+    {
+        // CLI 工具的 stderr 已包含通过 getKiranErrorMsg 映射后的具体错误（如后端 1001→"parameter out of range"），
+        // 直接展示给用户，避免用通用提示覆盖具体原因。
+        const QString detail = QString::fromUtf8(m_gencodeProcess->readAllStandardError()).trimmed();
+        KLOG_WARNING() << m_sessionID << "gencode command failed, exit code:" << exitCode << "error:" << detail;
+        const QString msg = detail.isEmpty()
+                                ? tr("Failed to request authorization code, please try again.")
+                                : detail;
+        Q_EMIT this->AuthMessage(msg, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        // 使用 SESSION_AUTH_NOT_MATCH 而非 INTERNAL_ERROR，确保 finishAuth 走 AuthFailed 路径
+        // 而非 AuthUnavail，避免 PAM authinfo_unavail=ignore 回退到密码登录。
+        this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+    }
+    else
+    {
+        Q_EMIT this->AuthMessage(tr("Authorization code request successful. Please contact the device administrator to obtain it."), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+        m_authCodeStep = AUTH_CODE_STEP_INPUT_CODE;
+        m_waitForResponseFunc = [this](const QString &response)
+        {
+            onAuthCodeInputResponse(response);
+        };
+        Q_EMIT this->AuthPrompt(tr("please input authorization code:"), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
+    }
+    m_gencodeProcess->deleteLater();
+    m_gencodeProcess = nullptr;
 }
 
 void Session::startPasswdAuth()

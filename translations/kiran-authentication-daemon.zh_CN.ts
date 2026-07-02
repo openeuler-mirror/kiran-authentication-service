@@ -13,6 +13,11 @@
     <name>Kiran::Session</name>
     <message>
         <location filename="../src/daemon/session.cpp" line="155"/>
+        <source>Requesting authorization code, please wait...</source>
+        <translation>正在申请授权码，请稍候...</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="549"/>
         <source>Authorization code request successful. Please contact the device administrator to obtain it.</source>
         <translation>申请授权码成功，请联系设备管理员获取。</translation>
     </message>
@@ -80,8 +85,8 @@
     </message>
     <message>
         <location filename="../src/daemon/session.cpp" line="541"/>
-        <source>Failed to request authorization code, please try again. %s</source>
-        <translation>申请授权码失败，请重试。%s</translation>
+        <source>Failed to request authorization code, please try again. %1</source>
+        <translation>申请授权码失败，请重试。%1</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.cpp" line="580"/>
