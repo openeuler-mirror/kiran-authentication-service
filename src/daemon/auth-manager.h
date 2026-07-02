@@ -57,7 +57,7 @@ public Q_SLOTS:  // DBUS METHODS
     QDBusObjectPath FindUserByName(const QString &userName);
 
     // 认证会话创建以及销毁
-    QDBusObjectPath CreateSession(const QString &userName, int timeout, int authApp);
+    QDBusObjectPath CreateSession(const QString &userName, int timeout, int authApp, const QString &pamService);
     void DestroySession(uint sessionID);
 
     // 根据认证类型获取驱动列表

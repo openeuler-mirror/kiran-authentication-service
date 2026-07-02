@@ -299,7 +299,7 @@ void Authentication::scheduleFinishAuth(int result)
 bool Authentication::initSession()
 {
     auto userName = this->m_pamHandle->getItem(PAM_USER);
-    auto reply = this->m_authManagerProxy->CreateSession(userName, -1, m_authApplication);
+    auto reply = this->m_authManagerProxy->CreateSession(userName, -1, m_authApplication, m_serviceName);
     auto sessionObjectPath = reply.value();
 
     if (reply.isError())

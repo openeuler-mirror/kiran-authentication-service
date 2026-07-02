@@ -552,17 +552,23 @@ void Session::onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitSt
 
     if (exitCode != 0 || exitStatus != QProcess::NormalExit)
     {
-        // CLI 工具的 stderr 已包含通过 getKiranErrorMsg 映射后的具体错误（如后端 1001→"parameter out of range"），
+        // CLI 工具的输出已包含通过 getKiranErrorMsg 映射后的具体错误（如后端 1001→"parameter out of range"），
         // 直接展示给用户，避免用通用提示覆盖具体原因。
-        const QString detail = QString::fromUtf8(m_gencodeProcess->readAllStandardError()).trimmed();
+        // 同时读取 stdout 和 stderr，以防 kiran-log 重定向输出通道。
+        QString detail = QString::fromUtf8(m_gencodeProcess->readAllStandardError()).trimmed();
+        if (detail.isEmpty())
+        {
+            detail = QString::fromUtf8(m_gencodeProcess->readAllStandardOutput()).trimmed();
+        }
         KLOG_WARNING() << m_sessionID << "gencode command failed, exit code:" << exitCode << "error:" << detail;
         const QString msg = detail.isEmpty()
                                 ? tr("Failed to request authorization code, please try again.")
                                 : detail;
         Q_EMIT this->AuthMessage(msg, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        // 使用 SESSION_AUTH_NOT_MATCH 而非 INTERNAL_ERROR，确保 finishAuth 走 AuthFailed 路径
-        // 而非 AuthUnavail，避免 PAM authinfo_unavail=ignore 回退到密码登录。
-        this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+        // 图形终端（LightDM）：走 AuthFailed 路径，返回重新认证，不回退密码。
+        // 字符终端（SSH）：走 AuthUnavail 路径，回退到 pam_unix 密码登录（保持原有行为）。
+        const bool isGraphical = (m_serviceName == QLatin1String("lightdm"));
+        this->finishPhaseAuth(isGraphical ? SESSION_AUTH_NOT_MATCH : SESSION_AUTH_INTERNAL_ERROR);
     }
     else
     {
