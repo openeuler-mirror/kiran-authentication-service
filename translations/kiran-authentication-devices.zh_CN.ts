@@ -2,6 +2,32 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>Kiran::SoftCodeBaseDevice</name>
+    <message>
+        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="49"/>
+        <source>identify success</source>
+        <translation>认证成功</translation>
+    </message>
+    <message>
+        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="71"/>
+        <source>Device Busy</source>
+        <translation>设备忙</translation>
+    </message>
+</context>
+<context>
+    <name>Kiran::SoftFaceDevice</name>
+    <message>
+        <location filename="../src/device/adaptor/soft-face-device.cpp" line="94"/>
+        <source>Device Busy</source>
+        <translation>设备忙</translation>
+    </message>
+    <message>
+        <location filename="../src/device/adaptor/soft-face-device.cpp" line="56"/>
+        <source>identify success</source>
+        <translation>认证成功</translation>
+    </message>
+</context>
+<context>
     <name>Kiran::UkeyDevice</name>
     <message>
         <location filename="../src/device/adaptor/ukey-device.cpp" line="56"/>
@@ -60,32 +86,6 @@
         <location filename="../src/device/adaptor/ukey-device.cpp" line="345"/>
         <source>invalid pin length</source>
         <translation>无效的pin码长度</translation>
-    </message>
-</context>
-<context>
-    <name>Kiran::SoftCodeBaseDevice</name>
-    <message>
-        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="48"/>
-        <source>identify success</source>
-        <translation>认证成功</translation>
-    </message>
-    <message>
-        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="71"/>
-        <source>Device Busy</source>
-        <translation>设备忙</translation>
-    </message>
-</context>
-<context>
-    <name>Kiran::SoftFaceDevice</name>
-    <message>
-        <location filename="../src/device/adaptor/soft-face-device.cpp" line="78"/>
-        <source>Device Busy</source>
-        <translation>设备忙</translation>
-    </message>
-    <message>
-        <location filename="../src/device/adaptor/soft-face-device.cpp" line="47"/>
-        <source>identify success</source>
-        <translation>认证成功</translation>
     </message>
 </context>
 </TS>

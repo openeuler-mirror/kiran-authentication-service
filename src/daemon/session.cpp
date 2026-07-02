@@ -142,7 +142,7 @@ void Session::onAuthCodeSelectResponse(const QString &response)
         m_gencodeProcess = new QProcess(this);
         connect(m_gencodeProcess, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                 this, &Session::onGencodeProcessFinished);
-        m_gencodeProcess->start("kiran-auth-code-request", QStringList() << "--auto");
+        m_gencodeProcess->start("kiran-auth-code-request", QStringList() << "--auto" << "--user-name" << m_userName);
 
         if (!m_gencodeProcess->waitForStarted(5000))
         {

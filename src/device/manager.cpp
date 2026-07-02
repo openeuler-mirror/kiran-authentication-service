@@ -12,6 +12,8 @@
  * Author:     yangfeng <yangfeng@kylinsec.com.cn>
  */
 
+#include <algorithm>
+
 #include <qt5-log-i.h>
 
 #include "adaptor/device.h"
@@ -26,6 +28,27 @@
 
 namespace Kiran
 {
+namespace
+{
+/** Kiran 软认证类型按 KiranWorkMode 位序排序：F → P → S → C */
+int kiranWorkModeAuthTypeRank(int authType)
+{
+    switch (authType)
+    {
+    case KAD_AUTH_TYPE_SOFT_FACE:
+        return 0;
+    case KAD_AUTH_TYPE_PASSWORD:
+        return 1;
+    case KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA:
+        return 2;
+    case KAD_AUTH_TYPE_SOFT_CODE:
+        return 3;
+    default:
+        return 100;
+    }
+}
+}  // namespace
+
 Manager* Manager::m_instance = nullptr;
 
 Manager::Manager(QObject* parent) : QObject(parent)
@@ -346,6 +369,16 @@ QString Manager::GetSupportedAuthTypes()
             }
         }
     }
+
+    std::sort(authTypes.begin(), authTypes.end(), [](int a, int b)
+              {
+        const int rankA = kiranWorkModeAuthTypeRank(a);
+        const int rankB = kiranWorkModeAuthTypeRank(b);
+        if (rankA != rankB)
+        {
+            return rankA < rankB;
+        }
+        return a < b; });
 
     QJsonArray jsonArray;
     for (int type : authTypes)
