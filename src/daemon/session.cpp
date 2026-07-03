@@ -552,13 +552,12 @@ void Session::onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitSt
 
     if (exitCode != 0 || exitStatus != QProcess::NormalExit)
     {
-        // CLI 工具的输出已包含通过 getKiranErrorMsg 映射后的具体错误（如后端 1001→"parameter out of range"），
-        // 直接展示给用户，避免用通用提示覆盖具体原因。
-        // 同时读取 stdout 和 stderr，以防 kiran-log 重定向输出通道。
-        QString detail = QString::fromUtf8(m_gencodeProcess->readAllStandardError()).trimmed();
+        // 优先读 stdout：gen-code 的错误消息通过 printf 写入 stdout，
+        // kiran-log-qt5 的 KLOG 只写 stderr，因此 stdout 是干净的。
+        QString detail = QString::fromUtf8(m_gencodeProcess->readAllStandardOutput()).trimmed();
         if (detail.isEmpty())
         {
-            detail = QString::fromUtf8(m_gencodeProcess->readAllStandardOutput()).trimmed();
+            detail = QString::fromUtf8(m_gencodeProcess->readAllStandardError()).trimmed();
         }
         KLOG_WARNING() << m_sessionID << "gencode command failed, exit code:" << exitCode << "error:" << detail;
         const QString msg = detail.isEmpty()
