@@ -39,12 +39,14 @@ namespace Kiran
 {
 Session::Session(uint32_t sessionID,
                  const QString &serviceName,
+                 const QString &pamServiceName,
                  const QString &userName,
                  KADAuthApplication authApp,
                  QObject *parent)
     : QObject(parent),
       m_sessionID(sessionID),
       m_serviceName(serviceName),
+      m_pamServiceName(pamServiceName),
       m_userName(userName),
       m_loginUserSwitchable(false),
       m_authApplication(authApp),
@@ -351,7 +353,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
         jsonObj.insert("logged_at", QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
         jsonObj.insert("duration_ms", static_cast<qint64>(QDateTime::currentMSecsSinceEpoch() - m_authStartMs));
         QJsonDocument jsonDoc(jsonObj);
-        this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, jsonDoc.toJson());
+        this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, QString::fromUtf8(jsonDoc.toJson()));
     }
     else if (!this->matchUser(this->m_verifyInfo.authType, bid) &&
              result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
@@ -380,7 +382,7 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
                 jsonObj.insert("logged_at", QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
                 jsonObj.insert("duration_ms", static_cast<qint64>(QDateTime::currentMSecsSinceEpoch() - m_authStartMs));
                 QJsonDocument jsonDoc(jsonObj);
-                this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, jsonDoc.toJson());
+                this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, QString::fromUtf8(jsonDoc.toJson()));
             }
             Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
             this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
@@ -566,7 +568,7 @@ void Session::onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitSt
         Q_EMIT this->AuthMessage(msg, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
         // 图形终端（LightDM）：走 AuthFailed 路径，返回重新认证，不回退密码。
         // 字符终端（SSH）：走 AuthUnavail 路径，回退到 pam_unix 密码登录（保持原有行为）。
-        const bool isGraphical = (m_serviceName == QLatin1String("lightdm"));
+        const bool isGraphical = (m_pamServiceName == QLatin1String("lightdm"));
         this->finishPhaseAuth(isGraphical ? SESSION_AUTH_NOT_MATCH : SESSION_AUTH_INTERNAL_ERROR);
     }
     else

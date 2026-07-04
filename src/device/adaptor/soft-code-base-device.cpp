@@ -16,6 +16,7 @@
 #include <QtConcurrent/QtConcurrent>
 
 #include "auth_device_adaptor.h"
+#include "lib/utils.h"
 #include "soft-code-base-device.h"
 
 namespace Kiran
@@ -39,7 +40,7 @@ SoftCodeBaseDevice::SoftCodeBaseDevice(DriverPtr driver, QObject *parent)
 
         if (0 != ret)
         {
-            QString msg = QString::fromStdString(m_driver->getErrorMsg(ret));
+            QString msg = Utils::stdStringToQStringUtf8(m_driver->getErrorMsg(ret));
             KLOG_ERROR() << "identify fail:" << msg;
             Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_NOT_MATCH, msg);
         }
@@ -79,7 +80,7 @@ void SoftCodeBaseDevice::doIdentifyStart(const QString &extraInfo)
     auto driver = m_driver;
     auto info = extraInfo;
     m_identifyWatcher.setFuture(QtConcurrent::run([driver, info]() -> int
-                                                  { return driver->identify(info.toStdString()); }));
+                                                  { return driver->identify(Utils::qStringToUtf8StdString(info)); }));
 }
 
 void SoftCodeBaseDevice::IdentifyStop()
@@ -99,7 +100,7 @@ void SoftCodeBaseDevice::IdentifyResultPostProcess(const QString &extraInfo)
 {
     KLOG_INFO() << "SoftCodeBaseDevice identifyResultPostProcess, extraInfo:" << extraInfo;
     // 识别结果后处理（如上报日志、开启人走监测等）
-    m_driver->identifyResultPostProcess(extraInfo.toStdString());
+    m_driver->identifyResultPostProcess(Utils::qStringToUtf8StdString(extraInfo));
 }
 
 }  // namespace Kiran

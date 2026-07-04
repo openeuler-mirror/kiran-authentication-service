@@ -4,12 +4,12 @@
 <context>
     <name>Kiran::SoftCodeBaseDevice</name>
     <message>
-        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="49"/>
+        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="50"/>
         <source>identify success</source>
         <translation>认证成功</translation>
     </message>
     <message>
-        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="71"/>
+        <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="72"/>
         <source>Device Busy</source>
         <translation>设备忙</translation>
     </message>
@@ -17,12 +17,12 @@
 <context>
     <name>Kiran::SoftFaceDevice</name>
     <message>
-        <location filename="../src/device/adaptor/soft-face-device.cpp" line="94"/>
+        <location filename="../src/device/adaptor/soft-face-device.cpp" line="95"/>
         <source>Device Busy</source>
         <translation>设备忙</translation>
     </message>
     <message>
-        <location filename="../src/device/adaptor/soft-face-device.cpp" line="56"/>
+        <location filename="../src/device/adaptor/soft-face-device.cpp" line="57"/>
         <source>identify success</source>
         <translation>认证成功</translation>
     </message>

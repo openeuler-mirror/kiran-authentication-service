@@ -251,4 +251,15 @@ QJsonValue Utils::getValueFromJsonString(const QString& json, const QString& key
     return jsonObject.value(key);
 }
 
+std::string Utils::qStringToUtf8StdString(const QString& text)
+{
+    const QByteArray utf8 = text.toUtf8();
+    return std::string(utf8.constData(), static_cast<size_t>(utf8.size()));
+}
+
+QString Utils::stdStringToQStringUtf8(const std::string& text)
+{
+    return QString::fromUtf8(text.c_str(), static_cast<int>(text.size()));
+}
+
 }  // namespace Kiran

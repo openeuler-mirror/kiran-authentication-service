@@ -234,6 +234,7 @@ int Authentication::startAuth()
     this->m_pamHandle->syslog(LOG_DEBUG, "Start authentication.");
 
     m_pendingAuthPrompts.clear();
+    m_pendingSshInfoMessages.clear();
     m_pendingFinishResult = -1;
     m_inStartAuth = true;
 
@@ -244,6 +245,7 @@ int Authentication::startAuth()
     if (reply.isError())
     {
         m_pendingAuthPrompts.clear();
+        m_pendingSshInfoMessages.clear();
         m_pendingFinishResult = -1;
         this->m_pamHandle->syslog(LOG_WARNING,
                                   QString("Call startAuth failed: %1, sessionID=%2, authType=%3.")
@@ -268,7 +270,7 @@ void Authentication::flushPendingSessionSignals()
     // 嵌套阻塞与 PAM 主线程互等死锁）。
     // AuthMessage（sendTextMessage）不阻塞，已由 onAuthMessage 在
     // m_inStartAuth 期间直接同步投递，无需缓冲。
-    for (const auto& prompt : pendingPrompts)
+    for (const auto &prompt : pendingPrompts)
     {
         this->onAuthPrompt(prompt.first, prompt.second);
     }
@@ -291,9 +293,8 @@ void Authentication::finishAuth(int result)
 
 void Authentication::scheduleFinishAuth(int result)
 {
-    QTimer::singleShot(0, this, [this, result]() {
-        this->finishAuth(result);
-    });
+    QTimer::singleShot(0, this, [this, result]()
+                       { this->finishAuth(result); });
 }
 
 bool Authentication::initSession()
@@ -498,9 +499,9 @@ void Authentication::onAuthTypeChanged(int authType)
     if (m_lastNotifiedAuthType == authType)
     {
         this->m_pamHandle->syslogDirect(LOG_DEBUG,
-                                  QString("Skip duplicate AuthTypeChanged notify,session ID:%1 authType:%2")
-                                      .arg(m_sessionID)
-                                      .arg(authType));
+                                        QString("Skip duplicate AuthTypeChanged notify,session ID:%1 authType:%2")
+                                            .arg(m_sessionID)
+                                            .arg(authType));
         return;
     }
     m_lastNotifiedAuthType = authType;

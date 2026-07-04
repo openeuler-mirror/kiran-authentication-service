@@ -12,53 +12,53 @@
 <context>
     <name>Kiran::Session</name>
     <message>
-        <location filename="../src/daemon/session.cpp" line="155"/>
+        <location filename="../src/daemon/session.cpp" line="154"/>
         <source>Requesting authorization code, please wait...</source>
         <translation>正在申请授权码，请稍候...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="549"/>
+        <location filename="../src/daemon/session.cpp" line="574"/>
         <source>Authorization code request successful. Please contact the device administrator to obtain it.</source>
         <translation>申请授权码成功，请联系设备管理员获取。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="162"/>
-        <location filename="../src/daemon/session.cpp" line="174"/>
+        <location filename="../src/daemon/session.cpp" line="169"/>
+        <location filename="../src/daemon/session.cpp" line="580"/>
         <source>please input authorization code:</source>
         <translation>请输入授权码：</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="166"/>
+        <location filename="../src/daemon/session.cpp" line="161"/>
         <source>waiting for authorization code...</source>
         <translation>等待输入授权码...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="442"/>
+        <location filename="../src/daemon/session.cpp" line="450"/>
         <source>Insert the UKey and enter the PIN code</source>
         <translation>请插入UKey并输入PIN码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="443"/>
+        <location filename="../src/daemon/session.cpp" line="451"/>
         <source>please input ukey code.</source>
         <translation>请输入PIN码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="485"/>
+        <location filename="../src/daemon/session.cpp" line="493"/>
         <source>Please look at the camera</source>
         <translation>请直视摄像头</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="507"/>
+        <location filename="../src/daemon/session.cpp" line="515"/>
         <source>Please request for an authorization code and then enter it</source>
         <translation>请申请授权码然后输入授权码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="530"/>
+        <location filename="../src/daemon/session.cpp" line="538"/>
         <source>please select:</source>
         <translation>请选择：</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="508"/>
+        <location filename="../src/daemon/session.cpp" line="516"/>
         <source>please input authorization code.</source>
         <translation>请输入授权码。</translation>
     </message>
@@ -68,28 +68,24 @@
         <translation>无效选择</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="150"/>
+        <location filename="../src/daemon/session.cpp" line="149"/>
+        <location filename="../src/daemon/session.cpp" line="564"/>
         <source>Failed to request authorization code, please try again.</source>
         <translation>申请授权码失败，请重试。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="182"/>
-        <location filename="../src/daemon/session.cpp" line="496"/>
+        <location filename="../src/daemon/session.cpp" line="177"/>
+        <location filename="../src/daemon/session.cpp" line="504"/>
         <source>authorization code cannot be empty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="529"/>
+        <location filename="../src/daemon/session.cpp" line="537"/>
         <source>1. Request an authorization code 2. Input authorization code</source>
         <translation>1. 申请授权码 2.输入授权码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="541"/>
-        <source>Failed to request authorization code, please try again. %1</source>
-        <translation>申请授权码失败，请重试。%1</translation>
-    </message>
-    <message>
-        <location filename="../src/daemon/session.cpp" line="580"/>
+        <location filename="../src/daemon/session.cpp" line="617"/>
         <source>can not find %1 device</source>
         <translation>未能检测到%1设备</translation>
     </message>

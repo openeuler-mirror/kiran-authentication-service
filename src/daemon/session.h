@@ -62,6 +62,7 @@ public:
     // 如果只允许对特定用户进行认证，则创建对象时需要指定用户名
     Session(uint32_t sessionID,
             const QString &serviceName,
+            const QString &pamServiceName,
             const QString &userName,
             KADAuthApplication authApp,
             QObject *parent = nullptr);
@@ -142,6 +143,7 @@ private:
     SessionAdaptor *m_dbusAdaptor;
     uint32_t m_sessionID;
     QString m_serviceName;
+    QString m_pamServiceName;
     QString m_userName;
     bool m_loginUserSwitchable;
     QDBusObjectPath m_objectPath;
