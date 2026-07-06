@@ -233,8 +233,8 @@ int Authentication::startAuth()
 {
     this->m_pamHandle->syslog(LOG_DEBUG, "Start authentication.");
 
-    m_pendingAuthMessages.clear();
     m_pendingAuthPrompts.clear();
+    m_pendingSshInfoMessages.clear();
     m_pendingFinishResult = -1;
     m_inStartAuth = true;
 
@@ -244,8 +244,8 @@ int Authentication::startAuth()
 
     if (reply.isError())
     {
-        m_pendingAuthMessages.clear();
         m_pendingAuthPrompts.clear();
+        m_pendingSshInfoMessages.clear();
         m_pendingFinishResult = -1;
         this->m_pamHandle->syslog(LOG_WARNING,
                                   QString("Call startAuth failed: %1, sessionID=%2, authType=%3.")
@@ -266,51 +266,22 @@ void Authentication::flushPendingSessionSignals()
     const auto pendingPrompts = m_pendingAuthPrompts;
     m_pendingAuthPrompts.clear();
 
-    // 先同步处理缓冲的协议 prompt（与 onAuthMessage 同理，避免 DBus 回调栈上
-    // sendQuestionPrompt 嵌套阻塞与 PAM 主线程互等死锁）。
-    for (const auto& prompt : pendingPrompts)
+    // 同步处理缓冲的协议 prompt（避免 DBus 回调栈上 sendQuestionPrompt
+    // 嵌套阻塞与 PAM 主线程互等死锁）。
+    // AuthMessage（sendTextMessage）不阻塞，已由 onAuthMessage 在
+    // m_inStartAuth 期间直接同步投递，无需缓冲。
+    for (const auto &prompt : pendingPrompts)
     {
         this->onAuthPrompt(prompt.first, prompt.second);
     }
 
-    const auto pendingMessages = m_pendingAuthMessages;
-    m_pendingAuthMessages.clear();
     const int pendingFinish = m_pendingFinishResult;
     m_pendingFinishResult = -1;
-
-    if (pendingMessages.isEmpty())
+    if (pendingFinish >= 0)
     {
-        if (pendingFinish >= 0)
-        {
-            this->flushPendingSshMessagesBeforeFinish();
-            this->scheduleFinishAuth(pendingFinish);
-        }
-        return;
+        this->flushPendingSshMessagesBeforeFinish();
+        this->scheduleFinishAuth(pendingFinish);
     }
-
-    // 逐条异步投递，避免 StartAuth 返回后在 worker 栈上同步 conv 与主 PAM 线程互等
-    auto deliverIndex = std::make_shared<int>(0);
-    auto deliverOne = std::make_shared<std::function<void()>>();
-    *deliverOne = [this, pendingMessages, pendingFinish, deliverIndex, deliverOne]() {
-        if (*deliverIndex < pendingMessages.size())
-        {
-            const auto item = pendingMessages.at(*deliverIndex);
-            ++(*deliverIndex);
-            this->deliverAuthMessage(item.first, item.second);
-            QTimer::singleShot(0, this, [deliverOne]() {
-                (*deliverOne)();
-            });
-            return;
-        }
-        if (pendingFinish >= 0)
-        {
-            this->flushPendingSshMessagesBeforeFinish();
-            this->scheduleFinishAuth(pendingFinish);
-        }
-    };
-    QTimer::singleShot(0, this, [deliverOne]() {
-        (*deliverOne)();
-    });
 }
 
 void Authentication::finishAuth(int result)
@@ -322,15 +293,14 @@ void Authentication::finishAuth(int result)
 
 void Authentication::scheduleFinishAuth(int result)
 {
-    QTimer::singleShot(0, this, [this, result]() {
-        this->finishAuth(result);
-    });
+    QTimer::singleShot(0, this, [this, result]()
+                       { this->finishAuth(result); });
 }
 
 bool Authentication::initSession()
 {
     auto userName = this->m_pamHandle->getItem(PAM_USER);
-    auto reply = this->m_authManagerProxy->CreateSession(userName, -1, m_authApplication);
+    auto reply = this->m_authManagerProxy->CreateSession(userName, -1, m_authApplication, m_serviceName);
     auto sessionObjectPath = reply.value();
 
     if (reply.isError())
@@ -437,20 +407,10 @@ bool Authentication::isSshService() const
 
 void Authentication::onAuthMessage(const QString &text, int type)
 {
-    if (m_inStartAuth)
-    {
-        m_pendingAuthMessages.append(qMakePair(text, type));
-        return;
-    }
-    this->handleAuthMessage(text, type);
-}
-
-void Authentication::handleAuthMessage(const QString &text, int type)
-{
-    // 统一异步投递到 worker 事件循环，避免 DBus 回调栈上同步 conv 死锁
-    QTimer::singleShot(0, this, [this, text, type]() {
-        this->deliverAuthMessage(text, type);
-    });
+    // sendTextMessage/sendErrorMessage 不阻塞用户输入，即使在 D-Bus 回调栈
+    // 上调用也不会死锁。直接同步投递，确保 AuthMessage 在 AuthPrompt（阻塞）
+    // 之前送达 LightDM，恢复 0cb424d 时期的正常时序。
+    this->deliverAuthMessage(text, type);
 }
 
 void Authentication::deliverAuthMessage(const QString &text, int type)
@@ -539,9 +499,9 @@ void Authentication::onAuthTypeChanged(int authType)
     if (m_lastNotifiedAuthType == authType)
     {
         this->m_pamHandle->syslogDirect(LOG_DEBUG,
-                                  QString("Skip duplicate AuthTypeChanged notify,session ID:%1 authType:%2")
-                                      .arg(m_sessionID)
-                                      .arg(authType));
+                                        QString("Skip duplicate AuthTypeChanged notify,session ID:%1 authType:%2")
+                                            .arg(m_sessionID)
+                                            .arg(authType));
         return;
     }
     m_lastNotifiedAuthType = authType;

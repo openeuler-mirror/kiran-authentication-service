@@ -72,7 +72,7 @@ int AuthManager::getMaxFailures()
     return m_authConfig->getMaxFailures();
 }
 
-QDBusObjectPath AuthManager::CreateSession(const QString &username, int timeout, int authApp)
+QDBusObjectPath AuthManager::CreateSession(const QString &username, int timeout, int authApp, const QString &pamService)
 {
     auto sessionID = this->generateSessionID();
     if (sessionID < 0)
@@ -85,7 +85,12 @@ QDBusObjectPath AuthManager::CreateSession(const QString &username, int timeout,
 
     this->m_serviceWatcher->addWatchedService(this->message().service());
 
-    auto session = new Session(sessionID, this->message().service(), username, (KADAuthApplication)authApp, this);
+    auto session = new Session(sessionID,
+                               this->message().service(),
+                               pamService,
+                               username,
+                               (KADAuthApplication)authApp,
+                               this);
     this->m_sessions.insert(sessionID, session);
 
     KLOG_DEBUG() << QString("create session user(%1) timeout(%2) app type(%3) for %4 -> session(%5)")

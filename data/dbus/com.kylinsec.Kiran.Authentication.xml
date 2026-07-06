@@ -13,6 +13,9 @@
             <arg name="auth_app" direction="in" type="i">
                 <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
             </arg>
+            <arg name="pam_service" direction="in" type="s">
+                <description>PAM service name (e.g. lightdm, sshd) used to distinguish GUI vs terminal behavior</description>
+            </arg>
             <arg name="session" direction="out" type="o">
                 <description>The object path for this session.</description>
             </arg>

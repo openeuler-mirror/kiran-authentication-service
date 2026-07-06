@@ -61,8 +61,7 @@ QString PAMHandle::getItem(int itemType)
     this->m_taskPool->pushTask([this, itemType, futurePtr]()
                                {
                                    auto value = this->getItemDirect(itemType);
-                                   futurePtr->reportFinished(&value);
-                               });
+                                   futurePtr->reportFinished(&value); });
     return futurePtr->future().result();
 }
 
@@ -75,8 +74,7 @@ void PAMHandle::setItem(int itemType, const QString &value)
                                {
                                    pam_set_item((pam_handle_t *)this->getPamh(), itemType, value.toStdString().c_str());
                                    futurePtr->reportResult(true);
-                                   futurePtr->reportFinished();
-                               });
+                                   futurePtr->reportFinished(); });
     futurePtr->future().result();
     return;
 }
@@ -95,8 +93,7 @@ void PAMHandle::syslog(int priority, const QString &log)
                                {
                                    pam_syslog((const pam_handle_t *)this->getPamh(), priority, "%s", log.toStdString().c_str());
                                    futurePtr->reportResult(true);
-                                   futurePtr->reportFinished();
-                               });
+                                   futurePtr->reportFinished(); });
     futurePtr->future().result();
     return;
 }
@@ -105,9 +102,7 @@ void PAMHandle::finish(int result)
 {
     auto taskPool = this->m_taskPool;
     this->m_taskPool->pushTask([taskPool, result]()
-                               {
-                                   taskPool->stopTask(result);
-                               });
+                               { taskPool->stopTask(result); });
     return;
 }
 
@@ -139,14 +134,14 @@ int32_t PAMHandle::send(const QString &request, int32_t requestType, QString &re
     futurePtr->reportStarted();
 
     // 跟locale的编码保持一致，以免出现乱码问题
-    auto requestLocale = QTextCodec::codecForLocale()->fromUnicode(request);
+    const QByteArray requestLocale = QTextCodec::codecForLocale()->fromUnicode(request);
 
     this->m_taskPool->pushTask(
         [this, requestLocale, requestType, futurePtr]()
         {
             pam_message *pamRequest = new pam_message{
                 .msg_style = requestType,
-                .msg = requestLocale.data()};
+                .msg = const_cast<char *>(requestLocale.constData())};
 
             SCOPE_EXIT(
                 {

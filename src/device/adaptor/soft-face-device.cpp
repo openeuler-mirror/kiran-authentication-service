@@ -16,6 +16,7 @@
 #include <QtConcurrent/QtConcurrent>
 
 #include "auth_device_adaptor.h"
+#include "lib/utils.h"
 #include "soft-face-device.h"
 
 namespace Kiran
@@ -43,7 +44,7 @@ SoftFaceDevice::SoftFaceDevice(DriverPtr driver, QObject* parent) : Device(drive
 
         if (0 != ret)
         {
-            QString msg = QString::fromStdString(m_driver->getErrorMsg(ret));
+            QString msg = Utils::stdStringToQStringUtf8(m_driver->getErrorMsg(ret));
             KLOG_ERROR() << "SoftFaceDevice identify fail:"
                          << "code=" << ret
                          << "msg=" << msg
@@ -106,7 +107,7 @@ void SoftFaceDevice::doIdentifyStart(const QString& extraInfo)
     auto info = extraInfo;
     KLOG_INFO() << "SoftFaceDevice: launching identify thread, deviceID=" << m_devId;
     m_identifyWatcher.setFuture(QtConcurrent::run([driver, info]() -> int
-                                                  { return driver->identify(info.toStdString()); }));
+                                                  { return driver->identify(Utils::qStringToUtf8StdString(info)); }));
 }
 
 void SoftFaceDevice::IdentifyStop()
@@ -133,7 +134,7 @@ void SoftFaceDevice::IdentifyResultPostProcess(const QString& extraInfo)
 {
     KLOG_INFO() << "SoftFaceDevice identifyResultPostProcess, extraInfo:" << extraInfo;
     // 识别结果后处理（如上报日志、开启人走监测等）
-    m_driver->identifyResultPostProcess(extraInfo.toStdString());
+    m_driver->identifyResultPostProcess(Utils::qStringToUtf8StdString(extraInfo));
 }
 
 }  // namespace Kiran

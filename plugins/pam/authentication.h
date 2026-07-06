@@ -50,7 +50,6 @@ private:
     int startAuth();
     void finishAuth(int result);
     void scheduleFinishAuth(int result);
-    void handleAuthMessage(const QString &text, int type);
     void deliverAuthMessage(const QString &text, int type);
     void flushPendingSessionSignals();
 
@@ -110,7 +109,6 @@ protected:
     QStringList m_pendingSshInfoMessages;
     int m_lastNotifiedAuthType = -1;
     bool m_inStartAuth = false;
-    QList<QPair<QString, int>> m_pendingAuthMessages;
     QList<QPair<QString, int>> m_pendingAuthPrompts;
     // <0 表示无待处理的结束信号
     int m_pendingFinishResult = -1;

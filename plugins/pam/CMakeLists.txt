@@ -71,7 +71,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES PREFIX "")
 set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH
                                                 "${KAS_INSTALL_DEP_LIBDIR}")
 
-install(FILES ${QM_FILE} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
+install(FILES ${QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
 
 # 在centos上，仅存在/lib64/security/，而不存在/usr/lib64/security/
 # 在openeuler系的系统上（如352、ks6），/lib64 是 /usr/lib64 的链接 所以直接安装到 /lib64/security/ 即可

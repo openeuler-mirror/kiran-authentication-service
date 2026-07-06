@@ -16,6 +16,7 @@
 
 #include <QJsonValue>
 #include <QString>
+#include <string>
 
 #include "kas-authentication-i.h"
 
@@ -49,5 +50,11 @@ public:
     static QString identifyResultEnum2Str(int32_t fpVerifyResult);
 
     static QJsonValue getValueFromJsonString(const QString &json, const QString &key);
+
+    /** @brief QString → UTF-8 std::string，避免 Qt 5.6 toStdString() 依赖 C locale */
+    static std::string qStringToUtf8StdString(const QString &text);
+
+    /** @brief UTF-8 std::string → QString，与 qStringToUtf8StdString 配对 */
+    static QString stdStringToQStringUtf8(const std::string &text);
 };
 }  // namespace Kiran
