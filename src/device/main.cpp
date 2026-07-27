@@ -23,6 +23,7 @@
 #include "kas-authentication-i.h"
 #include "lib/feature-data.h"
 #include "lib/feature-db.h"
+#include "lib/utils.h"
 #include "manager.h"
 
 int main(int argc, char *argv[])
@@ -39,8 +40,9 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to init kiran-log.");
     }
 
+    /* D-Bus 激活时进程可能无 LANG（Locale=C），需从系统配置兜底后再加载 .qm */
     QTranslator translator;
-    QLocale locale;
+    const QLocale locale = Kiran::Utils::setupProcessLocale();
     if (translator.load(locale, qAppName(), ".", KAS_INSTALL_TRANSLATIONDIR, ".qm"))
     {
         a.installTranslator(&translator);

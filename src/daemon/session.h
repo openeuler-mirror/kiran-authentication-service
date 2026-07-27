@@ -121,7 +121,6 @@ private:
 private:
     void startPhaseAuth();
     void startUkeyAuth();
-    QString getMachineCode();
     void startSoftFaceAuth();
     void startSoftCodeAuth();
     void startSoftCodeNoCameraAuth();

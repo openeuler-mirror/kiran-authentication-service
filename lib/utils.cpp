@@ -16,13 +16,77 @@
 #include <qt5-log-i.h>
 #include <QCoreApplication>
 #include <QCryptographicHash>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QTextCodec>
+#include <clocale>
 
 #include "utils.h"
 
 namespace Kiran
 {
+QString Utils::resolveLangEnv()
+{
+    const char* envNames[] = {"LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"};
+    for (const char* envName : envNames)
+    {
+        const QByteArray value = qgetenv(envName);
+        if (!value.isEmpty())
+        {
+            return QString::fromUtf8(value);
+        }
+    }
+
+    const QStringList configFiles = {
+        QStringLiteral("/etc/locale.conf"),
+        QStringLiteral("/etc/sysconfig/i18n"),
+    };
+    for (const QString& configFile : configFiles)
+    {
+        QFile file(configFile);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            continue;
+        }
+
+        while (!file.atEnd())
+        {
+            const QString line = QString::fromUtf8(file.readLine()).trimmed();
+            if (line.startsWith('#') || !line.startsWith(QStringLiteral("LANG=")))
+            {
+                continue;
+            }
+            const QString value = line.mid(5).trimmed().remove('"');
+            if (!value.isEmpty())
+            {
+                return value;
+            }
+        }
+    }
+
+    return QStringLiteral("zh_CN.UTF-8");
+}
+
+QLocale Utils::setupProcessLocale()
+{
+    const QString lang = resolveLangEnv();
+    qputenv("LANG", lang.toUtf8());
+    qputenv("LC_CTYPE", lang.toUtf8());
+    setlocale(LC_ALL, "");
+
+    if (lang.contains(QStringLiteral("UTF-8"), Qt::CaseInsensitive) ||
+        lang.contains(QStringLiteral("utf8"), Qt::CaseInsensitive))
+    {
+        QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+    }
+
+    const QLocale locale(lang);
+    KLOG_INFO() << "Resolved process locale: lang=" << lang
+                << "locale=" << locale.name();
+    return locale;
+}
+
 template <typename T>
 static QList<T> converIntListToEnum(QList<int> list)
 {
