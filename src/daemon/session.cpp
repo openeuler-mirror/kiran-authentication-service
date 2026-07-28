@@ -14,14 +14,12 @@
 
 #include <qt5-log-i.h>
 #include <QDBusConnection>
-#include <QDBusConnectionInterface>
 #include <QDateTime>
 #include <QEventLoop>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMetaEnum>
 
-#include "auth-config.h"
 #include "auth-manager.h"
 #include "auxiliary.h"
 #include "device/device-adaptor-factory.h"
@@ -180,8 +178,7 @@ void Session::onAuthCodeInputResponse(const QString &response)
         this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
         return;
     }
-    QString machineCode = getMachineCode();
-    QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}, {"code", response}});
+    QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"code", response}});
     m_authStartMs = QDateTime::currentMSecsSinceEpoch();
     startGeneralAuth(jsonDoc.toJson());
 }
@@ -453,45 +450,11 @@ void Session::startUkeyAuth()
     Q_EMIT this->AuthPrompt(tr("please input ukey code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);
 }
 
-QString Session::getMachineCode()
-{
-    // dbus接口获取机器码：com.kylinsec.Kiran.LicenseHelper.GetMachineCode
-    QString machineCode;
-    if (QDBusConnection::systemBus().interface()->isServiceRegistered("com.kylinsec.Kiran.LicenseHelper"))
-    {
-        QDBusInterface iface("com.kylinsec.Kiran.LicenseHelper", "/com/kylinsec/Kiran/LicenseHelper", "com.kylinsec.Kiran.LicenseHelper", QDBusConnection::systemBus());
-        QDBusReply<QString> reply = iface.call("GetMachineCode");
-        if (reply.isValid())
-        {
-            machineCode = reply.value();
-        }
-        else
-        {
-            KLOG_WARNING() << "get machine code failed:" << reply.error().message();
-        }
-    }
-    // 当dbus接口获取机器码失败时，从配置文件获取机器码（兼容低版本系统上不存在LicenseHelper的情况）
-    else
-    {
-        KLOG_WARNING() << "com.kylinsec.Kiran.LicenseHelper service not registered, get machine code from config file";
-        KLOG_INFO() << "get machine code from config file";
-        machineCode = AuthConfig::getInstance()->getMachineCode();
-        if (machineCode.isEmpty())
-        {
-            KLOG_WARNING() << "machine code not found in config file";
-        }
-    }
-
-    return machineCode;
-}
-
 void Session::startSoftFaceAuth()
 {
-    // 传输用户名和机器码
-    QString machineCode = getMachineCode();
-    QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}});
+    QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}});
 
-    KLOG_INFO() << m_sessionID << "start soft face auth for user:" << m_userName << "machine code:" << machineCode;
+    KLOG_INFO() << m_sessionID << "start soft face auth for user:" << m_userName;
     Q_EMIT this->AuthMessage(tr("Please look at the camera"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
 
     startGeneralAuth(jsonDoc.toJson());
@@ -507,8 +470,7 @@ void Session::startSoftCodeAuth()
             this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
             return;
         }
-        QString machineCode = getMachineCode();
-        QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"machine_code", machineCode}, {"code", response}});
+        QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"code", response}});
         m_authStartMs = QDateTime::currentMSecsSinceEpoch();
         startGeneralAuth(jsonDoc.toJson());
     };

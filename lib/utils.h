@@ -15,6 +15,7 @@
 #pragma once
 
 #include <QJsonValue>
+#include <QLocale>
 #include <QString>
 #include <string>
 
@@ -27,6 +28,19 @@ class Utils
 public:
     Utils() {};
     virtual ~Utils() {};
+
+    /**
+     * @brief 解析进程应使用的 LANG（环境变量 → /etc/locale.conf|/etc/sysconfig/i18n → 默认 zh_CN.UTF-8）
+     * @return LANG 风格字符串，如 "zh_CN.UTF-8"；调用方不应释放
+     * @note 供 D-Bus 激活等未继承会话 locale 的守护进程使用
+     */
+    static QString resolveLangEnv();
+
+    /**
+     * @brief 补齐进程 locale 环境并返回对应 QLocale
+     * @return 解析后的 QLocale，供 QTranslator::load 使用
+     */
+    static QLocale setupProcessLocale();
 
     template <typename T>
     static QList<int> converEnumListToInt(QList<T> list);

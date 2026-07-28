@@ -100,7 +100,11 @@ static QString resolve_lang_env(pam_handle_t *pamh)
             {
                 continue;
             }
-            return line.mid(5).trimmed().remove('"');
+            const QString value = line.mid(5).trimmed().remove('"');
+            if (!value.isEmpty())
+            {
+                return value;
+            }
         }
     }
 
