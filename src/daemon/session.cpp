@@ -138,11 +138,11 @@ void Session::onAuthCodeSelectResponse(const QString &response)
 
     if (choice == 1)
     {
-        // 执行 kiran-auth-code-request --auto 命令申请授权码
+        // 执行 ks-auth-code-request --auto 命令申请授权码
         m_gencodeProcess = new QProcess(this);
         connect(m_gencodeProcess, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                 this, &Session::onGencodeProcessFinished);
-        m_gencodeProcess->start("kiran-auth-code-request", QStringList() << "--auto" << "--user-name" << m_userName);
+        m_gencodeProcess->start("ks-auth-code-request", QStringList() << "--auto" << "--user-name" << m_userName);
 
         if (!m_gencodeProcess->waitForStarted(5000))
         {
