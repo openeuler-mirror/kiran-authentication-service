@@ -30,7 +30,7 @@ namespace Kiran
 {
 namespace
 {
-/** Kiran 软认证类型按 KiranWorkMode 位序排序：F → P → S → C */
+/** KS 软认证类型按 KsWorkMode 位序排序：F → P → S → C */
 int kiranWorkModeAuthTypeRank(int authType)
 {
     switch (authType)
