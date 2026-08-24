@@ -40,6 +40,8 @@ using namespace Kiran;
 
 // FIXME:去除该项，group name从utils中取，新增认证类型只需要在utils中做修改
 static const QMap<KADAuthType, QString> AuthTypeGroupMap = {
+    {KAD_AUTH_TYPE_PASSWORD,
+     "Password"},
     {KAD_AUTH_TYPE_FINGERPRINT,
      "FingerPrint"},
     {KAD_AUTH_TYPE_FACE,
@@ -100,13 +102,14 @@ bool AuthConfig::load()
     auto maxFailures = m_settings->value(INIFILE_GENERAL_KEY_MAX_FAILURES, 3).toInt();
     this->m_maxFailures = maxFailures;
 
-    // 读取认证类型下设置项,认证类型开关默认都为关闭
-    const bool authTypeDefaultEnable = false;
+    // 读取认证类型下设置项,认证类型开关默认都为关闭;密码默认开启
     auto iter = AuthTypeGroupMap.begin();
     while (iter != AuthTypeGroupMap.end())
     {
         KADAuthType authType = iter.key();
         QString groupName = iter.value();
+        // 密码认证默认开启(同事确认结论,2026-08-20);其余类型默认关闭
+        const bool authTypeDefaultEnable = (KAD_AUTH_TYPE_PASSWORD == authType);
 
         m_settings->beginGroup(groupName);
         auto defaultDevice = m_settings->value(INIFILE_AUTHTYPE_KEY_DEFAULT_DEVICE, "").toString();
