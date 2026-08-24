@@ -236,6 +236,20 @@ QStringList FeatureDB::getFeatureID(const QString &idVendor, const QString &idPr
     return featureIDs;
 }
 
+QStringList FeatureDB::getFeatureIDByDeviceType(int deviceType)
+{
+    QSqlQuery query(database);
+    query.prepare("SELECT featureID FROM feature WHERE deviceType = :devType");
+    query.bindValue(":devType", deviceType);
+    query.exec();
+    QStringList featureIDs;
+    while (query.next())
+    {
+        featureIDs << query.value(0).toString();
+    }
+    return featureIDs;
+}
+
 QString FeatureDB::getFeatureID(QByteArray feature)
 {
     QSqlQuery query(database);
@@ -267,7 +281,7 @@ QStringList FeatureDB::getFeatureID()
 FeatureData FeatureDB::getFeatureData(const QString &featureID)
 {
     QSqlQuery query(database);
-    query.prepare("SELECT userName, idVendor, idProduct, deviceType, deviceSerialNumber FROM feature WHERE featureID = :id");
+    query.prepare("SELECT feature, featureName, iid, userName, idVendor, idProduct, deviceType, deviceSerialNumber, authType FROM feature WHERE featureID = :id");
     query.bindValue(":id", featureID);
     query.exec();
     FeatureData featureData;

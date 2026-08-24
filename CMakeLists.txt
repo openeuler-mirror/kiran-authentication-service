@@ -43,6 +43,7 @@ add_subdirectory(lib)
 add_subdirectory(src)
 
 add_subdirectory(plugins/pam)
+add_subdirectory(plugins/driver)
 
 install(FILES include/kas-authentication-i.h
         DESTINATION ${KAS_INSTALL_INCLUDE}/)

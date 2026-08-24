@@ -41,11 +41,12 @@ class Device : public QObject, protected QDBusContext
     Q_PROPERTY(int DeviceStatus READ deviceStatus)
 public:
     /**
-     * @brief 构造设备对象
+     * @brief 构造设备对象（自动生成 UUID 设备标识）
      * @param driver 底层驱动智能指针
      * @param parent 父 QObject，可为空
      */
     explicit Device(DriverPtr driver, QObject *parent = nullptr);
+
 
     virtual ~Device();
 

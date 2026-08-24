@@ -2,6 +2,35 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>Kiran::FaceDevice</name>
+    <message>
+        <location filename="../src/device/adaptor/face-device.cpp" line="68"/>
+        <source>enroll success</source>
+        <translation>录入成功</translation>
+    </message>
+    <message>
+        <location filename="../src/device/adaptor/face-device.cpp" line="91"/>
+        <source>identify success</source>
+        <translation>认证成功</translation>
+    </message>
+    <message>
+        <location filename="../src/device/adaptor/face-device.cpp" line="120"/>
+        <location filename="../src/device/adaptor/face-device.cpp" line="177"/>
+        <source>Device Busy</source>
+        <translation>设备忙</translation>
+    </message>
+    <message>
+        <location filename="../src/device/adaptor/face-device.cpp" line="138"/>
+        <source>processing</source>
+        <translation>正在处理...</translation>
+    </message>
+    <message>
+        <location filename="../src/device/adaptor/face-device.cpp" line="220"/>
+        <source>no enrolled face feature</source>
+        <translation>未录入人脸特征</translation>
+    </message>
+</context>
+<context>
     <name>Kiran::SoftCodeBaseDevice</name>
     <message>
         <location filename="../src/device/adaptor/soft-code-base-device.cpp" line="50"/>
