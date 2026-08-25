@@ -73,12 +73,16 @@ public:
     QMap<QString, QVector<QPair<QString, QString>>> getPhysicalSupportDevices() { return m_physicalSupportDevices; };  // 获取物理设备支持信息
     QStringList getSoftDrivers() { return m_softDrivers; };                                                            // 获取软驱动列表
     QMap<QString, PhysicalDriverInfo> getPhysicalDriverInfos() { return m_physicalDriverInfos; };                      // 获取物理设备驱动信息
+    QStringList getLocalDrivers() { return m_localDrivers; };                                                          // 获取本地驱动列表(无 vid/pid 绑定)
+    QMap<QString, PhysicalDriverInfo> getLocalDriverInfos() { return m_localDriverInfos; };                            // 获取本地驱动信息(驱动管理展示用)
 
 private:
     void setupPhysicalDriver(const QString &file, const DriverPtr &driver);
 
     QMap<QString, DriverPtr> m_loadedDrivers;
     QStringList m_softDrivers;
+    QStringList m_localDrivers;  // 物理类型但无 vid/pid 绑定的本地驱动(如本地人脸识别)
+    QMap<QString, PhysicalDriverInfo> m_localDriverInfos;  // 本地驱动信息(与 m_localDrivers 对应)
     QMap<QString, QVector<QPair<QString, QString>>> m_physicalSupportDevices;
     QMap<QString, PhysicalDriverInfo> m_physicalDriverInfos;
 };

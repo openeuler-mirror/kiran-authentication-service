@@ -247,7 +247,7 @@ void DeviceAdaptorFactory::onAuthDeviceManagerLost(const QString &service)
 
 void DeviceAdaptorFactory::onDeviceDeleted(int deviceType, const QString &deviceID)
 {
-    // 认证设备拔出，认证设备变成无效，清理该设备下请求，从缓存中删除该设备
+    // 认证设备拔出/被禁用，设备无效，清理该设备下请求，从缓存中删除该设备
     for (auto iter = m_devices.begin(); iter != m_devices.end(); iter++)
     {
         if (iter.value().data()->getDeviceID() == deviceID)
@@ -256,6 +256,27 @@ void DeviceAdaptorFactory::onDeviceDeleted(int deviceType, const QString &device
             iter.value().data()->removeAllRequest();
             m_devices.erase(iter);
             break;
+        }
+    }
+
+    // 若被删除设备是某认证类型的默认设备,清理配置,避免残留失效的默认设备 ID
+    // (设备重新创建后 UUID 变化,失效配置会丢失用户设备偏好)
+    const QList<int> authTypes = {KAD_AUTH_TYPE_FINGERPRINT,
+                                  KAD_AUTH_TYPE_FACE,
+                                  KAD_AUTH_TYPE_FINGERVEIN,
+                                  KAD_AUTH_TYPE_IRIS,
+                                  KAD_AUTH_TYPE_UKEY,
+                                  KAD_AUTH_TYPE_SOFT_FACE,
+                                  KAD_AUTH_TYPE_SOFT_CODE,
+                                  KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA};
+    for (int authType : authTypes)
+    {
+        if (Utils::authType2DeviceType(authType) == deviceType &&
+            this->m_authManager->GetDefaultDeviceID(authType) == deviceID)
+        {
+            KLOG_INFO() << "clear stale default device, authType:" << authType
+                        << "device:" << deviceID;
+            this->m_authManager->SetDefaultDeviceID(authType, QString());
         }
     }
 }

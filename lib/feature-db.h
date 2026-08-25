@@ -50,6 +50,7 @@ public:
     QStringList getFeatureID();
     QString getFeatureID(QByteArray feature);
     QStringList getFeatureID(const QString &idVendor, const QString &idProduct, int deviceType, const QString &deviceSerialNumber);
+    QStringList getFeatureIDByDeviceType(int deviceType);
     FeatureData getFeatureData(const QString &featureID);
 
     QStringList getIID(const QString &userName);

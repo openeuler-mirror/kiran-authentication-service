@@ -15,13 +15,16 @@
 #include <algorithm>
 
 #include <qt5-log-i.h>
+#include <QSettings>
 
 #include "adaptor/device.h"
+#include "adaptor/face-device.h"
 #include "adaptor/soft-code-device.h"
 #include "adaptor/soft-code-no-camera-device.h"
 #include "adaptor/soft-face-device.h"
 #include "adaptor/ukey-device.h"
 #include "auth_device_manager_adaptor.h"
+#include "config.h"
 #include "kas-authentication-i.h"
 #include "lib/feature-db.h"
 #include "manager.h"
@@ -121,14 +124,41 @@ void Manager::init()
     connect(m_udevMonitor.data(), &UdevMonitor::deviceAdded, this, &Manager::onDeviceAdded);
     connect(m_udevMonitor.data(), &UdevMonitor::deviceDeleted, this, &Manager::onDeviceDeleted);
 
+    // 驱动禁用状态（持久化）
+    loadDisabledDrivers();
+
     // 软驱动，在程序启动时载入
     genSoftDevices();
+    // 本地能力驱动（无 vid/pid 绑定，如本地人脸识别），在程序启动时载入
+    genLocalDevices();
+}
+
+void Manager::loadDisabledDrivers()
+{
+    QSettings settings(QString(KAS_INSTALL_SYSCONFDIR) + "/kiran-authentication-devices.ini",
+                       QSettings::IniFormat);
+    const auto names = settings.value("DisabledDrivers/Names", QStringList()).toStringList();
+    m_disabledDrivers = QSet<QString>(names.begin(), names.end());
+    KLOG_INFO() << "disabled drivers:" << m_disabledDrivers;
+}
+
+void Manager::saveDisabledDrivers()
+{
+    QSettings settings(QString(KAS_INSTALL_SYSCONFDIR) + "/kiran-authentication-devices.ini",
+                       QSettings::IniFormat);
+    settings.setValue("DisabledDrivers/Names", QStringList(m_disabledDrivers.values()));
+    settings.sync();
 }
 
 QString Manager::genDevice(const QString& driverName, const QString& vendorId, const QString& productId, const QString& devNode)
 {
     auto driver = m_driverLoader->loadDriver(driverName);
     if (!driver)
+    {
+        return QString();
+    }
+    // 驱动被禁用时不为热插拔设备创建设备对象
+    if (m_disabledDrivers.contains(QString::fromStdString(driver->getDriverName())))
     {
         return QString();
     }
@@ -171,7 +201,8 @@ bool Manager::genSoftDevices()
     for (QString driverName : softDrivers)
     {
         DriverPtr driver = m_driverLoader->loadDriver(driverName);
-        if (driver)
+        if (driver &&
+            !m_disabledDrivers.contains(QString::fromStdString(driver->getDriverName())))
         {
             DevicePtr device;
             if (driver->getType() == DRIVER_TYPE_SOFT)
@@ -198,6 +229,42 @@ bool Manager::genSoftDevices()
         }
     }
     KLOG_INFO() << "gen Soft Devices result: ";
+    for (auto device : m_devices)
+    {
+        KLOG_INFO() << device->driverName() << device->deviceType() << device->deviceID();
+    }
+
+    return true;
+}
+
+bool Manager::genLocalDevices()
+{
+    QStringList localDrivers = m_driverLoader->getLocalDrivers();
+    for (QString driverFile : localDrivers)
+    {
+        DriverPtr driver = m_driverLoader->loadDriver(driverFile);
+        if (!driver ||
+            m_disabledDrivers.contains(QString::fromStdString(driver->getDriverName())))
+        {
+            continue;
+        }
+        DevicePtr device;
+        switch (driver->getType())
+        {
+        case DRIVER_TYPE_FACE:
+            device = FaceDevicePtr(new FaceDevice(driver));
+            break;
+        default:
+            KLOG_WARNING() << "unsupported local driver type:" << getDriverTypeStr(driver->getType())
+                           << "file:" << driverFile;
+            break;
+        }
+        if (device)
+        {
+            m_devices.insert(device->deviceID(), device);
+        }
+    }
+    KLOG_INFO() << "gen Local Devices result:";
     for (auto device : m_devices)
     {
         KLOG_INFO() << device->driverName() << device->deviceType() << device->deviceID();
@@ -325,14 +392,26 @@ QString Manager::GetDriversByType(int deviceType)
     QJsonDocument jsonDoc;
     QJsonArray jsonArray;
 
+    // 物理驱动(udev 硬件)与本地驱动(无 vid/pid 绑定,如本地人脸识别)
     auto driverInfos = m_driverLoader->getPhysicalDriverInfos();
+    auto localDriverInfos = m_driverLoader->getLocalDriverInfos();
     for (auto& driverInfo : driverInfos)
     {
         if (driverInfo.type == deviceType)
         {
             QJsonObject jsonObj{
                 {"driverName", driverInfo.name},
-                {"enable", true}};
+                {"enable", !m_disabledDrivers.contains(driverInfo.name)}};
+            jsonArray.append(jsonObj);
+        }
+    }
+    for (auto& driverInfo : localDriverInfos)
+    {
+        if (driverInfo.type == deviceType)
+        {
+            QJsonObject jsonObj{
+                {"driverName", driverInfo.name},
+                {"enable", !m_disabledDrivers.contains(driverInfo.name)}};
             jsonArray.append(jsonObj);
         }
     }
@@ -342,6 +421,95 @@ QString Manager::GetDriversByType(int deviceType)
 
 void Manager::SetEnableDriver(const QString& driverName, bool enable)
 {
+    KLOG_INFO() << "SetEnableDriver:" << driverName << "enable:" << enable;
+
+    if (enable)
+    {
+        m_disabledDrivers.remove(driverName);
+    }
+    else
+    {
+        m_disabledDrivers.insert(driverName);
+    }
+    saveDisabledDrivers();
+
+    // 即时生效:禁用时移除该驱动的在线设备并通知 daemon;
+    // 启用时若为本地/软驱动则立即创建设备(daemon 在下次查询时感知)
+    auto iter = m_devices.begin();
+    while (iter != m_devices.end())
+    {
+        auto device = iter.value();
+        if (device->driverName() == driverName)
+        {
+            if (enable)
+            {
+                ++iter;
+                continue;
+            }
+            const QString deviceID = device->deviceID();
+            const int deviceType = device->deviceType();
+            KLOG_INFO() << "SetEnableDriver remove device:" << deviceID;
+            // 先请求停止;驱动调用工作线程不捕获设备(this),结果经
+            // QFuture 返回,可安全地立即注销 D-Bus 对象并释放设备
+            device->EnrollStop();
+            device->IdentifyStop();
+            QDBusConnection::systemBus().unregisterObject(device->getObjectPath().path());
+            iter = m_devices.erase(iter);
+            Q_EMIT m_dbusAdaptor->DeviceDeleted(deviceType, deviceID);
+            continue;
+        }
+        ++iter;
+    }
+
+    if (enable)
+    {
+        // 重新装载被启用的本地/软驱动
+        auto createForFile = [this, driverName](const QString &driverFile)
+        {
+            DriverPtr driver = m_driverLoader->loadDriver(driverFile);
+            if (!driver || QString::fromStdString(driver->getDriverName()) != driverName)
+            {
+                return;
+            }
+            DevicePtr device;
+            if (DRIVER_TYPE_SOFT == driver->getType())
+            {
+                switch (driver->getSoftType())
+                {
+                case SOFT_DRIVER_TYPE_FACE:
+                    device = SoftFaceDevicePtr(new SoftFaceDevice(driver));
+                    break;
+                case SOFT_DRIVER_TYPE_CODE:
+                    device = SoftCodeDevicePtr(new SoftCodeDevice(driver));
+                    break;
+                case SOFT_DRIVER_TYPE_CODE_NO_CAMERA:
+                    device = SoftCodeNoCameraDevicePtr(new SoftCodeNoCameraDevice(driver));
+                    break;
+                default:
+                    break;
+                }
+            }
+            else if (DRIVER_TYPE_FACE == driver->getType())
+            {
+                device = FaceDevicePtr(new FaceDevice(driver));
+            }
+            if (device)
+            {
+                const QString deviceID = device->deviceID();
+                m_devices.insert(deviceID, device);
+                KLOG_INFO() << "SetEnableDriver create device:" << deviceID;
+                Q_EMIT m_dbusAdaptor->DeviceAdded(device->deviceType(), deviceID);
+            }
+        };
+        for (const auto &driverFile : m_driverLoader->getLocalDrivers())
+        {
+            createForFile(driverFile);
+        }
+        for (const auto &driverFile : m_driverLoader->getSoftDrivers())
+        {
+            createForFile(driverFile);
+        }
+    }
 }
 
 void Manager::Remove(const QString& featureId)

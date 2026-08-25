@@ -66,7 +66,23 @@ void DriverLoader::init()
         case DRIVER_TYPE_IRIS:
         case DRIVER_TYPE_VOICEPRINT:
         case DRIVER_TYPE_UKEY:
-            setupPhysicalDriver(file, driver);
+            if (driver->isLocalDriver())
+            {
+                // 本地能力驱动(如本地人脸识别),启动期直接装载
+                KLOG_INFO() << "local driver:" << file
+                            << "driver name:" << QString::fromStdString(driver->getDriverName())
+                            << "type:" << getDriverTypeStr(driver->getType());
+                m_localDrivers.append(file);
+                m_localDriverInfos[file] = PhysicalDriverInfo{
+                    file,
+                    QString::fromStdString(driver->getDriverName()),
+                    driver->getType(),
+                    {}};
+            }
+            else
+            {
+                setupPhysicalDriver(file, driver);
+            }
             break;
         case DRIVER_TYPE_SOFT:
             m_softDrivers.append(file);

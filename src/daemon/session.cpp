@@ -387,7 +387,10 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
         }
         else
         {
-            Q_EMIT this->AuthMessage(verifyResultStr, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+            // 优先展示设备上报的具体失败原因(如摄像头不可用/识别超时),
+            // 设备未带消息时回退为通用枚举文案(与软类型分支行为一致)
+            Q_EMIT this->AuthMessage(message.isEmpty() ? verifyResultStr : message,
+                                     KADMessageType::KAD_MESSAGE_TYPE_ERROR);
         }
     }
     else

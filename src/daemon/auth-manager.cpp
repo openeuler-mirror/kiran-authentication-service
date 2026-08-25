@@ -176,48 +176,55 @@ bool AuthManager::GetAuthTypeEnabledForApp(int authType, int authApp)
 
 /// @brief 通过认证应用枚举获取支持的认证类型或认证顺序
 /// @param authApp 应用程序所属的认证应用类型
-/// @return 与模式下为需认证类型的认证顺序,或模式下为可选的认证类型
+/// @return 认证类型列表(顺序与驱动上报顺序一致,密码在末尾)
 QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
 {
     KLOG_INFO() << "GetAuthTypeByApp: authApp:" << authApp;
 
-    QList<int> externalAuthTypes = DeviceAdaptorFactory::getInstance()->getSupportedAuthTypes();
-    if (!externalAuthTypes.isEmpty())
-    {
-        KLOG_INFO() << "GetAuthTypeByApp: external auth types from drivers:" << externalAuthTypes;
-        return externalAuthTypes;
-    }
+    // 候选认证方式:驱动支持的类型 + 密码
+    // (密码无驱动,不会出现在 getSupportedAuthTypes 中;是否提供由配置决定,默认开启)
+    QList<int> candidates = DeviceAdaptorFactory::getInstance()->getSupportedAuthTypes();
+    candidates << KAD_AUTH_TYPE_PASSWORD;
 
-    auto enabledAuthTypes = m_authConfig->getAuthTypeByApp(authApp);
-    auto authOrder = m_authConfig->getAuthOrder();
-
-    // 在认证顺序指定的认证类型中过滤掉未开启的认证类型
-    auto autoOrderIter = authOrder.begin();
-    while (autoOrderIter != authOrder.end())
+    // 统一过滤:没有驱动或配置中未启用(含未对该应用启用)的类型不提供
+    const auto enabledAuthTypes = m_authConfig->getAuthTypeByApp(authApp);
+    QList<int> enabledCandidates;
+    for (int authType : candidates)
     {
-        if (!enabledAuthTypes.contains(*autoOrderIter))
+        if (enabledAuthTypes.contains(authType))
         {
-            autoOrderIter = authOrder.erase(autoOrderIter);
+            enabledCandidates << authType;
         }
-        else
-            autoOrderIter++;
     }
 
-    auto sortedAuthTypes = authOrder;
-
-    auto enabledAuthTypeIter = enabledAuthTypes.begin();
-    while (enabledAuthTypeIter != enabledAuthTypes.end())
+    // 按认证顺序排序(与模式下认证顺序依赖此序):
+    // AuthOrder 中出现的类型按配置顺序在前,未指定的类型随后,密码固定在末尾
+    QList<int> result;
+    const auto authOrder = m_authConfig->getAuthOrder();
+    for (int authType : authOrder)
     {
-        if (!sortedAuthTypes.contains(*enabledAuthTypeIter))
+        if (enabledCandidates.contains(authType))
         {
-            sortedAuthTypes << *enabledAuthTypeIter;
+            result << authType;
         }
-        enabledAuthTypeIter++;
+    }
+    for (int authType : enabledCandidates)
+    {
+        if (!result.contains(authType))
+        {
+            result << authType;
+        }
+    }
+    // 密码若已被配置过滤掉,不得在此重新添加;仅在存在时固定移到末尾
+    if (result.contains(KAD_AUTH_TYPE_PASSWORD))
+    {
+        result.removeAll(KAD_AUTH_TYPE_PASSWORD);
+        result << KAD_AUTH_TYPE_PASSWORD;
     }
 
-    sortedAuthTypes << KAD_AUTH_TYPE_PASSWORD;
-    KLOG_INFO() << "get auth types by app:" << authApp << "result:" << sortedAuthTypes;
-    return sortedAuthTypes;
+    KLOG_INFO() << "GetAuthTypeByApp: candidates:" << candidates
+                << "result:" << result;
+    return result;
 }
 
 int AuthManager::QueryAuthApp(const QString &pamServiceName)

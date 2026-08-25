@@ -17,6 +17,7 @@
 #include <QDBusContext>
 #include <QMap>
 #include <QObject>
+#include <QSet>
 #include <QSharedPointer>
 
 #include "adaptor/device.h"
@@ -43,6 +44,9 @@ public:
 
     QString genDevice(const QString &driverName, const QString &vendorId, const QString &productId, const QString &devNode);
     bool genSoftDevices();
+    bool genLocalDevices();  // 装载无 vid/pid 绑定的本地能力设备(如本地人脸识别)
+    void loadDisabledDrivers();
+    void saveDisabledDrivers();
 
     QString getOnlineDevicesInfo();                                               // 获取当前已上线设备信息（含远程设备）（json：type、name）
     QMap<QString, QVector<QPair<QString, QString>>> getPhysicalSupportDevices();  // 获取物理设备支持信息
@@ -68,6 +72,7 @@ private:
     QMap<QString, DevicePtr> m_devices;  // key: dev uuid
     QSharedPointer<UdevMonitor> m_udevMonitor;
     QSharedPointer<DriverLoader> m_driverLoader;
+    QSet<QString> m_disabledDrivers;  // 被禁用的驱动名(持久化于 kiran-authentication-devices.ini)
 
     QMap<QString, QString> m_onlineDevices;  // key=devNode(busPath), value=deviceID(UUID)
 };

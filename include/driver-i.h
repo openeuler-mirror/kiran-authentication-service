@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -113,6 +114,17 @@ public:
     {
         return {};
     }
+
+    /**
+     * @brief 是否为本地能力驱动（无硬件绑定，设备管理服务启动期装载）
+     *
+     * 本地驱动（如本地人脸识别）不依赖 udev 热插拔，由设备管理服务
+     * 在启动时直接创建设备；物理设备驱动无需重写，默认返回 false。
+     */
+    virtual bool isLocalDriver()
+    {
+        return false;
+    }
 };
 
 using DriverPtr = std::shared_ptr<Driver>;
@@ -142,6 +154,79 @@ public:
 };
 
 using SoftFaceDriverPtr = std::shared_ptr<SoftFaceDriver>;
+
+/**
+ * @brief 本地人脸驱动抽象基类
+ *
+ * 本驱动在本机完成人脸检测、特征提取与比对（ncnn），
+ * 与"软人脸"（SoftFaceDriver，比对在远端服务器执行）无关。
+ * 驱动实现为 Qt 驱动（参考 ks-authhub ks-soft-driver 惯例），
+ * 错误文案经驱动自带翻译文件按 locale 提供；
+ * 接口参数为解析后的类型（JSON 解析由设备层完成）。
+ * 错误码由驱动实现自定（设备层只区分成功(0)与非零）。
+ */
+class FaceDriver : public Driver
+{
+public:
+    FaceDriver() = default;
+    virtual ~FaceDriver() = default;
+
+    /**
+     * @brief 执行人脸识别
+     *
+     * 打开摄像头连续采集，检测人脸并提取特征，与给定特征逐一比对。
+     * 画面中出现多张人脸时拒绝处理并返回多脸错误。
+     * 默认 10 秒超时；不匹配/超时/被停止均结束本次识别。
+     *
+     * 识别过程中通过 onRetry 回调上报"可重试"提示（未检测到人脸、
+     * 多张人脸等），由设备层翻译为界面提示；回调在工作线程中触发，
+     * 实现方不得在回调中做耗时操作。
+     *
+     * @param features 目标用户的已录入特征列表(每项为 <特征ID, 128 维 float 原始字节>)
+     * @param onRetry 重试提示回调（retryCode 为 FaceDriverError 值）
+     * @param featureID [out] 匹配命中时返回特征 ID
+     * @return FACE_DRIVER_ERROR_SUCCESS 匹配成功；
+     *         FACE_DRIVER_ERROR_NOT_MATCH 不匹配；
+     *         其他非 0 为错误码
+     */
+    virtual int identify(const std::vector<std::pair<std::string, std::vector<uint8_t>>> &features,
+                         const std::function<void(int retryCode, const std::string &message)> &onRetry,
+                         std::string &featureID) = 0;
+
+    /**
+     * @brief 请求停止进行中的识别
+     *
+     * 识别线程应在下一次采集循环检查到停止请求后尽快返回
+     * FACE_DRIVER_ERROR_STOPPED，调用方将丢弃其结果。
+     */
+    virtual void stopIdentify() = 0;
+
+    /**
+     * @brief 执行人脸录入
+     *
+     * 对传入的 JPEG 图像做人脸检测（无脸/质量不达标拒绝,多脸取最大脸）、
+     * 特征提取与重复检测，返回特征数据与特征 ID。
+     *
+     * @param imageJpeg JPEG 编码的图像数据
+     * @param existingFeatures 已录入特征列表(每项为 <特征ID, 128 维 float 原始字节>)，
+     *                         用于相似度重复检测
+     * @param feature [out] 128 维 float 特征原始字节
+     * @param featureID [out] 特征数据 MD5（小写十六进制,与 FeatureDB 历史格式一致）
+     * @return 0 成功，其他非 0 为错误码（错误码由驱动实现自定）
+     */
+    virtual int enroll(const std::vector<uint8_t> &imageJpeg,
+                       const std::vector<std::pair<std::string, std::vector<uint8_t>>> &existingFeatures,
+                       std::vector<uint8_t> &feature,
+                       std::string &featureID) = 0;
+
+    /**
+     * @brief 识别结果后处理（无论成功失败）
+     * @param extraInfo 附加信息（JSON 字符串，由设备层透传）
+     */
+    virtual void identifyResultPostProcess(const std::string &extraInfo) = 0;
+};
+
+using FaceDriverPtr = std::shared_ptr<FaceDriver>;
 
 /**
  * @brief 软验证码驱动抽象基类
