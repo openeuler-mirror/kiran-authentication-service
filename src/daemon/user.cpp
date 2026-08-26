@@ -16,6 +16,9 @@
 #include <pwd.h>
 #include <qt5-log-i.h>
 #include <QDBusConnection>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QSettings>
 
 #include "config-daemon.h"
@@ -233,6 +236,11 @@ void User::onEnrollStatus(const QString &data, int progress,
     case ENROLL_STATUS_FAIL:
         emit this->EnrollStatus(QString(), true, progress, message);
         break;
+    case ENROLL_STATUS_REPEATED:
+        // 重复录入（如已录入过相同手指），以完成状态结束本次录入，
+        // 由面板展示提示文案（message 由设备侧给出）。
+        emit this->EnrollStatus(QString(), true, progress, message);
+        break;
     default:
         emit this->EnrollStatus(QString(), false, progress, message);
         break;
@@ -275,7 +283,21 @@ void User::onEnrollStart(const QDBusMessage &message, int authType,
     USER_DEBUG() << "enroll start" << authType << name << extraInfo;
     this->m_enrollInfo.m_dbusMessage = message;
     this->m_enrollInfo.deviceAdaptor = deviceAdaptor;
-    this->m_enrollInfo.deviceAdaptor->enroll(this, extraInfo);
+    QJsonObject rootObject;
+    if (!extraInfo.isEmpty())
+    {
+        rootObject = QJsonDocument::fromJson(extraInfo.toUtf8()).object();
+    }
+    // 人脸等仍需本服务侧查重；指纹查重由 fprintd enroll-duplicate 完成，不注入 feature_ids。
+    if (authType != KAD_AUTH_TYPE_FINGERPRINT)
+    {
+        rootObject[AUTH_DEVICE_JSON_KEY_FEATURE_IDS] = QJsonArray::fromStringList(getFeatureIDs(authType));
+    }
+    // fprintd Claim 需要用户名；设备进程无会话上下文，由 daemon 注入
+    rootObject.insert("user_name", getUserName());
+    const QString enrollExtraInfo = QString(QJsonDocument(rootObject).toJson(QJsonDocument::Compact));
+
+    this->m_enrollInfo.deviceAdaptor->enroll(this, enrollExtraInfo);
     this->m_enrollInfo.m_authTpe = authType;
     this->m_enrollInfo.m_feautreName = name;
 
@@ -305,18 +327,29 @@ void User::onResetFailures(const QDBusMessage &message)
 
 void User::onDeleteIdentification(const QDBusMessage &message, const QString &iid)
 {
-    // TODO:删除特征值同步删除认证设备管理中的fid
     if (!getIIDs().contains(iid))
     {
         USER_WARNING() << "delete identification" << iid << "error,can not find!";
         DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::InvalidArgs, KADErrorCode::ERROR_INVALID_ARGUMENT);
     }
 
-    USER_DEBUG() << "delete identification" << iid;
-    FeatureDB::getInstance()->deleteFearureByIID(iid);
+    // 必须先取 featureID，再交给 devices 的 Remove：
+    // Remove 会先删 fprintd 模板，成功后再删 FeatureDB。
+    // 若先 deleteFearureByIID，再 getFetureIDByIID 得到空串，fprintd 侧不会删，
+    // 面板已无记录但按压仍可被 VerifyStart(any) 命中。
+    const QString dataID = getFetureIDByIID(iid);
+    if (dataID.isEmpty())
+    {
+        USER_WARNING() << "delete identification" << iid << "error, empty featureID";
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::InvalidArgs, KADErrorCode::ERROR_INVALID_ARGUMENT);
+    }
 
-    QString dataID = getFetureIDByIID(iid);
-    DeviceAdaptorFactory::getInstance()->deleteFeature(dataID);
+    USER_DEBUG() << "delete identification" << iid << "featureID" << dataID;
+    if (!DeviceAdaptorFactory::getInstance()->deleteFeature(dataID))
+    {
+        USER_WARNING() << "delete identification" << iid << "failed, featureID" << dataID;
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::Failed, KADErrorCode::ERROR_FAILED);
+    }
 
     auto replyMessage = message.createReply();
     QDBusConnection::systemBus().send(replyMessage);

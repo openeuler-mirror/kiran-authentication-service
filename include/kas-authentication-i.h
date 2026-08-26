@@ -109,7 +109,9 @@ enum IdentifyStatus
     // 因为扫描质量或者用户扫描过程中发生的问题导致认证不成功
     IDENTIFY_STATUS_RETRY,
     // 正常识别中，用来传递消息，不涉及状态改变
-    IDENTIFY_STATUS_NORMAL
+    IDENTIFY_STATUS_NORMAL,
+    // 设备不存在/服务不可用（区别于认证失败：不应计入失败次数，PAM 回退密码）
+    IDENTIFY_STATUS_DEVICE_UNAVAILABLE
 };
 
 // 录入过程

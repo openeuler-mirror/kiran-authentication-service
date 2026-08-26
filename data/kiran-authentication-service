@@ -6,7 +6,8 @@
 
 # =========================认证配置项目================================ #
 # 多路认证模式，成/功则认证通过，失败/切换到密码 跳过多因子认证模式
-auth  [success=done ignore=2 default=bad authinfo_unavail=die] pam_kiran_authentication.so doauth
+# 多因子不可用的情况应该是跳过认证，进入密码认证。而不是直接退出
+auth  [success=done ignore=2 default=bad authinfo_unavail=2] pam_kiran_authentication.so doauth
 # 多因子认证模式, 成功继续执行PAM流程栈,失败或默认值都为失败
 #auth  [success=2 default=bad] pam_kiran_authentication.so doauth
 # ==================================================================== #
