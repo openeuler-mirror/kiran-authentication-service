@@ -236,24 +236,18 @@ void FaceDevice::doIdentifyStart(const QString &extraInfo)
 
     auto driver = m_driver;
     QPointer<FaceDevice> guard(this);
-    auto onRetry = [guard](int retryCode, const std::string &message)
+    // Qt 5.6 仅支持 const char* 槽名重载,不可传 lambda(需 Qt >= 5.10)
+    auto onRetry = [guard](int /*retryCode*/, const std::string &message)
     {
         // 回调在识别工作线程触发,经事件循环转回设备线程后发信号
         if (!guard)
         {
             return;
         }
-        QMetaObject::invokeMethod(guard.data(), [guard, retryCode, message]()
-                                  {
-                                      if (!guard || DEVICE_STATUS_DOING_IDENTIFY != guard->deviceStatus())
-                                      {
-                                          return;
-                                      }
-                                      Q_EMIT guard->m_dbusAdaptor->IdentifyStatus("",
-                                                                                 IDENTIFY_STATUS_RETRY,
-                                                                                 Utils::stdStringToQStringUtf8(message));
-                                  },
-                                  Qt::QueuedConnection);
+        QMetaObject::invokeMethod(guard.data(),
+                                  "onIdentifyRetry",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(QString, Utils::stdStringToQStringUtf8(message)));
     };
 
     m_identifyWatcher.setFuture(QtConcurrent::run([driver, features, onRetry]() -> FaceIdentifyResult
@@ -262,6 +256,15 @@ void FaceDevice::doIdentifyStart(const QString &extraInfo)
                                                       result.ret = driver->identify(features, onRetry, result.featureID);
                                                       return result;
                                                   }));
+}
+
+void FaceDevice::onIdentifyRetry(const QString &message)
+{
+    if (DEVICE_STATUS_DOING_IDENTIFY != deviceStatus())
+    {
+        return;
+    }
+    Q_EMIT m_dbusAdaptor->IdentifyStatus("", IDENTIFY_STATUS_RETRY, message);
 }
 
 void FaceDevice::IdentifyStop()

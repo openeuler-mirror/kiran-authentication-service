@@ -3,6 +3,7 @@ build
 CMakeLists.txt.user*
 .cache
 .clangd
+compile_commands.json
 
 # speckit 本地工作目录,不入库
 .claude/

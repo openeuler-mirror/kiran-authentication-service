@@ -104,7 +104,12 @@ protected:
      *   - onAuthFailed() / onAuthUnavail()：flushPendingSshMessagesBeforeFinish() 用 PROMPT 展示后结束；
      *   - onAuthSuccessed()：直接清空。
      *
-     * /etc/pam.d/sshd 请使用 requisite/required + default=die，勿用 default=ignore（ignore 会继续密码认证）。
+     * /etc/pam.d/sshd 请使用 data/pam.d/sshd 示例（含 pam_faillock；kiran 用
+     * success=3/ignore=1/default=bad，勿用 success=done 以免跳过 authsucc）。
+     * 并建议 PasswordAuthentication no，否则 OpenSSH 在 KI 失败后仍会弹出 password。
+     *
+     * sshd 上任意 AuthFailed（授权码/人脸/UKey 等）都会落同连接防抖锁；OR 模式下用户
+     * 显式选择密码仍可走 pam_unix，属预期行为。
      */
     QStringList m_pendingSshInfoMessages;
     int m_lastNotifiedAuthType = -1;
