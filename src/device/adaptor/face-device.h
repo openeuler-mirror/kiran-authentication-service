@@ -50,6 +50,13 @@ public:
     QStringList GetFeatureIDList() override;
     void IdentifyResultPostProcess(const QString &extraInfo) override;
 
+private Q_SLOTS:
+    /**
+     * @brief 识别重试状态回调（工作线程经 QueuedConnection 投递到设备线程）
+     * @param message 重试提示信息
+     */
+    void onIdentifyRetry(const QString &message);
+
 private:
     FaceDriverPtr m_driver;
     QFutureWatcher<FaceEnrollResult> m_enrollWatcher;
