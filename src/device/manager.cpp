@@ -138,7 +138,8 @@ void Manager::loadDisabledDrivers()
     QSettings settings(QString(KAS_INSTALL_SYSCONFDIR) + "/kiran-authentication-devices.ini",
                        QSettings::IniFormat);
     const auto names = settings.value("DisabledDrivers/Names", QStringList()).toStringList();
-    m_disabledDrivers = QSet<QString>(names.begin(), names.end());
+    // Qt 5.6 无迭代器范围构造(需 Qt >= 5.14),改用 fromList
+    m_disabledDrivers = QSet<QString>::fromList(names);
     KLOG_INFO() << "disabled drivers:" << m_disabledDrivers;
 }
 

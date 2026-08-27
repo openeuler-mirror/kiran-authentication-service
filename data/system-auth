@@ -4,6 +4,7 @@ auth        required      pam_env.so
 auth        required      pam_faillock.so preauth audit deny=3 even_deny_root unlock_time=60
 -auth        sufficient    pam_fprintd.so
 #若想切换为与和或模式,通过修改PAM配置来达到 成功auth完成，ignore忽略进行密码认证，默认为忽略
+#sshd 请勿照搬下方 default=ignore：授权码拒绝后会回退密码。应使用 data/pam.d/sshd（含 faillock + PasswordAuthentication no）
 auth       [success=done ignore=ignore default=ignore] pam_kiran_authentication.so doauth
 auth        sufficient    pam_unix.so nullok try_first_pass
 -auth        sufficient    pam_sss.so use_first_pass

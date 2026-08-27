@@ -15,9 +15,17 @@
 #include <auxiliary.h>
 #include <pam_ext.h>
 #include <pam_modules.h>
+#include <sys/stat.h>
 #include <syslog.h>
+#include <unistd.h>
 #include <QDBusConnection>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QIODevice>
 #include <QJsonDocument>
+#include <QTextStream>
 #include <QMetaType>
 #include <QTimer>
 #include <QTranslator>
@@ -32,6 +40,110 @@
 #include "kas-authentication-i.h"
 #include "pam-args-parser.h"
 #include "pam-handle.h"
+
+namespace
+{
+/* 同连接防抖：OpenSSH 在 PAM_AUTH_ERR 后常于同一连接内自动重试
+ * keyboard-interactive；锁文件记录 pam 调用父进程 PID（sshd 会话进程），仅同连接拦截。
+ * 另用 mtime TTL，避免父进程长期存活或特权分离关闭时锁永不失效/误伤新连接。 */
+constexpr const char *kFailDebounceDir = "/run/kiran-authentication/authfail";
+constexpr int kFailDebounceTtlSec = 300;
+
+QString failDebounceSanitize(const QString &in)
+{
+    if (in.isEmpty())
+    {
+        return QStringLiteral("unknown");
+    }
+    QString out;
+    out.reserve(in.size());
+    for (const QChar ch : in)
+    {
+        const char c = ch.toLatin1();
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+            (c >= '0' && c <= '9') || c == '.' || c == '-')
+        {
+            out.append(ch);
+        }
+        else
+        {
+            out.append(QLatin1Char('_'));
+        }
+    }
+    return out;
+}
+
+QString failDebounceLockPath(const QString &user, const QString &rhost)
+{
+    return QStringLiteral("%1/%2_%3.lock")
+        .arg(QLatin1String(kFailDebounceDir),
+             failDebounceSanitize(user),
+             failDebounceSanitize(rhost));
+}
+
+bool failDebounceParentLooksLikeSshd(long ppid)
+{
+    QFile comm(QStringLiteral("/proc/%1/comm").arg(ppid));
+    if (!comm.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return false;
+    }
+    const QString name = QString::fromUtf8(comm.readAll()).trimmed();
+    return name.contains(QLatin1String("sshd"));
+}
+
+bool failDebounceIsActive(const QString &user, const QString &rhost)
+{
+    const QString path = failDebounceLockPath(user, rhost);
+    QFileInfo info(path);
+    if (!info.exists() || !info.isFile())
+    {
+        return false;
+    }
+    if (info.lastModified().secsTo(QDateTime::currentDateTime()) > kFailDebounceTtlSec)
+    {
+        QFile::remove(path);
+        return false;
+    }
+
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return false;
+    }
+    bool ok = false;
+    const long lockedPpid = QString::fromUtf8(file.readAll().trimmed()).toLong(&ok);
+    file.close();
+    if (!ok || lockedPpid <= 0)
+    {
+        QFile::remove(path);
+        return false;
+    }
+    if (!QFile::exists(QStringLiteral("/proc/%1").arg(lockedPpid)) ||
+        !failDebounceParentLooksLikeSshd(lockedPpid))
+    {
+        QFile::remove(path);
+        return false;
+    }
+    return static_cast<long>(getppid()) == lockedPpid;
+}
+
+void failDebounceSet(const QString &user, const QString &rhost)
+{
+    QDir().mkpath(QLatin1String(kFailDebounceDir));
+    ::chmod(kFailDebounceDir, 0700);
+    const QString path = failDebounceLockPath(user, rhost);
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+    {
+        return;
+    }
+    QTextStream stream(&file);
+    stream << static_cast<qint64>(getppid()) << '\n';
+    file.close();
+    ::chmod(path.toLocal8Bit().constData(), 0600);
+}
+}  // namespace
 
 namespace Kiran
 {
@@ -126,7 +238,19 @@ int Authentication::checkFailures()
                                                  .arg(this->m_authManagerProxy->maxFailures()));
         this->m_pamHandle->sendErrorMessage(tr("Too many authentication failures, so the authentication mode is locked."));
         const int authMode = this->m_authManagerProxy->authMode();
-        auto ret = authMode == KAD_AUTH_MODE_AND ? PAM_SYSTEM_ERR : PAM_IGNORE;
+        // sshd：失败达上限返回 PAM_AUTH_ERR（配合 default=die 拒绝登录，不回退密码）。
+        // 图形/本机 OR 模式仍 PAM_IGNORE，继续 pam_unix 密码。
+        int ret = PAM_SYSTEM_ERR;
+        if (this->isSshService())
+        {
+            const QString rhost = this->m_pamHandle->getItem(PAM_RHOST);
+            failDebounceSet(this->m_userName, rhost.isEmpty() ? QStringLiteral("unknown") : rhost);
+            ret = PAM_AUTH_ERR;
+        }
+        else if (authMode != KAD_AUTH_MODE_AND)
+        {
+            ret = PAM_IGNORE;
+        }
         KLOG_DEBUG() << "ret" << ret;
         return ret;
     }
@@ -161,6 +285,18 @@ int Authentication::startAction()
 
 int Authentication::startActionDoAuth()
 {
+    if (this->isSshService())
+    {
+        const QString rhost = this->m_pamHandle->getItem(PAM_RHOST);
+        if (failDebounceIsActive(this->m_userName, rhost.isEmpty() ? QStringLiteral("unknown") : rhost))
+        {
+            this->m_pamHandle->syslog(LOG_INFO,
+                                      QString("auth-fail debounce active for %1 from %2, reject retry")
+                                          .arg(this->m_userName, rhost));
+            return PAM_AUTH_ERR;
+        }
+    }
+
     auto result = this->startAuthPre();
     RETURN_VAL_IF_TRUE(result != PAM_SUCCESS, result);
     result = this->startAuth();
@@ -451,6 +587,12 @@ void Authentication::onAuthFailed()
 {
     this->m_pamHandle->syslog(LOG_INFO,
                               QString("Authentication AuthFailed signal,session ID:%1").arg(m_sessionID));
+    // sshd：拒绝后落同连接防抖锁，吞掉 OpenSSH 对本连接的 KI 自动重试
+    if (this->isSshService())
+    {
+        const QString rhost = this->m_pamHandle->getItem(PAM_RHOST);
+        failDebounceSet(this->m_userName, rhost.isEmpty() ? QStringLiteral("unknown") : rhost);
+    }
     if (m_inStartAuth)
     {
         m_pendingFinishResult = PAM_AUTH_ERR;
