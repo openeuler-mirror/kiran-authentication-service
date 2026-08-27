@@ -117,8 +117,9 @@ void Session::ResponsePrompt(const QString &text)
     RETURN_IF_FALSE(m_waitForResponseFunc);
     m_waitForResponseFunc(text);
 
-    // SOFT_CODE_NO_CAMERA 存在两步认证，第一步选择验证方式后不需要清除 m_waitForResponseFunc，用于处理第二阶段的返回
-    if (!(m_authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA && m_authCodeStep == AUTH_CODE_STEP_INPUT_CODE))
+    // SOFT_CODE_NO_CAMERA：菜单选择可多次重试，输入授权码为第二阶段，均需保留回调
+    if (!(m_authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA &&
+          (m_authCodeStep == AUTH_CODE_STEP_SELECT || m_authCodeStep == AUTH_CODE_STEP_INPUT_CODE)))
     {
         m_waitForResponseFunc = nullptr;
     }
@@ -130,11 +131,22 @@ void Session::onAuthCodeSelectResponse(const QString &response)
     int choice = response.toInt(&toIntOk);
     if (!toIntOk || (choice != 1 && choice != 2))
     {
-        // 显示错误信息，结束验证
+        // 无效选择：提示后回到菜单；累计 3 次则拒绝登录（不回退密码）
+        m_invalidAuthCodeChoiceCount++;
         Q_EMIT this->AuthMessage(tr("Invalid choice"), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+        if (m_invalidAuthCodeChoiceCount >= 3)
+        {
+            KLOG_WARNING() << m_sessionID << "too many invalid auth-code menu choices, reject login";
+            this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+            return;
+        }
+        Q_EMIT this->AuthMessage(tr("1. Request an authorization code 2. Input authorization code"),
+                                 KADMessageType::KAD_MESSAGE_TYPE_INFO);
+        Q_EMIT this->AuthPrompt(tr("please select:"), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
         return;
     }
+
+    m_invalidAuthCodeChoiceCount = 0;
 
     if (choice == 1)
     {
@@ -175,12 +187,43 @@ void Session::onAuthCodeInputResponse(const QString &response)
     if (response.trimmed().isEmpty())
     {
         Q_EMIT this->AuthMessage(tr("authorization code cannot be empty"), KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+        if (!retryAuthCodeInputAfterFailure())
+        {
+            this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
+        }
         return;
     }
     QJsonDocument jsonDoc(QJsonObject{{"user_name", m_userName}, {"code", response}});
     m_authStartMs = QDateTime::currentMSecsSinceEpoch();
     startGeneralAuth(jsonDoc.toJson());
+}
+
+bool Session::retryAuthCodeInputAfterFailure()
+{
+    m_authCodeVerifyFailCount++;
+    if (m_authCodeVerifyFailCount >= 3)
+    {
+        KLOG_WARNING() << m_sessionID << "too many authorization code verify failures, reject login";
+        return false;
+    }
+
+    // 校验失败后回到菜单，由用户重新选择申请或输入
+    m_authCodeStep = AUTH_CODE_STEP_SELECT;
+    m_waitForResponseFunc = [this](const QString &response)
+    {
+        if (m_authCodeStep == AUTH_CODE_STEP_SELECT)
+        {
+            onAuthCodeSelectResponse(response);
+        }
+        else if (m_authCodeStep == AUTH_CODE_STEP_INPUT_CODE)
+        {
+            onAuthCodeInputResponse(response);
+        }
+    };
+    Q_EMIT this->AuthMessage(tr("1. Request an authorization code 2. Input authorization code"),
+                             KADMessageType::KAD_MESSAGE_TYPE_INFO);
+    Q_EMIT this->AuthPrompt(tr("please select:"), KADPromptType::KAD_PROMPT_TYPE_QUESTION);
+    return true;
 }
 
 void Session::SetAuthType(int authType)
@@ -382,6 +425,12 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
                 this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, QString::fromUtf8(jsonDoc.toJson()));
             }
             Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+            // 无摄像头授权码：校验失败允许会话内重试，满 3 次再拒绝
+            if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA &&
+                retryAuthCodeInputAfterFailure())
+            {
+                return;
+            }
             this->finishPhaseAuth(SESSION_AUTH_NOT_MATCH);
             return;
         }
@@ -487,6 +536,8 @@ void Session::startSoftCodeNoCameraAuth()
 {
     m_authCodeStep = AUTH_CODE_STEP_SELECT;
     m_gencodeProcess = nullptr;
+    m_invalidAuthCodeChoiceCount = 0;
+    m_authCodeVerifyFailCount = 0;
 
     m_waitForResponseFunc = [this](const QString &response)
     {
@@ -531,8 +582,9 @@ void Session::onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitSt
                                 ? tr("Failed to request authorization code, please try again.")
                                 : detail;
         Q_EMIT this->AuthMessage(msg, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        // 图形终端（LightDM）：走 AuthFailed 路径，返回重新认证，不回退密码。
-        // 字符终端（SSH）：走 AuthUnavail 路径，回退到 pam_unix 密码登录（保持原有行为）。
+        // 图形终端（LightDM）：AuthFailed，由 greeter 重新认证，不回退密码。
+        // 字符终端（SSH）：AuthUnavail → PAM_AUTHINFO_UNAVAIL；在 sshd 示例栈（default=bad/die）
+        // 下会拒绝登录、不回退密码（勿再假设会落入 pam_unix）。
         const bool isGraphical = (m_pamServiceName == QLatin1String("lightdm"));
         this->finishPhaseAuth(isGraphical ? SESSION_AUTH_NOT_MATCH : SESSION_AUTH_INTERNAL_ERROR);
     }

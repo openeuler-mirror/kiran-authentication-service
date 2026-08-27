@@ -54,8 +54,8 @@ public:
 
     enum AuthCodeStep
     {
-        AUTH_CODE_STEP_SELECT,     // 等待用户选择：申请验证码还是输入验证码
-        AUTH_CODE_STEP_INPUT_CODE  // 等待用户输入验证码
+        AUTH_CODE_STEP_SELECT,     // 等待用户选择：申请授权码还是输入授权码
+        AUTH_CODE_STEP_INPUT_CODE  // 等待用户输入授权码
     };
 
 public:
@@ -132,6 +132,12 @@ private:
 
     bool matchUser(int32_t authType, const QString &dataID);
 
+    /**
+     * @brief 授权码校验失败后回到选择菜单；累计达上限则不再重试
+     * @return true 表示已重新出菜单，调用方勿结束认证；false 表示次数用尽，应拒绝登录
+     */
+    bool retryAuthCodeInputAfterFailure();
+
 private Q_SLOTS:
     // 处理授权码自动申请
     void onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
@@ -161,5 +167,9 @@ private:
     AuthCodeStep m_authCodeStep;
     QProcess *m_gencodeProcess;
     qint64 m_authStartMs = 0; /**< StartAuth 时间戳，用于计算认证耗时 */
+    /** SOFT_CODE_NO_CAMERA 菜单无效选择累计次数（满 3 次拒绝登录，不回退密码） */
+    int m_invalidAuthCodeChoiceCount = 0;
+    /** SOFT_CODE_NO_CAMERA 授权码校验失败累计次数（空/错误，满 3 次拒绝登录） */
+    int m_authCodeVerifyFailCount = 0;
 };
 }  // namespace Kiran

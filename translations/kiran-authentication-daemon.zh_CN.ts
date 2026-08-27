@@ -12,80 +12,84 @@
 <context>
     <name>Kiran::Session</name>
     <message>
-        <location filename="../src/daemon/session.cpp" line="154"/>
+        <location filename="../src/daemon/session.cpp" line="166"/>
         <source>Requesting authorization code, please wait...</source>
         <translation>正在申请授权码，请稍候...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="574"/>
+        <location filename="../src/daemon/session.cpp" line="593"/>
         <source>Authorization code request successful. Please contact the device administrator to obtain it.</source>
         <translation>申请授权码成功，请联系设备管理员获取。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="169"/>
-        <location filename="../src/daemon/session.cpp" line="580"/>
+        <location filename="../src/daemon/session.cpp" line="181"/>
+        <location filename="../src/daemon/session.cpp" line="599"/>
         <source>please input authorization code:</source>
         <translation>请输入授权码：</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="161"/>
+        <location filename="../src/daemon/session.cpp" line="173"/>
         <source>waiting for authorization code...</source>
         <translation>等待输入授权码...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="450"/>
+        <location filename="../src/daemon/session.cpp" line="501"/>
         <source>Insert the UKey and enter the PIN code</source>
         <translation>请插入UKey并输入PIN码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="451"/>
+        <location filename="../src/daemon/session.cpp" line="502"/>
         <source>please input ukey code.</source>
         <translation>请输入PIN码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="493"/>
+        <location filename="../src/daemon/session.cpp" line="510"/>
         <source>Please look at the camera</source>
         <translation>请直视摄像头</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="515"/>
+        <location filename="../src/daemon/session.cpp" line="531"/>
         <source>Please request for an authorization code and then enter it</source>
         <translation>请申请授权码然后输入授权码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="538"/>
+        <location filename="../src/daemon/session.cpp" line="145"/>
+        <location filename="../src/daemon/session.cpp" line="225"/>
+        <location filename="../src/daemon/session.cpp" line="556"/>
         <source>please select:</source>
         <translation>请选择：</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="516"/>
+        <location filename="../src/daemon/session.cpp" line="532"/>
         <source>please input authorization code.</source>
         <translation>请输入授权码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="134"/>
+        <location filename="../src/daemon/session.cpp" line="136"/>
         <source>Invalid choice</source>
         <translation>无效选择</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="149"/>
-        <location filename="../src/daemon/session.cpp" line="564"/>
+        <location filename="../src/daemon/session.cpp" line="161"/>
+        <location filename="../src/daemon/session.cpp" line="582"/>
         <source>Failed to request authorization code, please try again.</source>
         <translation>申请授权码失败，请重试。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="177"/>
-        <location filename="../src/daemon/session.cpp" line="504"/>
+        <location filename="../src/daemon/session.cpp" line="189"/>
+        <location filename="../src/daemon/session.cpp" line="521"/>
         <source>authorization code cannot be empty</source>
-        <translation type="unfinished"></translation>
+        <translation>授权码不能为空</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="537"/>
+        <location filename="../src/daemon/session.cpp" line="143"/>
+        <location filename="../src/daemon/session.cpp" line="223"/>
+        <location filename="../src/daemon/session.cpp" line="555"/>
         <source>1. Request an authorization code 2. Input authorization code</source>
         <translation>1. 申请授权码 2.输入授权码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="617"/>
+        <location filename="../src/daemon/session.cpp" line="636"/>
         <source>can not find %1 device</source>
         <translation>未能检测到%1设备</translation>
     </message>
@@ -111,47 +115,47 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../lib/utils.cpp" line="205"/>
+        <location filename="../lib/utils.cpp" line="269"/>
         <source>password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="206"/>
+        <location filename="../lib/utils.cpp" line="270"/>
         <source>fingerprint</source>
         <translation>指纹</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="207"/>
+        <location filename="../lib/utils.cpp" line="271"/>
         <source>face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="208"/>
+        <location filename="../lib/utils.cpp" line="272"/>
         <source>fingervein</source>
         <translation>指静脉</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="209"/>
+        <location filename="../lib/utils.cpp" line="273"/>
         <source>iris</source>
         <translation>虹膜</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="210"/>
+        <location filename="../lib/utils.cpp" line="274"/>
         <source>ukey</source>
         <translation>UKey</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="211"/>
+        <location filename="../lib/utils.cpp" line="275"/>
         <source>soft face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="212"/>
+        <location filename="../lib/utils.cpp" line="276"/>
         <source>soft code</source>
         <translation>授权码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="213"/>
+        <location filename="../lib/utils.cpp" line="277"/>
         <source>soft code no camera</source>
         <translation>授权码(无摄像头)</translation>
     </message>
@@ -204,22 +208,22 @@
         <translation> (错误码:0x%x)</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="230"/>
+        <location filename="../lib/utils.cpp" line="294"/>
         <source>Feature not match.</source>
         <translation>特征不匹配。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="232"/>
+        <location filename="../lib/utils.cpp" line="296"/>
         <source>Feature matching successed.</source>
         <translation>特征匹配成功。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="234"/>
+        <location filename="../lib/utils.cpp" line="298"/>
         <source>Feature not match, please retry it.</source>
         <translation>特征不匹配，请重试。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="239"/>
+        <location filename="../lib/utils.cpp" line="303"/>
         <source>Unknown verfication error.</source>
         <translation>未知认证错误。</translation>
     </message>

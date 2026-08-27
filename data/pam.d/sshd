@@ -1,0 +1,34 @@
+# /etc/pam.d/sshd 接入示例（授权码 / 多因子 SSH，拒绝登录不回退独立 password）
+#
+# 将下列 auth/account 片段接入 sshd（或替换对 system-auth 的盲 include）。
+# 本示例保留 pam_faillock，避免：
+#   (a) pam_unix 回退路径可被无限试密码（仅受 MaxAuthTries 限制）；
+#   (b) AND 模式跨连接无限重试（daemon 内部 failures 仅在 OR+NOT_MATCH 递增）。
+#
+# pam_kiran_authentication.so 控制旗：
+#   success=3  — 成功：跳过 authfail、pam_unix、第二处 authfail，落到 authsucc 清锁定计数。
+#   ignore=1   — PAM_IGNORE：跳过紧随 authfail，进入 pam_unix（OR 降级回退密码）。
+#   default=bad— PAM_AUTH_ERR 等：落入 authfail 记账后 die，拒绝登录、不继续密码。
+#
+# 勿对 pam_kiran 使用 success=done，否则会跳过 pam_faillock.so authsucc，成功后无法清零锁定计数。
+#
+# 配套 sshd_config：
+#   ChallengeResponseAuthentication yes
+#   KbdInteractiveAuthentication yes
+#   PasswordAuthentication no
+# 必须关闭独立 password 方法，否则 KI 被拒绝后 OpenSSH 仍可能弹出 user@host's password。
+#
+# 影响范围：sshd 上 pam_kiran 任意 AuthFailed（授权码/人脸/UKey 等）均配合防抖与本栈拒绝同连接重试；
+# OR 模式下用户显式选择密码仍可走 pam_unix（ignore 路径），属 OR 预期而非绕过。
+#
+# 桌面登录请继续用 system-auth，不要整段照搬本文件。
+
+auth       required      pam_faillock.so preauth audit deny=3 even_deny_root unlock_time=60
+auth       [success=3 ignore=1 default=bad]  pam_kiran_authentication.so doauth
+auth       [default=die] pam_faillock.so authfail audit deny=3 even_deny_root unlock_time=60
+auth       [success=1 default=bad] pam_unix.so nullok try_first_pass
+auth       [default=die] pam_faillock.so authfail audit deny=3 even_deny_root unlock_time=60
+auth       sufficient    pam_faillock.so authsucc audit deny=3 even_deny_root unlock_time=60
+
+account    required      pam_faillock.so
+account    required      pam_kiran_authentication.so authsucc
