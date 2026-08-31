@@ -186,6 +186,18 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
     QList<int> candidates = DeviceAdaptorFactory::getInstance()->getSupportedAuthTypes();
     candidates << KAD_AUTH_TYPE_PASSWORD;
 
+    // MFA 关闭时 work_mode 仅为密码,Soft* 驱动均不上报,用于下方密码回退判定。
+    bool hasSoftMfaFactor = false;
+    for (int authType : candidates)
+    {
+        if (authType == KAD_AUTH_TYPE_SOFT_FACE || authType == KAD_AUTH_TYPE_SOFT_CODE ||
+            authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA)
+        {
+            hasSoftMfaFactor = true;
+            break;
+        }
+    }
+
     // 统一过滤:没有驱动或配置中未启用(含未对该应用启用)的类型不提供
     const auto enabledAuthTypes = m_authConfig->getAuthTypeByApp(authApp);
     QList<int> enabledCandidates;
@@ -220,6 +232,16 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
     {
         result.removeAll(KAD_AUTH_TYPE_PASSWORD);
         result << KAD_AUTH_TYPE_PASSWORD;
+    }
+
+    // Soft* 均不可用时,仍须提供密码入口(仅要求该应用 LoginEnable/UnlockEnable)（MFA功能支持）
+    if (!hasSoftMfaFactor && !result.contains(KAD_AUTH_TYPE_PASSWORD) &&
+        m_authConfig->getAuthTypeEnabledForApp(KAD_AUTH_TYPE_PASSWORD,
+                                               static_cast<KADAuthApplication>(authApp)))
+    {
+        result << KAD_AUTH_TYPE_PASSWORD;
+        KLOG_INFO() << "GetAuthTypeByApp: no soft MFA factors,"
+                    << "fallback password despite Password.Enable=false";
     }
 
     KLOG_INFO() << "GetAuthTypeByApp: candidates:" << candidates
