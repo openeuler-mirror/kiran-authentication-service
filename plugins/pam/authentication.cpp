@@ -25,6 +25,7 @@
 #include <QFileInfo>
 #include <QIODevice>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QTextStream>
 #include <QMetaType>
 #include <QTimer>
@@ -40,6 +41,7 @@
 #include "kas-authentication-i.h"
 #include "pam-args-parser.h"
 #include "pam-handle.h"
+#include "ssh-client-ip.h"
 
 namespace
 {
@@ -323,9 +325,6 @@ int Authentication::startActionAuthSucc()
 
 int Authentication::startAuthPre()
 {
-    auto authTypeReply = m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
-    QList<int> authTypeList = authTypeReply.value();
-
     this->notifyAuthMode();
     RETURN_VAL_IF_TRUE(!this->initSession(), PAM_SYSTEM_ERR);
 
@@ -539,6 +538,44 @@ void Authentication::onAuthPrompt(const QString &text, int type)
 bool Authentication::isSshService() const
 {
     return this->m_serviceName == QLatin1String("sshd");
+}
+
+QString Authentication::buildSshAuthExtraInfo() const
+{
+    if (!this->isSshService())
+    {
+        return QString();
+    }
+
+    // 仅信任 pam_get_item(PAM_RHOST)，不做 SSH 环境变量 / getpeername 自研回落
+    const QString rhost = this->m_pamHandle->getItem(PAM_RHOST);
+    const QString clientIp = sshClientIpFromRhost(rhost);
+    if (clientIp.isEmpty())
+    {
+        this->m_pamHandle->syslog(LOG_INFO,
+                                  QString("SSH auth extra_info skipped: PAM_RHOST is empty or not an IP (rhost=%1)")
+                                      .arg(rhost));
+        return QString();
+    }
+
+    QJsonObject req;
+    req.insert(QStringLiteral("channel"), QStringLiteral("ssh"));
+    req.insert(QStringLiteral("account"), this->m_userName);
+    req.insert(QStringLiteral("client_ip"), clientIp);
+    this->m_pamHandle->syslog(LOG_DEBUG,
+                              QString("SSH auth extra_info account=%1 client_ip=%2 via PAM_RHOST")
+                                  .arg(this->m_userName, clientIp));
+    return QString::fromUtf8(QJsonDocument(req).toJson(QJsonDocument::Compact));
+}
+
+QList<int> Authentication::queryAuthTypesForSession()
+{
+    const QString extraInfo = this->buildSshAuthExtraInfo();
+    if (extraInfo.isEmpty())
+    {
+        return this->m_authManagerProxy->GetAuthTypeByApp(m_authApplication).value();
+    }
+    return this->m_authManagerProxy->GetAuthTypeByAppEx(m_authApplication, extraInfo).value();
 }
 
 void Authentication::onAuthMessage(const QString &text, int type)

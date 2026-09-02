@@ -33,8 +33,7 @@ AuthenticationTerminal::AuthenticationTerminal(PAMHandle* pamHandle,
 
 void AuthenticationTerminal::notifySupportAuthType()
 {
-    auto authType = this->m_authManagerProxy->GetAuthTypeByApp(m_authApplication);
-    QList<int> authTypeList = authType.value();
+    QList<int> authTypeList = this->queryAuthTypesForSession();
 
     QList<KADAuthType> tempAuthTypeList;
     for (auto authType : authTypeList)

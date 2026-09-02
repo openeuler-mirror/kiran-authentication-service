@@ -523,12 +523,20 @@ void Manager::Remove(const QString& featureId)
 
 QString Manager::GetSupportedAuthTypes()
 {
+    return GetSupportedAuthTypes(QString());
+}
+
+QString Manager::GetSupportedAuthTypes(const QString &extraInfo)
+{
+    const std::string extraInfoStd = extraInfo.toStdString();
     QList<int> authTypes;
     for (auto device : m_devices)
     {
         if (device && device->m_driver)
         {
-            std::vector<int> driverTypes = device->m_driver->getSupportedAuthTypes();
+            std::vector<int> driverTypes =
+                extraInfo.isEmpty() ? device->m_driver->getSupportedAuthTypes()
+                                    : device->m_driver->getSupportedAuthTypes(extraInfoStd);
             for (int type : driverTypes)
             {
                 if (!authTypes.contains(type))

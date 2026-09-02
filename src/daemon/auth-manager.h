@@ -85,6 +85,14 @@ public Q_SLOTS:  // DBUS METHODS
     // 通过指定的认证应用获取支持的认证类型,返回值为有序列表
     QList<int> GetAuthTypeByApp(int32_t authApp);
 
+    /**
+     * @brief 带会话上下文获取支持的认证类型
+     * @param[in] authApp 认证应用
+     * @param[in] extraInfo 透传给驱动的 JSON；空串等价 GetAuthTypeByApp
+     * @return 有序认证类型列表
+     */
+    QList<int> GetAuthTypeByAppEx(int32_t authApp, const QString &extraInfo);
+
     void onNameLost(const QString &serviceName);
 
     // root

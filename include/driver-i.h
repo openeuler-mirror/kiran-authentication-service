@@ -125,6 +125,25 @@ public:
     {
         return false;
     }
+
+    /**
+     * @brief 带会话上下文查询支持的认证类型
+     *
+     * 新增原因：SSH MFA 白名单需要把会话上下文（channel/account/client_ip）
+     * 从 PAM 经 daemon 透传到可插拔驱动，驱动据此决定可用认证类型
+     * （例如白名单 IP 可豁免二次认证）。因此在既有无参接口之外追加本重载，
+     * 作为带上下文查询入口；既有无参虚函数槽位保持不变。
+     *
+     * @param[in] extraInfo JSON 字符串（如 {"channel":"ssh","account":...,"client_ip":...}）；空表示无上下文（等价无参版本）
+     * @return 认证类型列表
+     * @note 默认忽略 extraInfo 并转调无参版本；可插拔驱动可按需覆盖（如 SSH 白名单）。
+     *       置于类末尾：新虚函数追加在既有虚函数之后，不改变既有槽位顺序。
+     */
+    virtual std::vector<int> getSupportedAuthTypes(const std::string &extraInfo)
+    {
+        (void)extraInfo;
+        return getSupportedAuthTypes();
+    }
 };
 
 using DriverPtr = std::shared_ptr<Driver>;

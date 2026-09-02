@@ -64,6 +64,15 @@
             </arg>
         </method>
 
+        <method name="GetSupportedAuthTypes">
+            <arg name="extra_info" direction="in" type="s">
+                <description>Optional session context JSON (e.g. channel/account/client_ip for SSH whitelist). Empty string equals no-arg GetSupportedAuthTypes.</description>
+            </arg>
+            <arg name="auth_types" direction="out" type="s">
+                <description>JSON array of integers (KADAuthType values) supported by currently loaded drivers.</description>
+            </arg>
+        </method>
+
         <signal name="DeviceAdded">
             <arg name="device_type" type="i">
                 <description>The device type.</description>

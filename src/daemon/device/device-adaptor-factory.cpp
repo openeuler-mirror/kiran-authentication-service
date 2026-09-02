@@ -83,6 +83,11 @@ QString DeviceAdaptorFactory::getDriversForType(int32_t authType)
 
 QList<int> DeviceAdaptorFactory::getSupportedAuthTypes()
 {
+    return getSupportedAuthTypes(QString());
+}
+
+QList<int> DeviceAdaptorFactory::getSupportedAuthTypes(const QString &extraInfo)
+{
     if (!this->m_authDeviceManagerProxy)
     {
         KLOG_WARNING() << "auth device manager proxy is null.";
@@ -90,7 +95,15 @@ QList<int> DeviceAdaptorFactory::getSupportedAuthTypes()
     }
 
     QList<int> authTypes;
-    QString jsonStr = m_authDeviceManagerProxy->GetSupportedAuthTypes();
+    QString jsonStr;
+    if (extraInfo.isEmpty())
+    {
+        jsonStr = m_authDeviceManagerProxy->GetSupportedAuthTypes();
+    }
+    else
+    {
+        jsonStr = m_authDeviceManagerProxy->GetSupportedAuthTypes(extraInfo);
+    }
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
     if (jsonDoc.isArray())
     {
