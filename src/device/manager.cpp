@@ -105,6 +105,10 @@ void Manager::init()
     {
         const char* syspath = udev_list_entry_get_name(entry);
         struct udev_device* dev = udev_device_new_from_syspath(udev, syspath);
+        if (!dev)
+        {
+            continue;
+        }
 
         QString idVendor = udev_device_get_sysattr_value(dev, "idVendor");
         QString idProduct = udev_device_get_sysattr_value(dev, "idProduct");
