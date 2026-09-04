@@ -179,11 +179,18 @@ bool AuthManager::GetAuthTypeEnabledForApp(int authType, int authApp)
 /// @return 认证类型列表(顺序与驱动上报顺序一致,密码在末尾)
 QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
 {
-    KLOG_INFO() << "GetAuthTypeByApp: authApp:" << authApp;
+    return GetAuthTypeByAppEx(authApp, QString());
+}
+
+/// @brief 带会话上下文获取支持的认证类型（SSH 白名单等）
+QList<int> AuthManager::GetAuthTypeByAppEx(int32_t authApp, const QString &extraInfo)
+{
+    KLOG_INFO() << "GetAuthTypeByAppEx: authApp:" << authApp
+                << "extra_info_empty:" << extraInfo.isEmpty();
 
     // 候选认证方式:驱动支持的类型 + 密码
     // (密码无驱动,不会出现在 getSupportedAuthTypes 中;是否提供由配置决定,默认开启)
-    QList<int> candidates = DeviceAdaptorFactory::getInstance()->getSupportedAuthTypes();
+    QList<int> candidates = DeviceAdaptorFactory::getInstance()->getSupportedAuthTypes(extraInfo);
     candidates << KAD_AUTH_TYPE_PASSWORD;
 
     // MFA 关闭时 work_mode 仅为密码,Soft* 驱动均不上报,用于下方密码回退判定。
@@ -240,11 +247,11 @@ QList<int> AuthManager::GetAuthTypeByApp(int32_t authApp)
                                                static_cast<KADAuthApplication>(authApp)))
     {
         result << KAD_AUTH_TYPE_PASSWORD;
-        KLOG_INFO() << "GetAuthTypeByApp: no soft MFA factors,"
+        KLOG_INFO() << "GetAuthTypeByAppEx: no soft MFA factors,"
                     << "fallback password despite Password.Enable=false";
     }
 
-    KLOG_INFO() << "GetAuthTypeByApp: candidates:" << candidates
+    KLOG_INFO() << "GetAuthTypeByAppEx: candidates:" << candidates
                 << "result:" << result;
     return result;
 }

@@ -64,6 +64,12 @@ public:
     void SetEnableDriver(const QString &driverName, bool enable);
     void Remove(const QString &featureId);
     QString GetSupportedAuthTypes();
+    /**
+     * @brief 带会话上下文查询支持的认证类型
+     * @param[in] extraInfo JSON；空串等价无参版本
+     * @return 紧凑 JSON 数组字符串
+     */
+    QString GetSupportedAuthTypes(const QString &extraInfo);
 
 private:
     static Manager *m_instance;
