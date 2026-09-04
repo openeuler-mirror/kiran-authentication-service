@@ -112,6 +112,19 @@
             </arg>
         </method>
 
+        <method name="GetAuthTypeByAppEx">
+            <arg name="auth_app" direction="in" type="i">
+                <description>Authentication application, Refer to KADAuthApplication in kas-authentication-i.h</description>
+            </arg>
+            <arg name="extra_info" direction="in" type="s">
+                <description>Optional session context JSON forwarded to drivers (e.g. SSH whitelist). Empty equals GetAuthTypeByApp.</description>
+            </arg>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QList&lt;int&gt;"/>
+            <arg name="auth_types" direction="out" type="ai">
+                <description>The auth type List. Refer to KADAuthType in kas-authentication-i.h</description>
+            </arg>
+        </method>
+
         <method name="QueryAuthApp">
             <arg name="pam_service_name" direction="in" type="s">
                 <description>The PAM service name. For example lightdm, login, etc..</description>

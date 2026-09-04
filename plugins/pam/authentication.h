@@ -80,6 +80,17 @@ private Q_SLOTS:
     void flushPendingSshMessagesBeforeFinish();
 
 protected:
+    /**
+     * @brief 组装 SSH 会话上下文 JSON（供 GetAuthTypeByAppEx 透传）
+     * @return 非 SSH，或 PAM_RHOST 为空/非 IP 字面量时返回空串
+     * @note client_ip 仅来自 pam_get_item(PAM_RHOST)，无自研多源回落
+     */
+    QString buildSshAuthExtraInfo() const;
+    /**
+     * @brief 查询当前会话可用认证类型（SSH 时带 extra_info）
+     */
+    QList<int> queryAuthTypesForSession();
+
     PAMHandle *m_pamHandle;
     QStringList m_arguments;
     QString m_serviceName;

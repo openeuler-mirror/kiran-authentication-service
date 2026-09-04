@@ -49,6 +49,11 @@ public:
 
     // 获取当前已加载驱动支持的认证类型列表
     QList<int> getSupportedAuthTypes();
+    /**
+     * @brief 带会话上下文获取驱动支持的认证类型
+     * @param[in] extraInfo JSON；空串等价无参版本
+     */
+    QList<int> getSupportedAuthTypes(const QString &extraInfo);
 
 private:
     void init();
