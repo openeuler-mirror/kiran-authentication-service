@@ -127,6 +127,13 @@ private:
     void startPasswdAuth();
     void startGeneralAuth(const QString &extraInfo = QString());
 
+    /**
+     * @brief 无可用特征时结束本阶段（静默 AuthUnavail）
+     *
+     * 避免未按压指纹就报「认证失败」；有特征且按压后不匹配仍走正常 NOT_MATCH。
+     */
+    void skipAuthTypeNoFeature();
+
     void finishPhaseAuth(SessionAuthResult authResult);
     void finishAuth(SessionAuthResult authResult);
 

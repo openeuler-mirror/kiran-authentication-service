@@ -299,6 +299,8 @@ QString Utils::identifyResultEnum2Str(int32_t identifyResult)
         break;
     case IdentifyStatus::IDENTIFY_STATUS_NORMAL:
         return "";
+    case IdentifyStatus::IDENTIFY_STATUS_DEVICE_UNAVAILABLE:
+        return QObject::tr("Fingerprint device unavailable.");
     default:
         return QObject::tr("Unknown verfication error.");
     }

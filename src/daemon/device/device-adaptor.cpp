@@ -259,12 +259,13 @@ void DeviceAdaptor::enrollStart(const QString &extraInfo)
 {
     if (this->m_dbusDeviceProxy)
     {
+        m_occupyIdentify = false;
         startDeviceOccupyTimer(ENROLL_TIMEOUT_MS);
         this->m_dbusDeviceProxy->EnrollStart(extraInfo);
     }
     else
     {
-        DEVICE_DEBUG() << "Not found fingerprint device, enroll failed.";
+        DEVICE_DEBUG() << "Not found device, enroll failed.";
         this->onEnrollStatus({}, EnrollStatus::ENROLL_STATUS_FAIL, 0, "");
     }
 }
@@ -283,12 +284,13 @@ void DeviceAdaptor::identifyStart(const QString &extraInfo)
     if (this->m_dbusDeviceProxy)
     {
         DEVICE_DEBUG() << "device proxy identify start";
+        m_occupyIdentify = true;
         startDeviceOccupyTimer(IDENTIFY_TIMEOUT_MS);
         this->m_dbusDeviceProxy->IdentifyStart(extraInfo);
     }
     else
     {
-        DEVICE_DEBUG() << "Not found fingerprint device, identify failed.";
+        DEVICE_DEBUG() << "Not found device, identify failed.";
         this->onIdentifyStatus(QString(), IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH, "");
     }
 }
@@ -348,7 +350,8 @@ void DeviceAdaptor::onEnrollStatus(const QString &data, int progress, int result
     }
 
     if (result == EnrollStatus::ENROLL_STATUS_COMPLETE ||
-        result == EnrollStatus::ENROLL_STATUS_FAIL)
+        result == EnrollStatus::ENROLL_STATUS_FAIL ||
+        result == EnrollStatus::ENROLL_STATUS_REPEATED)
     {
         this->finishRequest();
     }
@@ -368,7 +371,8 @@ void DeviceAdaptor::onIdentifyStatus(const QString &featureID, int result, const
     }
 
     if (result == IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH ||
-        result == IdentifyStatus::IDENTIFY_STATUS_MATCH)
+        result == IdentifyStatus::IDENTIFY_STATUS_MATCH ||
+        result == IdentifyStatus::IDENTIFY_STATUS_DEVICE_UNAVAILABLE)
     {
         this->finishRequest();
     }
@@ -394,6 +398,30 @@ void DeviceAdaptor::onActiveSessionChanged(const Login1SessionItem &sessionItem)
 
 void DeviceAdaptor::onDeviceOccupyTimeout()
 {
+    if (!this->m_currentRequest)
+    {
+        return;
+    }
+
+    // 指纹识别超时：按 NOT_MATCH 收尾 → Session AuthFailed，锁屏可重试。
+    // 勿走 removeRequest/cancel（会 AuthUnavail，UI 不切密码也不好重试）。
+    const bool fingerprintIdentify =
+        m_occupyIdentify &&
+        this->m_dbusDeviceProxy &&
+        this->m_dbusDeviceProxy->deviceType() == DEVICE_TYPE_FINGERPRINT;
+    if (fingerprintIdentify)
+    {
+        DEVICE_DEBUG() << QString("request: %1 fingerprint identify occupy timeout, treat as NOT_MATCH")
+                              .arg(m_currentRequest->reqID);
+        // 先停设备，保留 m_currentRequest，再合成终态由 onIdentifyStatus → finishRequest
+        this->m_currentRequest->stop();
+        this->onIdentifyStatus(QString(),
+                               IdentifyStatus::IDENTIFY_STATUS_NOT_MATCH,
+                               tr("Identify timeout"));
+        return;
+    }
+
+    // 其它类型/录入：removeRequest → cancel → AuthUnavail
     DEVICE_DEBUG() << QString("request: %1 occupy timeout,cancel!").arg(m_currentRequest->reqID);
     this->removeRequest(m_currentRequest->reqID);
 }

@@ -44,7 +44,7 @@ public:
 
     QString genDevice(const QString &driverName, const QString &vendorId, const QString &productId, const QString &devNode);
     bool genSoftDevices();
-    bool genLocalDevices();  // 装载无 vid/pid 绑定的本地能力设备(如本地人脸识别)
+    bool genLocalDevices();  // 装载无 vid/pid 绑定的本地能力设备(如本地人脸识别 / fprintd 指纹)
     void loadDisabledDrivers();
     void saveDisabledDrivers();
 
