@@ -312,3 +312,197 @@ public:
 };
 
 using UKeyDriverPtr = std::shared_ptr<UKeyDriver>;
+
+/**
+ * @brief 指纹驱动录入状态码
+ *
+ * 取值与 kas-authentication-i.h 中的 EnrollStatus 枚举保持一致，
+ * 上层可据此直接转发为 D-Bus EnrollStatus 信号。
+ */
+enum FingerprintEnrollStatus
+{
+    // 录入完成
+    FINGERPRINT_ENROLL_COMPLETE = 0,
+    // 录入失败
+    FINGERPRINT_ENROLL_FAIL = 1,
+    // 录入阶段性完成
+    FINGERPRINT_ENROLL_PASS = 2,
+    // 因为扫描质量或者用户扫描过程中发生的问题引起，需要重试
+    FINGERPRINT_ENROLL_RETRY = 3,
+    // 重复录入同一特征
+    FINGERPRINT_ENROLL_REPEATED = 4,
+    // 正常录入中，用来传递消息，不涉及状态改变
+    FINGERPRINT_ENROLL_NORMAL = 5,
+};
+
+/**
+ * @brief 指纹驱动识别状态码
+ *
+ * 取值与 kas-authentication-i.h 中的 IdentifyStatus 枚举保持一致，
+ * 上层可据此直接转发为 D-Bus IdentifyStatus 信号。
+ */
+enum FingerprintIdentifyStatus
+{
+    // 认证失败
+    FINGERPRINT_IDENTIFY_NOT_MATCH = 0,
+    // 认证成功
+    FINGERPRINT_IDENTIFY_MATCH = 1,
+    // 因为扫描质量或者用户扫描过程中发生的问题导致认证不成功
+    FINGERPRINT_IDENTIFY_RETRY = 2,
+    // 正常识别中，用来传递消息，不涉及状态改变
+    FINGERPRINT_IDENTIFY_NORMAL = 3,
+};
+
+/**
+ * @brief 指纹驱动错误码
+ *
+ * 必须避开 FingerprintEnrollStatus / FingerprintIdentifyStatus 的值域（0~5），
+ * 否则上层会把错误码误判为录入/识别状态。
+ */
+enum FingerprintDriverError
+{
+    FINGERPRINT_ERROR_OPEN_FAIL = 100,
+    FINGERPRINT_ERROR_ENROLL_FAIL = 101,
+    FINGERPRINT_ERROR_IDENTIFY_FAIL = 102,
+    FINGERPRINT_ERROR_CANCELED = 103,
+    FINGERPRINT_ERROR_NO_FEATURE = 104,
+    FINGERPRINT_ERROR_PERMISSION_DENIED = 105,
+    FINGERPRINT_ERROR_SERVICE_UNAVAILABLE = 106,
+    FINGERPRINT_ERROR_BUSY = 107,
+    /** fprintd 可用但当前没有指纹仪 */
+    FINGERPRINT_ERROR_NO_DEVICE = 108,
+};
+
+/** FeatureDB 中 fprintd 映射特征的字节前缀：fprintd:<user>:<finger_name> */
+#define FINGERPRINT_FPRINTD_FEATURE_PREFIX "fprintd:"
+
+/**
+ * @brief 指纹驱动抽象基类
+ *
+ * 第三方厂商实现指纹驱动时继承此类，无需依赖 Qt 框架。
+ * 驱动插件实例可能被多个设备对象共享，因此 open() 返回独立设备句柄，
+ * 后续所有操作均传入该句柄，避免设备间状态互相覆盖。
+ *
+ * 录入/识别均为同步阻塞接口，驱动内部循环采集直到完成；
+ * 过程中通过回调上报进度与提示消息，供上层转发为 D-Bus 信号。
+ *
+ * 回调中的 result 取值使用本头文件中定义的
+ * FingerprintEnrollStatus / FingerprintIdentifyStatus 枚举。
+ */
+class FingerprintDriver : public Driver
+{
+public:
+    FingerprintDriver() = default;
+    virtual ~FingerprintDriver() = default;
+
+    /**
+     * @brief 打开指纹设备，返回独立设备句柄
+     * @param vid 厂商 ID（小写十六进制字符串，如 "1b55"）
+     * @param pid 产品 ID（小写十六进制字符串，如 "0120"）
+     * @return 设备句柄，失败返回 nullptr
+     */
+    virtual void *open(const std::string &vid, const std::string &pid) = 0;
+
+    /**
+     * @brief 打开指纹设备（带回错误码）
+     * @param handleOut [out] 成功时非空句柄
+     * @return 0 成功；非 0 为 FingerprintDriverError（如 NO_DEVICE / SERVICE_UNAVAILABLE）
+     */
+    virtual int openEx(const std::string &vid, const std::string &pid, void **handleOut)
+    {
+        if (!handleOut)
+        {
+            return FINGERPRINT_ERROR_OPEN_FAIL;
+        }
+        *handleOut = open(vid, pid);
+        return (*handleOut) ? 0 : FINGERPRINT_ERROR_OPEN_FAIL;
+    }
+
+    /**
+     * @brief 关闭指纹设备
+     * @param handle 由 open() 返回的设备句柄
+     */
+    virtual void close(void *handle) = 0;
+
+    /**
+     * @brief 当前是否真的存在可用指纹设备（硬件在位）
+     *
+     * 不做耗时占用；用于设备进程「无硬件时不对外暴露指纹认证类型」，
+     * 让 daemon 的 GetAuthTypeByApp 不再把指纹排到密码前面。
+     * 非本地驱动默认按有设备处理（沿用旧行为）。
+     */
+    virtual bool hasDevice()
+    {
+        return true;
+    }
+
+    /**
+     * @brief 录入指纹（同步阻塞，直到录入完成/失败/被取消）
+     *
+     * 录入过程中通过 progressCb 上报进度（progress 0~100）与提示消息，
+     * 例如"请按压手指""请移开手指再试一次"。
+     *
+     * @param handle 设备句柄
+     * @param extraInfo 附加信息（JSON 字符串，预留，可传空串）
+     * @param progressCb 进度回调 (progress, result, message)，result 为 FingerprintEnrollStatus
+     * @param featureData [out] 录入成功后的特征数据（序列化字节串），供上层存入特征库
+     * @return 0 录入成功，非 0 错误码
+     */
+    virtual int enroll(void *handle,
+                       const std::string &extraInfo,
+                       const std::function<void(int, int, const std::string &)> &progressCb,
+                       std::string &featureData) = 0;
+
+    /**
+     * @brief 识别指纹（同步阻塞，扫描并与模板库比对）
+     *
+     * @param handle 设备句柄
+     * @param featureDataList 待比对的模板数据列表（由上层从特征库加载）
+     * @param statusCb 识别过程状态回调 (result, message)，result 为 FingerprintIdentifyStatus
+     * @param matchIndex [out] 匹配到的模板下标，明确不匹配时为 -1
+     * @return 0 识别成功（matchIndex >= 0 表示匹配，-1 表示不匹配），非 0 错误码
+     */
+    virtual int identify(void *handle,
+                         const std::vector<std::string> &featureDataList,
+                         const std::function<void(int, const std::string &)> &statusCb,
+                         int &matchIndex) = 0;
+
+    /**
+     * @brief 取消/停止当前录入或识别操作
+     *
+     * 取消后正在阻塞的 enroll/identify 应尽快返回非 0 错误码。
+     *
+     * @param handle 设备句柄
+     */
+    virtual void cancel(void *handle) = 0;
+
+    /**
+     * @brief 删除已录入指纹（可选，默认不支持）
+     *
+     * fprintd 后端根据 featureData（fprintd:user:finger）调用 DeleteEnrolledFinger。
+     *
+     * @param featureData 特征映射字节串
+     * @return 0 成功，非 0 错误码
+     */
+    virtual int deleteEnrolledPrint(const std::string &featureData)
+    {
+        (void)featureData;
+        return FINGERPRINT_ERROR_ENROLL_FAIL;
+    }
+
+    /**
+     * @brief 列出用户在 fprintd 中已录入的 finger_name（可选）
+     * @return 0 成功，非 0 错误码
+     */
+    virtual int listEnrolledFingers(void *handle,
+                                    const std::string &userName,
+                                    std::vector<std::string> &fingers)
+    {
+        (void)handle;
+        (void)userName;
+        fingers.clear();
+        return FINGERPRINT_ERROR_ENROLL_FAIL;
+    }
+};
+
+using FingerprintDriverPtr = std::shared_ptr<FingerprintDriver>;

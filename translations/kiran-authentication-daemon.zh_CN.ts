@@ -228,4 +228,12 @@
         <translation>未知认证错误。</translation>
     </message>
 </context>
+<context>
+    <name>Kiran::DeviceAdaptor</name>
+    <message>
+        <location filename="../src/daemon/device/device-adaptor.cpp" line="420"/>
+        <source>Identify timeout</source>
+        <translation>识别超时</translation>
+    </message>
+</context>
 </TS>

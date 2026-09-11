@@ -13,12 +13,15 @@
  */
 
 #include <algorithm>
+#include <memory>
 
 #include <qt5-log-i.h>
+#include <QDBusError>
 #include <QSettings>
 
 #include "adaptor/device.h"
 #include "adaptor/face-device.h"
+#include "adaptor/fingerprint-device.h"
 #include "adaptor/soft-code-device.h"
 #include "adaptor/soft-code-no-camera-device.h"
 #include "adaptor/soft-face-device.h"
@@ -129,7 +132,7 @@ void Manager::init()
 
     // 软驱动，在程序启动时载入
     genSoftDevices();
-    // 本地能力驱动（无 vid/pid 绑定，如本地人脸识别），在程序启动时载入
+    // 本地能力驱动（无 vid/pid 绑定，如本地人脸识别 / fprintd 指纹），在程序启动时载入
     genLocalDevices();
 }
 
@@ -138,7 +141,6 @@ void Manager::loadDisabledDrivers()
     QSettings settings(QString(KAS_INSTALL_SYSCONFDIR) + "/kiran-authentication-devices.ini",
                        QSettings::IniFormat);
     const auto names = settings.value("DisabledDrivers/Names", QStringList()).toStringList();
-    // Qt 5.6 无迭代器范围构造(需 Qt >= 5.14),改用 fromList
     m_disabledDrivers = QSet<QString>::fromList(names);
     KLOG_INFO() << "disabled drivers:" << m_disabledDrivers;
 }
@@ -182,6 +184,9 @@ QString Manager::genDevice(const QString& driverName, const QString& vendorId, c
     }
 
     case DRIVER_TYPE_FINGERPRINT:
+        // fprintd 本地设备仅由 genLocalDevices / SetEnableDriver 注册，不走 USB 热插
+        break;
+
     case DRIVER_TYPE_FACE:
     case DRIVER_TYPE_FINGERVEIN:
     case DRIVER_TYPE_IRIS:
@@ -255,6 +260,17 @@ bool Manager::genLocalDevices()
         case DRIVER_TYPE_FACE:
             device = FaceDevicePtr(new FaceDevice(driver));
             break;
+        case DRIVER_TYPE_FINGERPRINT:
+        {
+            // fprintd：启动只注册逻辑设备，真正 GetDefaultDevice 在录入/识别时懒 open
+            auto fpDevice = FingerprintDevicePtr(new FingerprintDevice(QString(), QString(), driver));
+            if (fpDevice)
+            {
+                m_devices.insert(fpDevice->deviceID(), fpDevice);
+            }
+            device.clear();  // 已插入，避免下面重复 insert
+            break;
+        }
         default:
             KLOG_WARNING() << "unsupported local driver type:" << getDriverTypeStr(driver->getType())
                            << "file:" << driverFile;
@@ -494,6 +510,18 @@ void Manager::SetEnableDriver(const QString& driverName, bool enable)
             {
                 device = FaceDevicePtr(new FaceDevice(driver));
             }
+            else if (DRIVER_TYPE_FINGERPRINT == driver->getType())
+            {
+                auto fpDevice = FingerprintDevicePtr(new FingerprintDevice(QString(), QString(), driver));
+                if (fpDevice)
+                {
+                    const QString deviceID = fpDevice->deviceID();
+                    m_devices.insert(deviceID, fpDevice);
+                    KLOG_INFO() << "SetEnableDriver create fingerprint device:" << deviceID;
+                    Q_EMIT m_dbusAdaptor->DeviceAdded(fpDevice->deviceType(), deviceID);
+                }
+                return;
+            }
             if (device)
             {
                 const QString deviceID = device->deviceID();
@@ -515,10 +543,65 @@ void Manager::SetEnableDriver(const QString& driverName, bool enable)
 
 void Manager::Remove(const QString& featureId)
 {
-    // FeatureData featureData = FeatureDB::getInstance()->getFeatureData(featureId);
-    bool result = FeatureDB::getInstance()->deleteFeature(featureId);
+    auto replyRemoveFailed = [this](const QString &reason)
+    {
+        KLOG_WARNING() << reason;
+        // 必须回 D-Bus error，否则 daemon deleteFeature() 会当成成功并 IdentificationDeleted
+        if (calledFromDBus())
+        {
+            sendErrorReply(QDBusError::Failed, reason);
+        }
+    };
 
-    // NOTE: 是否需要重置ukey设备
+    FeatureData featureData = FeatureDB::getInstance()->getFeatureData(featureId);
+    const QByteArray blob = featureData.feature;
+    if (blob.startsWith(FINGERPRINT_FPRINTD_FEATURE_PREFIX))
+    {
+        // fprintd 映射必须先删模板再删 DB；任一步失败都保留 DB，避免面板已无而 fprintd 仍在。
+        bool attempted = false;
+        for (auto device : m_devices)
+        {
+            if (!device || device->deviceType() != DEVICE_TYPE_FINGERPRINT)
+            {
+                continue;
+            }
+            auto fpDriver = std::dynamic_pointer_cast<FingerprintDriver>(device->m_driver);
+            if (!fpDriver)
+            {
+                continue;
+            }
+            attempted = true;
+            const int ret = fpDriver->deleteEnrolledPrint(
+                std::string(blob.constData(), static_cast<size_t>(blob.size())));
+            if (0 != ret)
+            {
+                replyRemoveFailed(
+                    QString("Remove: fprintd deleteEnrolledPrint failed, keep FeatureDB"
+                            " featureId:%1 code:%2 msg:%3")
+                        .arg(featureId)
+                        .arg(ret)
+                        .arg(QString::fromStdString(fpDriver->getErrorMsg(ret))));
+                return;
+            }
+            break;
+        }
+        if (!attempted)
+        {
+            replyRemoveFailed(
+                QString("Remove: no fingerprint driver for fprintd delete, keep FeatureDB"
+                        " featureId:%1")
+                    .arg(featureId));
+            return;
+        }
+    }
+
+    bool result = FeatureDB::getInstance()->deleteFeature(featureId);
+    if (!result)
+    {
+        replyRemoveFailed(QString("Remove: FeatureDB delete failed, featureId:%1").arg(featureId));
+        return;
+    }
+    KLOG_INFO() << "Remove feature" << featureId << "db result:" << result;
 }
 
 QString Manager::GetSupportedAuthTypes()
@@ -532,17 +615,28 @@ QString Manager::GetSupportedAuthTypes(const QString &extraInfo)
     QList<int> authTypes;
     for (auto device : m_devices)
     {
-        if (device && device->m_driver)
+        if (!device || !device->m_driver)
         {
-            std::vector<int> driverTypes =
-                extraInfo.isEmpty() ? device->m_driver->getSupportedAuthTypes()
-                                    : device->m_driver->getSupportedAuthTypes(extraInfoStd);
-            for (int type : driverTypes)
+            continue;
+        }
+
+        // fprintd 本地逻辑设备启动即注册；无硬件时不对外暴露指纹认证类型
+        auto fpDriver = std::dynamic_pointer_cast<FingerprintDriver>(device->m_driver);
+        if (fpDriver && !fpDriver->hasDevice())
+        {
+            KLOG_INFO() << "GetSupportedAuthTypes: skip fingerprint, no device present"
+                        << "deviceID:" << device->deviceID();
+            continue;
+        }
+
+        std::vector<int> driverTypes =
+            extraInfo.isEmpty() ? device->m_driver->getSupportedAuthTypes()
+                                : device->m_driver->getSupportedAuthTypes(extraInfoStd);
+        for (int type : driverTypes)
+        {
+            if (!authTypes.contains(type))
             {
-                if (!authTypes.contains(type))
-                {
-                    authTypes << type;
-                }
+                authTypes << type;
             }
         }
     }

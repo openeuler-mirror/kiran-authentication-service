@@ -117,4 +117,63 @@
         <translation>无效的pin码长度</translation>
     </message>
 </context>
+<context>
+    <name>Kiran::FingerprintDevice</name>
+    <message>
+        <source>This fingerprint may already be enrolled for this or another user</source>
+        <translation>该指纹可能已由当前用户或其他用户录入</translation>
+    </message>
+    <message>
+        <source>Please press the finger to enroll</source>
+        <translation>请按压手指进行录入</translation>
+    </message>
+    <message>
+        <source>enroll success</source>
+        <translation>录入成功</translation>
+    </message>
+    <message>
+        <source>identify success</source>
+        <translation>认证成功</translation>
+    </message>
+    <message>
+        <source>identify fail!</source>
+        <translation>认证失败!</translation>
+    </message>
+    <message>
+        <source>Device Busy</source>
+        <translation>设备忙</translation>
+    </message>
+    <message>
+        <source>scan quality issue, please retry</source>
+        <translation>指纹质量不佳，请重试</translation>
+    </message>
+    <message>
+        <source>enroll pass, please press again</source>
+        <translation>请再次按压手指</translation>
+    </message>
+    <message>
+        <source>fingerprint operation canceled</source>
+        <translation>操作已取消</translation>
+    </message>
+    <message>
+        <source>No fingerprint device found</source>
+        <translation>未检测到指纹设备，请接入后再试</translation>
+    </message>
+    <message>
+        <source>fprintd service unavailable</source>
+        <translation>指纹服务不可用</translation>
+    </message>
+    <message>
+        <source>Fingerprint permission denied</source>
+        <translation>指纹权限不足</translation>
+    </message>
+    <message>
+        <source>Failed to open fingerprint device</source>
+        <translation>打开指纹设备失败</translation>
+    </message>
+    <message>
+        <source>no enrolled fingerprint feature</source>
+        <translation>未录入指纹特征</translation>
+    </message>
+</context>
 </TS>

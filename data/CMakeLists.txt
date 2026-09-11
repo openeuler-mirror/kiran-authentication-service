@@ -69,3 +69,7 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE WORLD_READ
               WORLD_WRITE
   DESTINATION ${KAS_INSTALL_DATADIR})
+
+# fprintd：允许认证设备服务以 root 调用 enroll/verify（无交互授权）
+install(FILES ${PROJECT_SOURCE_DIR}/data/polkit/50-kiran-authentication-fprintd.rules
+        DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/polkit-1/rules.d)

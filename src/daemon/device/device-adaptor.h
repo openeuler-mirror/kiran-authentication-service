@@ -91,6 +91,8 @@ private:
     int64_t m_requestIDCount;
     QString m_deviceID;
     QTimer m_deviceOccupyTimer;
+    /** 当前占用定时器对应 Identify（true）还是 Enroll（false） */
+    bool m_occupyIdentify{false};
 };
 
 }  // namespace Kiran

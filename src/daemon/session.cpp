@@ -374,6 +374,21 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
                 << "requestID=" << this->m_verifyInfo.m_requestID
                 << "inAuth=" << this->m_verifyInfo.m_inAuth;
 
+    // 设备不存在/服务不可用/打开失败：不是认证结果，不应计入失败次数。
+    // 走 NO_DEVICE（AuthUnavail）；图形 OR 模式下 PAM 会 IGNORE 并继续 pam_unix。
+    if (result == IdentifyStatus::IDENTIFY_STATUS_DEVICE_UNAVAILABLE)
+    {
+        KLOG_WARNING() << m_sessionID << "identify device unavailable"
+                       << "authType=" << this->m_verifyInfo.authType
+                       << "message=" << message;
+        if (!message.isEmpty())
+        {
+            Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
+        }
+        this->finishPhaseAuth(SESSION_AUTH_NO_DEVICE);
+        return;
+    }
+
     // 软驱动认证类型，成功（MATCH）与失败（NOT_MATCH）均上报登录日志
     // 成功时 result=accept；失败时 result=reject（由 D-Bus 服务端按在线/离线决定是否持久化）
     if (result == IdentifyStatus::IDENTIFY_STATUS_MATCH &&
@@ -645,8 +660,6 @@ void Session::startGeneralAuth(const QString &extraInfo)
         rootObject = tempDoc.object();
     }
 
-    QJsonDocument doc(rootObject);
-
     QStringList bids;
     if (!m_loginUserSwitchable)  // 不允许切换用户，则只认证当前用户
     {
@@ -657,11 +670,53 @@ void Session::startGeneralAuth(const QString &extraInfo)
         }
     }
 
+    // 无特征时不要发起 Identify：设备会立刻回 NOT_MATCH，锁屏在「未按压」时就刷「认证失败」。
+    // 有特征、按压后不匹配再报失败是正常的。此处 AuthUnavail，交给 PAM 密码；切勿 startPasswdAuth()。
+    bool shouldSkipNoFeature = false;
+    if (!m_loginUserSwitchable)
+    {
+        // 仅当已明确当前用户且该用户无特征时跳过（用户名为空时不要误判）
+        shouldSkipNoFeature = !m_userName.isEmpty() && bids.isEmpty();
+    }
+    else
+    {
+        const int featureDeviceType = Utils::authType2DeviceType(this->m_authType);
+        shouldSkipNoFeature = (featureDeviceType >= 0) &&
+                              FeatureDB::getInstance()->getFeatureIDByDeviceType(featureDeviceType).isEmpty();
+    }
+    if (shouldSkipNoFeature)
+    {
+        this->skipAuthTypeNoFeature();
+        return;
+    }
+
     rootObject["feature_ids"] = QJsonArray::fromStringList(bids);
+
+    // 在填充 feature_ids 之后再序列化，确保设备侧能拿到精确的特征列表
+    QJsonDocument doc(rootObject);
 
     this->m_verifyInfo.deviceAdaptor = device;
     this->m_verifyInfo.authType = this->m_authType;
     this->m_verifyInfo.deviceAdaptor->identify(this, doc.toJson(QJsonDocument::Compact));
+}
+
+void Session::skipAuthTypeNoFeature()
+{
+    KLOG_INFO() << m_sessionID << "skip auth type, no enrolled feature (no finger prompt):"
+                << Utils::authTypeEnum2Str(this->m_authType)
+                << "mode=" << this->m_authMode;
+
+    // 当前认证类型无可用特征：不发起 Identify（避免未按压就报「认证失败」）。
+    // 通知 UI 切到密码后以 AuthUnavail 结束本阶段；
+    // PAM 在 OR + 图形登录/锁屏下将 AuthUnavail 映射为 PAM_IGNORE，继续 pam_unix 验密码。
+    // 有特征、按压后不匹配仍走正常 NOT_MATCH（AuthFailed），此处仅处理“无特征”。
+    if (this->m_authMode != KAD_AUTH_MODE_AND)
+    {
+        this->m_authType = KAD_AUTH_TYPE_PASSWORD;
+        Q_EMIT this->m_dbusAdaptor->AuthTypeChanged(this->m_authType);
+    }
+
+    this->finishPhaseAuth(SESSION_AUTH_INTERNAL_ERROR);
 }
 
 void Session::finishPhaseAuth(SessionAuthResult authResult)

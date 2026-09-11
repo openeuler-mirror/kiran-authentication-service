@@ -1,0 +1,13 @@
+/* Allow kiran-authentication-devices (systemd, typically root, no active seat)
+ * to call fprintd without interactive polkit prompts.
+ *
+ * Note: desktop "allow_active=yes" does NOT cover system services (allow_any=no).
+ */
+polkit.addRule(function (action, subject) {
+    if ((action.id == "net.reactivated.fprint.device.enroll" ||
+         action.id == "net.reactivated.fprint.device.verify" ||
+         action.id == "net.reactivated.fprint.device.setusername") &&
+        subject.user == "root") {
+        return polkit.Result.YES;
+    }
+});
