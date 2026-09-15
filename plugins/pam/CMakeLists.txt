@@ -73,11 +73,6 @@ set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH
 
 install(FILES ${QM_FILES} DESTINATION ${KAS_INSTALL_TRANSLATIONDIR})
 
-# 在centos上，仅存在/lib64/security/，而不存在/usr/lib64/security/
-# 在openeuler系的系统上（如352、ks6），/lib64 是 /usr/lib64 的链接 所以直接安装到 /lib64/security/ 即可
-install(TARGETS ${TARGET_NAME} LIBRARY DESTINATION /lib64/security/)
-# # 兼容旧版本，使用链接方式安装，/lib64/security/TARGETS 链接到
-# ${CMAKE_INSTALL_FULL_LIBDIR}/security/TARGETS # install(TARGETS ${TARGET_NAME}
-# LIBRARY DESTINATION /lib64/security/) install(CODE " execute_process(COMMAND
-# ln -sf ${CMAKE_INSTALL_FULL_LIBDIR}/security/${TARGET_NAME}
-# /lib64/security/${TARGET_NAME}) ")
+# PAM 模块目录在顶层 CMakeLists.txt 中探测（KAS_INSTALL_PAM_MODULEDIR），
+# 覆盖 CentOS/openEuler(/lib64/security)、sw(/lib/security)、Debian/Ubuntu multiarch。
+install(TARGETS ${TARGET_NAME} LIBRARY DESTINATION ${KAS_INSTALL_PAM_MODULEDIR})
