@@ -114,15 +114,10 @@ static QString resolve_lang_env(pam_handle_t *pamh)
 static QLocale setup_pam_locale(pam_handle_t *pamh)
 {
     const QString lang = resolve_lang_env(pamh);
-    qputenv("LANG", lang.toUtf8());
-    qputenv("LC_CTYPE", lang.toUtf8());
+    /* 不修改 LANG/LC_CTYPE：避免污染 lightdm 进程环境导致用户会话编码错乱。
+     * PAM 文案经 toUtf8() 发送；greeter 侧固定 UTF-8。此处仅同步 C locale 与 Qt codec。 */
     setlocale(LC_ALL, "");
-
-    if (lang.contains(QStringLiteral("UTF-8"), Qt::CaseInsensitive) ||
-        lang.contains(QStringLiteral("utf8"), Qt::CaseInsensitive))
-    {
-        QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
-    }
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
     const QLocale locale(lang);
     const QTextCodec *codec = QTextCodec::codecForLocale();
