@@ -18,7 +18,6 @@
 #include <QFuture>
 #include <QFutureInterface>
 #include <QPair>
-#include <QTextCodec>
 #include <functional>
 #include <memory>
 
@@ -133,15 +132,17 @@ int32_t PAMHandle::send(const QString &request, int32_t requestType, QString &re
     auto futurePtr = std::make_shared<QFutureInterface<QPairIS>>();
     futurePtr->reportStarted();
 
-    // 跟locale的编码保持一致，以免出现乱码问题
-    const QByteArray requestLocale = QTextCodec::codecForLocale()->fromUnicode(request);
+    /* 固定 UTF-8 发送 PAM 文案，不跟系统 locale 编码。
+     * greeter（forceUtf8Locale）与 liblightdm-qt 按 UTF-8 解码 showMessage；
+     * 若用 codecForLocale()（如 GB18030）编码，登录界面认证提示会乱码。 */
+    const QByteArray requestUtf8 = request.toUtf8();
 
     this->m_taskPool->pushTask(
-        [this, requestLocale, requestType, futurePtr]()
+        [this, requestUtf8, requestType, futurePtr]()
         {
             pam_message *pamRequest = new pam_message{
                 .msg_style = requestType,
-                .msg = const_cast<char *>(requestLocale.constData())};
+                .msg = const_cast<char *>(requestUtf8.constData())};
 
             SCOPE_EXIT(
                 {
@@ -159,7 +160,8 @@ int32_t PAMHandle::send(const QString &request, int32_t requestType, QString &re
             }
             else
             {
-                futurePtr->reportResult(qMakePair(int(PAM_SUCCESS), QString(pamResponse->resp)));
+                futurePtr->reportResult(qMakePair(int(PAM_SUCCESS),
+                                                  QString::fromUtf8(pamResponse->resp)));
             }
             futurePtr->reportFinished();
         });
