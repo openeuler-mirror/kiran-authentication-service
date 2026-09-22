@@ -244,6 +244,13 @@ int32_t Utils::authType2SoftDeviceType(int32_t authType)
     }
 }
 
+bool Utils::isSoftAuthType(int32_t authType)
+{
+    return authType == KADAuthType::KAD_AUTH_TYPE_SOFT_FACE ||
+           authType == KADAuthType::KAD_AUTH_TYPE_SOFT_CODE ||
+           authType == KADAuthType::KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA;
+}
+
 QStringList Utils::authOrderEnum2Str(const QList<int>& authOrder)
 {
     QStringList retval;
