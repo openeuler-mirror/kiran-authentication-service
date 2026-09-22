@@ -57,6 +57,9 @@ public:
     static int32_t authType2DeviceType(int32_t authType);
     static int32_t authType2SoftDeviceType(int32_t authType);
 
+    /** @brief 是否为软认证类型（SOFT_FACE / SOFT_CODE / SOFT_CODE_NO_CAMERA） */
+    static bool isSoftAuthType(int32_t authType);
+
     static QStringList authOrderEnum2Str(const QList<int> &authOrder);
     static QList<int> authOrderStr2Enum(const QStringList &authOrder);
 
