@@ -672,16 +672,19 @@ void Session::startGeneralAuth(const QString &extraInfo)
 
     // 无特征时不要发起 Identify：设备会立刻回 NOT_MATCH，锁屏在「未按压」时就刷「认证失败」。
     // 有特征、按压后不匹配再报失败是正常的。此处 AuthUnavail，交给 PAM 密码；切勿 startPasswdAuth()。
+    // 注：软类型（SOFT_FACE/SOFT_CODE/SOFT_CODE_NO_CAMERA）的特征在平台后端，本地不存储，故跳过。
     bool shouldSkipNoFeature = false;
     if (!m_loginUserSwitchable)
     {
         // 仅当已明确当前用户且该用户无特征时跳过（用户名为空时不要误判）
-        shouldSkipNoFeature = !m_userName.isEmpty() && bids.isEmpty();
+        shouldSkipNoFeature = !Utils::isSoftAuthType(this->m_authType) &&
+                              !m_userName.isEmpty() && bids.isEmpty();
     }
     else
     {
         const int featureDeviceType = Utils::authType2DeviceType(this->m_authType);
-        shouldSkipNoFeature = (featureDeviceType >= 0) &&
+        shouldSkipNoFeature = !Utils::isSoftAuthType(this->m_authType) &&
+                              (featureDeviceType >= 0) &&
                               FeatureDB::getInstance()->getFeatureIDByDeviceType(featureDeviceType).isEmpty();
     }
     if (shouldSkipNoFeature)
