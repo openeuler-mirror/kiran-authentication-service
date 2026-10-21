@@ -141,7 +141,9 @@ CHECK_AUTH_WITH_3ARGS(User, EnrollStart, onEnrollStart, AUTH_USER_SELF, int, con
 CHECK_AUTH(User, EnrollStop, onEnrollStop, AUTH_USER_SELF)
 CHECK_AUTH(User, ResetFailures, onResetFailures, AUTH_USER_SELF)
 
-QString User::GetIdentifications(int authType)
+CHECK_AUTH_WITH_1ARGS_AND_RETVAL(User, QString, GetIdentifications, onGetIdentifications, AUTH_USER_SELF, int)
+
+void User::onGetIdentifications(const QDBusMessage &message, int authType)
 {
     QJsonDocument jsonDoc;
     QJsonArray jsonArray;
@@ -156,7 +158,9 @@ QString User::GetIdentifications(int authType)
         jsonArray.append(jsonObj);
     }
     jsonDoc.setArray(jsonArray);
-    return QString(jsonDoc.toJson(QJsonDocument::Compact));
+
+    auto replyMessage = message.createReply(QString(jsonDoc.toJson(QJsonDocument::Compact)));
+    QDBusConnection::systemBus().send(replyMessage);
 }
 
 int32_t User::getPriority()
