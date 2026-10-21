@@ -80,6 +80,18 @@ namespace Kiran
         return retType();                                                                                                                    \
     }
 
+#define CHECK_AUTH_WITH_1ARGS_AND_RETVAL(className, retType, funName, callback, action, arg1Type)                            \
+    retType className::funName(arg1Type value1)                                                                             \
+    {                                                                                                                       \
+        auto newAction = this->calcAction(action);                                                                          \
+        this->setDelayedReply(true);                                                                                        \
+        PolkitProxy::getDefault()->checkAuthorization(newAction,                                                            \
+                                                      true,                                                                 \
+                                                      this->message(),                                                      \
+                                                      std::bind(&className::callback, this, std::placeholders::_1, value1)); \
+        return retType();                                                                                                   \
+    }
+
 class PolkitProxy : public QObject
 {
     Q_OBJECT

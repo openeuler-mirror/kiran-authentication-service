@@ -146,14 +146,6 @@ QString AuthManager::GetDefaultDeviceID(int authType)
     return m_authConfig->getDefaultDeviceID((KADAuthType)authType);
 }
 
-void AuthManager::SetDefaultDeviceID(int authType, const QString &deviceID)
-{
-    auto oldDeviceID = this->GetDefaultDeviceID(authType);
-    RETURN_IF_TRUE(deviceID == oldDeviceID);
-
-    m_authConfig->setDefaultDeviceID((KADAuthType)authType, deviceID);
-}
-
 bool AuthManager::GetAuthTypeEnabled(int authType)
 {
     return m_authConfig->getAuthTypeEnable((KADAuthType)authType);
@@ -246,6 +238,7 @@ void AuthManager::onNameLost(const QString &serviceName)
 CHECK_AUTH_WITH_2ARGS(AuthManager, SetDrivereEnabled, onSetDriverEnabled, AUTH_USER_ADMIN, const QString &, bool);
 CHECK_AUTH_WITH_2ARGS(AuthManager, SetAuthTypeEnabled, onSetAuthTypeEnabled, AUTH_USER_ADMIN, int, bool);
 CHECK_AUTH_WITH_3ARGS(AuthManager, SetAuthTypeEnabledForApp, onSetAuthTypeEnabledForApp, AUTH_USER_ADMIN, int, int, bool);
+CHECK_AUTH_WITH_2ARGS(AuthManager, SetDefaultDeviceID, onSetDefaultDeviceID, AUTH_USER_ADMIN, int, const QString &);
 
 void AuthManager::init()
 {
@@ -311,6 +304,18 @@ void AuthManager::onSetAuthTypeEnabled(const QDBusMessage &message, int authType
 void AuthManager::onSetAuthTypeEnabledForApp(const QDBusMessage &message, int authType, int authApp, bool enabled)
 {
     m_authConfig->setAuthTypeEnabledForApp((KADAuthType)authType, (KADAuthApplication)authApp, enabled);
+
+    auto replyMessage = message.createReply();
+    QDBusConnection::systemBus().send(replyMessage);
+}
+
+void AuthManager::onSetDefaultDeviceID(const QDBusMessage &message, int authType, const QString &deviceID)
+{
+    auto oldDeviceID = this->GetDefaultDeviceID(authType);
+    if (deviceID != oldDeviceID)
+    {
+        m_authConfig->setDefaultDeviceID((KADAuthType)authType, deviceID);
+    }
 
     auto replyMessage = message.createReply();
     QDBusConnection::systemBus().send(replyMessage);
