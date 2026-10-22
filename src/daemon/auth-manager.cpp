@@ -360,7 +360,7 @@ void AuthManager::onSetDriverEnabled(const QDBusMessage &message, const QString 
 {
     if (!DeviceAdaptorFactory::getInstance()->setDrivereEanbled(driverName, enabled))
     {
-        DBUS_ERROR_REPLY_ASYNC(message, QDBusError::InternalError, KADErrorCode::ERROR_FAILED);
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::InternalError, KADErrorCode::ERROR_FAILED);
     }
 
     auto replyMessage = message.createReply();
