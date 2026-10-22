@@ -19,6 +19,7 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <QDBusConnection>
+#include <QDBusMessage>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -162,10 +163,54 @@ Authentication::Authentication(PAMHandle *pamHandle,
 
 Authentication::~Authentication()
 {
-    if (this->m_authSessionProxy && this->m_authManagerProxy)
+    /*
+     * 现场复现：析构路径上同步拆掉 AuthManagerProxy/QDBusServiceWatcher 时，
+     * 主线程在 destroyed→QSemaphore::acquire 与 QDBus 线程 postEvent 互锁，
+     * pam_sm_authenticate 无法返回 → 父进程收不到 Complete → 锁屏卡死。
+     * 此处只做兜底销毁会话 + 摘掉 proxy，禁止再触发 ~QDBus*。
+     */
+    this->destroySessionAsync();
+    this->detachDbusProxies();
+}
+
+void Authentication::destroySessionAsync()
+{
+    if (this->m_sessionID == 0)
     {
-        auto reply = this->m_authManagerProxy->DestroySession(this->m_authSessionProxy->iD());
-        reply.waitForFinished();
+        return;
+    }
+
+    const uint sessionId = this->m_sessionID;
+    this->m_sessionID = 0;
+
+    QDBusMessage message = QDBusMessage::createMethodCall(KAD_MANAGER_DBUS_NAME,
+                                                          KAD_MANAGER_DBUS_OBJECT_PATH,
+                                                          KAD_MANAGER_DBUS_INTERFACE_NAME,
+                                                          QStringLiteral("DestroySession"));
+    message << sessionId;
+    /* NoBlock：不拖住 finish/Complete；daemon 侧 onNameLost 仍可兜底 */
+    QDBusConnection::systemBus().call(message, QDBus::NoBlock);
+}
+
+void Authentication::detachDbusProxies()
+{
+    if (this->m_authSessionProxy != nullptr)
+    {
+        disconnect(this->m_authSessionProxy, nullptr, this, nullptr);
+        this->m_authSessionProxy->setParent(nullptr);
+        this->m_authSessionProxy = nullptr;
+    }
+    if (this->m_authUserProxy != nullptr)
+    {
+        disconnect(this->m_authUserProxy, nullptr, this, nullptr);
+        this->m_authUserProxy->setParent(nullptr);
+        this->m_authUserProxy = nullptr;
+    }
+    if (this->m_authManagerProxy != nullptr)
+    {
+        disconnect(this->m_authManagerProxy, nullptr, this, nullptr);
+        this->m_authManagerProxy->setParent(nullptr);
+        this->m_authManagerProxy = nullptr;
     }
 }
 
@@ -421,6 +466,12 @@ void Authentication::flushPendingSessionSignals()
 
 void Authentication::finishAuth(int result)
 {
+    /* 先断信号并异步 DestroySession，再 finish；勿在此后同步拆 QDBus proxy */
+    if (this->m_authSessionProxy != nullptr)
+    {
+        disconnect(this->m_authSessionProxy, nullptr, this, nullptr);
+    }
+    this->destroySessionAsync();
     this->m_pamHandle->syslog(LOG_DEBUG,
                               QString("Authentication thread ready quit,result:%1").arg(result));
     this->m_pamHandle->finish(result);
