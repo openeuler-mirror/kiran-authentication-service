@@ -115,6 +115,7 @@ private:
 private:
     // 如果请求用户和当前用户相同则使用originAction，否则需要管理员权限
     QString calcAction(const QString &originAction);
+    void onGetIdentifications(const QDBusMessage &message, int authType);
     void onResetFailures(const QDBusMessage &message);
     void onEnrollStart(const QDBusMessage &message, int authType, const QString &name, const QString &extraInfo);
     void onEnrollStop(const QDBusMessage &message);

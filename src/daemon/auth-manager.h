@@ -105,6 +105,10 @@ public Q_SLOTS:  // DBUS METHODS
     // 获取/设置指定认证场景下认证类型的开关
     void SetAuthTypeEnabledForApp(int authType, int authApp, bool enabled);
 
+public:
+    // 仅内部使用：不触发鉴权的默认设备设置
+    void applyDefaultDeviceID(int authType, const QString &deviceID);
+
 signals:
     void defaultDeviceChanged(int authType, const QString &deviceID, QPrivateSignal);
 
@@ -114,6 +118,7 @@ private:
     QString calcAction(const QString &originAction);
     // 生成一个唯一的会话ID
     int32_t generateSessionID();
+    void onSetDefaultDeviceID(const QDBusMessage &message, int authType, const QString &deviceID);
     void onSetDriverEnabled(const QDBusMessage &message, const QString &driverName, bool enabled);
     void onSetAuthTypeEnabled(const QDBusMessage &message, int authType, bool enabled);
     void onSetAuthTypeEnabledForApp(const QDBusMessage &message, int authType, int authApp, bool enabled);
