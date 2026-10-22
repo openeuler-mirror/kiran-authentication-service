@@ -14,6 +14,7 @@
 
 #include <pwd.h>
 #include <QDBusInterface>
+#include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusReply>
 #include <QDBusServiceWatcher>
@@ -156,7 +157,17 @@ QString AuthManager::GetDefaultDeviceID(int authType)
     return m_authConfig->getDefaultDeviceID((KADAuthType)authType);
 }
 
-void AuthManager::SetDefaultDeviceID(int authType, const QString &deviceID)
+CHECK_AUTH_WITH_2ARGS(AuthManager, SetDefaultDeviceID, onSetDefaultDeviceID, AUTH_USER_ADMIN, int, const QString &);
+
+void AuthManager::onSetDefaultDeviceID(const QDBusMessage &message, int authType, const QString &deviceID)
+{
+    applyDefaultDeviceID(authType, deviceID);
+
+    auto replyMessage = message.createReply();
+    QDBusConnection::systemBus().send(replyMessage);
+}
+
+void AuthManager::applyDefaultDeviceID(int authType, const QString &deviceID)
 {
     auto oldDeviceID = this->GetDefaultDeviceID(authType);
     RETURN_IF_TRUE(deviceID == oldDeviceID);
@@ -349,7 +360,7 @@ void AuthManager::onSetDriverEnabled(const QDBusMessage &message, const QString 
 {
     if (!DeviceAdaptorFactory::getInstance()->setDrivereEanbled(driverName, enabled))
     {
-        DBUS_ERROR_REPLY_ASYNC(message, QDBusError::InternalError, KADErrorCode::ERROR_FAILED);
+        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::InternalError, KADErrorCode::ERROR_FAILED);
     }
 
     auto replyMessage = message.createReply();

@@ -289,7 +289,7 @@ void DeviceAdaptorFactory::onDeviceDeleted(int deviceType, const QString &device
         {
             KLOG_INFO() << "clear stale default device, authType:" << authType
                         << "device:" << deviceID;
-            this->m_authManager->SetDefaultDeviceID(authType, QString());
+            this->m_authManager->applyDefaultDeviceID(authType, QString());
         }
     }
 }

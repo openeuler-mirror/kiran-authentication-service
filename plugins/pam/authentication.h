@@ -50,6 +50,16 @@ private:
     int startAuth();
     void finishAuth(int result);
     void scheduleFinishAuth(int result);
+    /**
+     * @brief 异步销毁认证会话（仅用缓存 sid，禁止 iD() 同步 property）
+     * @note QDBus::NoBlock；须在仍可跑事件循环时调用（finishAuth），勿依赖析构里再堵
+     */
+    void destroySessionAsync();
+    /**
+     * @brief 断开并摘掉 D-Bus proxy 的 parent，避免 ~QDBusServiceWatcher 与 QDBus 线程死锁
+     * @note checkpass 进程即将退出，proxy 交由进程退出回收即可
+     */
+    void detachDbusProxies();
     void deliverAuthMessage(const QString &text, int type);
     void flushPendingSessionSignals();
 
@@ -97,7 +107,7 @@ protected:
     QString m_userName;
     int32_t m_result;
     int m_authApplication;
-    uint m_sessionID;
+    uint m_sessionID = 0;
 
     AuthManagerProxy *m_authManagerProxy;
     AuthSessionProxy *m_authSessionProxy;
