@@ -44,7 +44,8 @@ public:
 
     // 获取当前认证类型下所支持的所有驱动信息，从认证服务之中拿到，以JSON格式提供，转发出去
     QString getDriversForType(int32_t authType);
-    bool deleteFeature(const QString &featureID);
+    /** @param errorMessage 失败时可选带回设备侧错误信息 */
+    bool deleteFeature(const QString &featureID, QString *errorMessage = nullptr);
     bool setDrivereEanbled(const QString &driverName, bool enabled);
 
     // 获取当前已加载驱动支持的认证类型列表

@@ -137,14 +137,19 @@ void DeviceAdaptorFactory::init()
     connect(this->m_authDeviceManagerProxy, &AuthDeviceManagerProxy::DeviceDeleted, this, &DeviceAdaptorFactory::onDeviceDeleted);
 }
 
-bool DeviceAdaptorFactory::deleteFeature(const QString &featureID)
+bool DeviceAdaptorFactory::deleteFeature(const QString &featureID, QString *errorMessage)
 {
     auto reply = m_authDeviceManagerProxy->Remove(featureID);
     reply.waitForFinished();
 
     if (reply.isError())
     {
-        KLOG_WARNING() << "delete feature" << featureID << "failed," << reply.error().message();
+        const QString msg = reply.error().message();
+        KLOG_WARNING() << "delete feature" << featureID << "failed," << msg;
+        if (errorMessage)
+        {
+            *errorMessage = msg;
+        }
         return false;
     }
 

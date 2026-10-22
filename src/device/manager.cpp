@@ -547,13 +547,14 @@ void Manager::SetEnableDriver(const QString& driverName, bool enable)
 
 void Manager::Remove(const QString& featureId)
 {
-    auto replyRemoveFailed = [this](const QString &reason)
+    // userMessage 经 daemon 透传给控制面板展示；logReason 仅写日志
+    auto replyRemoveFailed = [this](const QString &logReason, const QString &userMessage)
     {
-        KLOG_WARNING() << reason;
+        KLOG_WARNING() << logReason;
         // 必须回 D-Bus error，否则 daemon deleteFeature() 会当成成功并 IdentificationDeleted
         if (calledFromDBus())
         {
-            sendErrorReply(QDBusError::Failed, reason);
+            sendErrorReply(QDBusError::Failed, userMessage);
         }
     };
 
@@ -574,17 +575,36 @@ void Manager::Remove(const QString& featureId)
             {
                 continue;
             }
+            if (!fpDriver->hasDevice())
+            {
+                replyRemoveFailed(
+                    QString("Remove: no fingerprint device available, keep FeatureDB"
+                            " featureId:%1")
+                        .arg(featureId),
+                    tr("Delete failed, no available fingerprint device"));
+                return;
+            }
             attempted = true;
             const int ret = fpDriver->deleteEnrolledPrint(
                 std::string(blob.constData(), static_cast<size_t>(blob.size())));
             if (0 != ret)
             {
+                if (ret == FINGERPRINT_ERROR_NO_DEVICE)
+                {
+                    replyRemoveFailed(
+                        QString("Remove: no fingerprint device available, keep FeatureDB"
+                                " featureId:%1")
+                            .arg(featureId),
+                        tr("Delete failed, no available fingerprint device"));
+                    return;
+                }
                 replyRemoveFailed(
                     QString("Remove: fprintd deleteEnrolledPrint failed, keep FeatureDB"
                             " featureId:%1 code:%2 msg:%3")
                         .arg(featureId)
                         .arg(ret)
-                        .arg(QString::fromStdString(fpDriver->getErrorMsg(ret))));
+                        .arg(QString::fromStdString(fpDriver->getErrorMsg(ret))),
+                    tr("Delete failed"));
                 return;
             }
             break;
@@ -592,9 +612,10 @@ void Manager::Remove(const QString& featureId)
         if (!attempted)
         {
             replyRemoveFailed(
-                QString("Remove: no fingerprint driver for fprintd delete, keep FeatureDB"
+                QString("Remove: no fingerprint device available, keep FeatureDB"
                         " featureId:%1")
-                    .arg(featureId));
+                    .arg(featureId),
+                tr("Delete failed, no available fingerprint device"));
             return;
         }
     }
@@ -602,7 +623,8 @@ void Manager::Remove(const QString& featureId)
     bool result = FeatureDB::getInstance()->deleteFeature(featureId);
     if (!result)
     {
-        replyRemoveFailed(QString("Remove: FeatureDB delete failed, featureId:%1").arg(featureId));
+        replyRemoveFailed(QString("Remove: FeatureDB delete failed, featureId:%1").arg(featureId),
+                          tr("Delete failed"));
         return;
     }
     KLOG_INFO() << "Remove feature" << featureId << "db result:" << result;
