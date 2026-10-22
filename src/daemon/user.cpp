@@ -349,10 +349,16 @@ void User::onDeleteIdentification(const QDBusMessage &message, const QString &ii
     }
 
     USER_DEBUG() << "delete identification" << iid << "featureID" << dataID;
-    if (!DeviceAdaptorFactory::getInstance()->deleteFeature(dataID))
+    QString removeError;
+    if (!DeviceAdaptorFactory::getInstance()->deleteFeature(dataID, &removeError))
     {
-        USER_WARNING() << "delete identification" << iid << "failed, featureID" << dataID;
-        DBUS_ERROR_REPLY_ASYNC_AND_RET(message, QDBusError::Failed, KADErrorCode::ERROR_FAILED);
+        USER_WARNING() << "delete identification" << iid << "failed, featureID" << dataID
+                       << "error:" << removeError;
+        // 透传设备侧已翻译的失败原因，供控制面板直接展示
+        const QString tips = removeError.isEmpty() ? KAD_ERROR2STR(KADErrorCode::ERROR_FAILED) : removeError;
+        auto replyMessage = message.createErrorReply(QDBusError::Failed, tips);
+        QDBusConnection::systemBus().send(replyMessage);
+        return;
     }
 
     auto replyMessage = message.createReply();

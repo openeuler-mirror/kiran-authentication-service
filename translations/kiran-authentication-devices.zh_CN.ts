@@ -176,4 +176,15 @@
         <translation>未录入指纹特征</translation>
     </message>
 </context>
+<context>
+    <name>Kiran::Manager</name>
+    <message>
+        <source>Delete failed, no available fingerprint device</source>
+        <translation>删除失败，没有可用的指纹设备</translation>
+    </message>
+    <message>
+        <source>Delete failed</source>
+        <translation>删除失败</translation>
+    </message>
+</context>
 </TS>
