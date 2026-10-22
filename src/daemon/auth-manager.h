@@ -108,6 +108,7 @@ private:
     void onSetDriverEnabled(const QDBusMessage &message,const QString& driverName,bool enabled);
     void onSetAuthTypeEnabled(const QDBusMessage &message,int authType,bool enabled);
     void onSetAuthTypeEnabledForApp(const QDBusMessage &message,int authType, int authApp, bool enabled);
+    void onSetDefaultDeviceID(const QDBusMessage &message, int authType, const QString &deviceID);
 
 private:
     static AuthManager *m_instance;
