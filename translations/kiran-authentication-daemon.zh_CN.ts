@@ -2,6 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>Kiran::DeviceAdaptor</name>
+    <message>
+        <location filename="../src/daemon/device/device-adaptor.cpp" line="420"/>
+        <source>Identify timeout</source>
+        <translation>识别超时</translation>
+    </message>
+</context>
+<context>
     <name>Kiran::PolkitProxy</name>
     <message>
         <location filename="../src/daemon/proxy/polkit-proxy.cpp" line="216"/>
@@ -17,13 +25,13 @@
         <translation>正在申请授权码，请稍候...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="593"/>
+        <location filename="../src/daemon/session.cpp" line="630"/>
         <source>Authorization code request successful. Please contact the device administrator to obtain it.</source>
         <translation>申请授权码成功，请联系设备管理员获取。</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.cpp" line="181"/>
-        <location filename="../src/daemon/session.cpp" line="599"/>
+        <location filename="../src/daemon/session.cpp" line="636"/>
         <source>please input authorization code:</source>
         <translation>请输入授权码：</translation>
     </message>
@@ -33,34 +41,40 @@
         <translation>等待输入授权码...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="501"/>
+        <location filename="../src/daemon/session.cpp" line="522"/>
         <source>Insert the UKey and enter the PIN code</source>
         <translation>请插入UKey并输入PIN码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="502"/>
+        <location filename="../src/daemon/session.cpp" line="523"/>
         <source>please input ukey code.</source>
         <translation>请输入PIN码。</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="510"/>
+        <location filename="../src/daemon/session.cpp" line="529"/>
+        <source>Please press your finger</source>
+        <translation>请按压指纹</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.cpp" line="537"/>
+        <location filename="../src/daemon/session.cpp" line="547"/>
         <source>Please look at the camera</source>
         <translation>请直视摄像头</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="531"/>
+        <location filename="../src/daemon/session.cpp" line="568"/>
         <source>Please request for an authorization code and then enter it</source>
         <translation>请申请授权码然后输入授权码</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.cpp" line="145"/>
         <location filename="../src/daemon/session.cpp" line="225"/>
-        <location filename="../src/daemon/session.cpp" line="556"/>
+        <location filename="../src/daemon/session.cpp" line="593"/>
         <source>please select:</source>
         <translation>请选择：</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="532"/>
+        <location filename="../src/daemon/session.cpp" line="569"/>
         <source>please input authorization code.</source>
         <translation>请输入授权码。</translation>
     </message>
@@ -71,25 +85,25 @@
     </message>
     <message>
         <location filename="../src/daemon/session.cpp" line="161"/>
-        <location filename="../src/daemon/session.cpp" line="582"/>
+        <location filename="../src/daemon/session.cpp" line="619"/>
         <source>Failed to request authorization code, please try again.</source>
         <translation>申请授权码失败，请重试。</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.cpp" line="189"/>
-        <location filename="../src/daemon/session.cpp" line="521"/>
+        <location filename="../src/daemon/session.cpp" line="558"/>
         <source>authorization code cannot be empty</source>
         <translation>授权码不能为空</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.cpp" line="143"/>
         <location filename="../src/daemon/session.cpp" line="223"/>
-        <location filename="../src/daemon/session.cpp" line="555"/>
+        <location filename="../src/daemon/session.cpp" line="592"/>
         <source>1. Request an authorization code 2. Input authorization code</source>
         <translation>1. 申请授权码 2.输入授权码</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.cpp" line="636"/>
+        <location filename="../src/daemon/session.cpp" line="673"/>
         <source>can not find %1 device</source>
         <translation>未能检测到%1设备</translation>
     </message>
@@ -97,17 +111,17 @@
 <context>
     <name>Kiran::User</name>
     <message>
-        <location filename="../src/daemon/user.cpp" line="173"/>
+        <location filename="../src/daemon/user.cpp" line="180"/>
         <source>Please wait while the request is processed</source>
         <translation>请等待,录入请求正在处理</translation>
     </message>
     <message>
-        <location filename="../src/daemon/user.cpp" line="179"/>
+        <location filename="../src/daemon/user.cpp" line="186"/>
         <source>Enroll has been interrupted. Please wait</source>
         <translation>录入中断请稍等</translation>
     </message>
     <message>
-        <location filename="../src/daemon/user.cpp" line="185"/>
+        <location filename="../src/daemon/user.cpp" line="192"/>
         <source>Enroll has been cancelled</source>
         <translation>录入已被取消</translation>
     </message>
@@ -115,47 +129,47 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../lib/utils.cpp" line="269"/>
+        <location filename="../lib/utils.cpp" line="276"/>
         <source>password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="270"/>
+        <location filename="../lib/utils.cpp" line="277"/>
         <source>fingerprint</source>
         <translation>指纹</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="271"/>
+        <location filename="../lib/utils.cpp" line="278"/>
         <source>face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="272"/>
+        <location filename="../lib/utils.cpp" line="279"/>
         <source>fingervein</source>
         <translation>指静脉</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="273"/>
+        <location filename="../lib/utils.cpp" line="280"/>
         <source>iris</source>
         <translation>虹膜</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="274"/>
+        <location filename="../lib/utils.cpp" line="281"/>
         <source>ukey</source>
         <translation>UKey</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="275"/>
+        <location filename="../lib/utils.cpp" line="282"/>
         <source>soft face</source>
         <translation>人脸</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="276"/>
+        <location filename="../lib/utils.cpp" line="283"/>
         <source>soft code</source>
         <translation>授权码</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="277"/>
+        <location filename="../lib/utils.cpp" line="284"/>
         <source>soft code no camera</source>
         <translation>授权码(无摄像头)</translation>
     </message>
@@ -208,32 +222,29 @@
         <translation> (错误码:0x%x)</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="294"/>
+        <location filename="../lib/utils.cpp" line="301"/>
         <source>Feature not match.</source>
         <translation>特征不匹配。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="296"/>
+        <location filename="../lib/utils.cpp" line="303"/>
         <source>Feature matching successed.</source>
         <translation>特征匹配成功。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="298"/>
+        <location filename="../lib/utils.cpp" line="305"/>
         <source>Feature not match, please retry it.</source>
         <translation>特征不匹配，请重试。</translation>
     </message>
     <message>
-        <location filename="../lib/utils.cpp" line="303"/>
+        <location filename="../lib/utils.cpp" line="310"/>
+        <source>Fingerprint device unavailable.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../lib/utils.cpp" line="312"/>
         <source>Unknown verfication error.</source>
         <translation>未知认证错误。</translation>
-    </message>
-</context>
-<context>
-    <name>Kiran::DeviceAdaptor</name>
-    <message>
-        <location filename="../src/daemon/device/device-adaptor.cpp" line="420"/>
-        <source>Identify timeout</source>
-        <translation>识别超时</translation>
     </message>
 </context>
 </TS>
