@@ -486,6 +486,12 @@ void Session::startPhaseAuth()
     case KAD_AUTH_TYPE_UKEY:
         startUkeyAuth();
         break;
+    case KAD_AUTH_TYPE_FINGERPRINT:
+        startFingerprintAuth();
+        break;
+    case KAD_AUTH_TYPE_FACE:
+        startFaceAuth();
+        break;
     case KAD_AUTH_TYPE_PASSWORD:
         startPasswdAuth();
         break;
@@ -515,6 +521,22 @@ void Session::startUkeyAuth()
     KLOG_DEBUG() << "auth prompt: input ukey code";
     Q_EMIT this->AuthMessage(tr("Insert the UKey and enter the PIN code"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
     Q_EMIT this->AuthPrompt(tr("please input ukey code."), KADPromptType::KAD_PROMPT_TYPE_SECRET);
+}
+
+void Session::startFingerprintAuth()
+{
+    KLOG_INFO() << m_sessionID << "start fingerprint auth for user:" << m_userName;
+    Q_EMIT this->AuthMessage(tr("Please press your finger"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+
+    startGeneralAuth();
+}
+
+void Session::startFaceAuth()
+{
+    KLOG_INFO() << m_sessionID << "start face auth for user:" << m_userName;
+    Q_EMIT this->AuthMessage(tr("Please look at the camera"), KADMessageType::KAD_MESSAGE_TYPE_INFO);
+
+    startGeneralAuth();
 }
 
 void Session::startSoftFaceAuth()
