@@ -121,6 +121,8 @@ private:
 private:
     void startPhaseAuth();
     void startUkeyAuth();
+    void startFingerprintAuth();
+    void startFaceAuth();
     void startSoftFaceAuth();
     void startSoftCodeAuth();
     void startSoftCodeNoCameraAuth();
