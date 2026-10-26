@@ -52,6 +52,9 @@ public:
     };
     Q_ENUM(SessionAuthResult)
 
+    /**
+     * @brief SSH 侧 SOFT_CODE_NO_CAMERA 菜单状态（图形登录/锁屏不走此状态机）
+     */
     enum AuthCodeStep
     {
         AUTH_CODE_STEP_SELECT,     // 等待用户选择：申请授权码还是输入授权码
@@ -142,15 +145,25 @@ private:
     bool matchUser(int32_t authType, const QString &dataID);
 
     /**
-     * @brief 授权码校验失败后回到选择菜单；累计达上限则不再重试
+     * @brief 是否为图形 PAM 服务（登录/锁屏）
+     * @return true 表示 lightdm 或 kiran-screensaver
+     * @note 图形 SMS 与临时授权码共用输入框交互；SSH 仍走 (1;2) 菜单
+     */
+    bool isGraphicalPamService() const;
+
+    /**
+     * @brief SSH 授权码校验失败后回到 (1;2) 选择菜单；累计达上限则不再重试
      * @return true 表示已重新出菜单，调用方勿结束认证；false 表示次数用尽，应拒绝登录
+     * @note 仅 sshd 的 SOFT_CODE_NO_CAMERA 使用；图形侧失败策略与临时授权码一致
      */
     bool retryAuthCodeInputAfterFailure();
 
 private Q_SLOTS:
-    // 处理授权码自动申请
+    /** @brief SSH 菜单选「申请」后处理 ks-auth-code-request --auto 退出 */
     void onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    /** @brief SSH (1;2) 菜单选择响应 */
     void onAuthCodeSelectResponse(const QString &response);
+    /** @brief SSH 菜单选「输入」后的授权码响应 */
     void onAuthCodeInputResponse(const QString &response);
 
 private:
@@ -172,13 +185,13 @@ private:
     int m_authType;
     SessionVerifyInfo m_verifyInfo;
     std::function<void(const QString &text)> m_waitForResponseFunc;
-    // 处理授权码自动申请
-    AuthCodeStep m_authCodeStep;
+    /** SSH SOFT_CODE_NO_CAMERA 菜单阶段 */
+    AuthCodeStep m_authCodeStep = AUTH_CODE_STEP_SELECT;
     QProcess *m_gencodeProcess;
     qint64 m_authStartMs = 0; /**< StartAuth 时间戳，用于计算认证耗时 */
-    /** SOFT_CODE_NO_CAMERA 菜单无效选择累计次数（满 3 次拒绝登录，不回退密码） */
+    /** SSH 菜单无效选择累计次数（满 3 次拒绝登录，不回退密码） */
     int m_invalidAuthCodeChoiceCount = 0;
-    /** SOFT_CODE_NO_CAMERA 授权码校验失败累计次数（空/错误，满 3 次拒绝登录） */
+    /** SSH 授权码校验失败累计次数（空/错误，满 3 次拒绝登录） */
     int m_authCodeVerifyFailCount = 0;
 };
 }  // namespace Kiran

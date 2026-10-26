@@ -112,13 +112,21 @@ QString Session::getUsername() const
     return m_userName;
 }
 
+bool Session::isGraphicalPamService() const
+{
+    return this->m_pamServiceName == QLatin1String("lightdm") ||
+           this->m_pamServiceName == QLatin1String("kiran-screensaver");
+}
+
 void Session::ResponsePrompt(const QString &text)
 {
     RETURN_IF_FALSE(m_waitForResponseFunc);
     m_waitForResponseFunc(text);
 
-    // SOFT_CODE_NO_CAMERA：菜单选择可多次重试，输入授权码为第二阶段，均需保留回调
+    // SSH SOFT_CODE_NO_CAMERA：菜单选择可多次重试，输入授权码为第二阶段，均需保留回调。
+    // 图形侧已与临时授权码同路径（单次输入），应答后清回调。
     if (!(m_authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA &&
+          !this->isGraphicalPamService() &&
           (m_authCodeStep == AUTH_CODE_STEP_SELECT || m_authCodeStep == AUTH_CODE_STEP_INPUT_CODE)))
     {
         m_waitForResponseFunc = nullptr;
@@ -154,7 +162,9 @@ void Session::onAuthCodeSelectResponse(const QString &response)
         m_gencodeProcess = new QProcess(this);
         connect(m_gencodeProcess, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                 this, &Session::onGencodeProcessFinished);
-        m_gencodeProcess->start("ks-auth-code-request", QStringList() << "--auto" << "--user-name" << m_userName);
+        m_gencodeProcess->start(QStringLiteral("ks-auth-code-request"),
+                                QStringList() << QStringLiteral("--auto")
+                                              << QStringLiteral("--user-name") << m_userName);
 
         if (!m_gencodeProcess->waitForStarted(5000))
         {
@@ -207,7 +217,7 @@ bool Session::retryAuthCodeInputAfterFailure()
         return false;
     }
 
-    // 校验失败后回到菜单，由用户重新选择申请或输入
+    // SSH：校验失败后回到 (1;2) 菜单，由用户重新选择申请或输入
     m_authCodeStep = AUTH_CODE_STEP_SELECT;
     m_waitForResponseFunc = [this](const QString &response)
     {
@@ -440,8 +450,10 @@ void Session::onIdentifyStatus(const QString &bid, int result, const QString &me
                 this->m_verifyInfo.deviceAdaptor->identifyResultPostProcess(this, QString::fromUtf8(jsonDoc.toJson()));
             }
             Q_EMIT this->AuthMessage(message, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-            // 无摄像头授权码：校验失败允许会话内重试，满 3 次再拒绝
+            // SSH 无摄像头授权码：校验失败允许会话内回 (1;2) 菜单重试，满 3 次再拒绝。
+            // 图形侧与临时授权码一致：直接结束本轮，由 greeter/锁屏重新认证。
             if (this->m_verifyInfo.authType == KAD_AUTH_TYPE_SOFT_CODE_NO_CAMERA &&
+                !this->isGraphicalPamService() &&
                 retryAuthCodeInputAfterFailure())
             {
                 return;
@@ -571,6 +583,15 @@ void Session::startSoftCodeAuth()
 
 void Session::startSoftCodeNoCameraAuth()
 {
+    // 图形登录/锁屏：与临时授权码同一交互（输入框 + UI 申请按钮），不再出 (1;2)
+    if (this->isGraphicalPamService())
+    {
+        KLOG_DEBUG() << m_sessionID << "graphical SMS auth: reuse soft-code input prompt";
+        this->startSoftCodeAuth();
+        return;
+    }
+
+    // SSH 等字符终端：保留 (1;2) 申请/输入菜单
     m_authCodeStep = AUTH_CODE_STEP_SELECT;
     m_gencodeProcess = nullptr;
     m_invalidAuthCodeChoiceCount = 0;
@@ -619,11 +640,12 @@ void Session::onGencodeProcessFinished(int exitCode, QProcess::ExitStatus exitSt
                                 ? tr("Failed to request authorization code, please try again.")
                                 : detail;
         Q_EMIT this->AuthMessage(msg, KADMessageType::KAD_MESSAGE_TYPE_ERROR);
-        // 图形终端（LightDM）：AuthFailed，由 greeter 重新认证，不回退密码。
+        // 图形终端（LightDM/锁屏）：AuthFailed，由 greeter 重新认证，不回退密码。
         // 字符终端（SSH）：AuthUnavail → PAM_AUTHINFO_UNAVAIL；在 sshd 示例栈（default=bad/die）
         // 下会拒绝登录、不回退密码（勿再假设会落入 pam_unix）。
-        const bool isGraphical = (m_pamServiceName == QLatin1String("lightdm"));
-        this->finishPhaseAuth(isGraphical ? SESSION_AUTH_NOT_MATCH : SESSION_AUTH_INTERNAL_ERROR);
+        // 注：图形 SMS 申请已改走 UI 按钮，此处 gencode 主要为 SSH 菜单路径服务。
+        this->finishPhaseAuth(this->isGraphicalPamService() ? SESSION_AUTH_NOT_MATCH
+                                                            : SESSION_AUTH_INTERNAL_ERROR);
     }
     else
     {
