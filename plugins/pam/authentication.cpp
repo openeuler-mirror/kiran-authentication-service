@@ -274,15 +274,18 @@ int Authentication::init()
 
 int Authentication::checkFailures()
 {
-    if (this->m_authUserProxy->failures() >= this->m_authManagerProxy->maxFailures())
+    /* 与 Linux-PAM pam_faillock 的 deny 语义对齐：上限 <=0 表示关闭锁定，不检查次数。 */
+    const int maxFailures = this->m_authManagerProxy->maxFailures();
+    const int failures = this->m_authUserProxy->failures();
+    if (maxFailures > 0 && failures >= maxFailures)
     {
-        KLOG_DEBUG() << "current failures:" << this->m_authUserProxy->failures();
-        KLOG_DEBUG() << "max failures:    " << this->m_authManagerProxy->maxFailures();
+        KLOG_DEBUG() << "current failures:" << failures;
+        KLOG_DEBUG() << "max failures:    " << maxFailures;
 
         this->m_pamHandle->syslog(LOG_DEBUG, QString("user:%1,failures:%2,max filures:%3")
                                                  .arg(m_userName)
-                                                 .arg(this->m_authUserProxy->failures())
-                                                 .arg(this->m_authManagerProxy->maxFailures()));
+                                                 .arg(failures)
+                                                 .arg(maxFailures));
         this->m_pamHandle->sendErrorMessage(tr("Too many authentication failures, so the authentication mode is locked."));
         const int authMode = this->m_authManagerProxy->authMode();
         // sshd：失败达上限返回 PAM_AUTH_ERR（配合 default=die 拒绝登录，不回退密码）。
