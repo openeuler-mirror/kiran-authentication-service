@@ -67,6 +67,35 @@ void closeSystemBus(const QString &name)
     QDBusConnection::disconnectFromBus(name);
 }
 
+/**
+ * @brief 命名 system bus 连接析构守卫（须先于 QDBusConnection / QDBusInterface 声明）。
+ *
+ * 崩溃原因：hasDevice/openEx 等高频路径曾在 QDBusInterface 仍存活时调用
+ * disconnectFromBus，拆掉连接私有对象树；列表中出现非法 QString（d==nullptr），
+ * 下一轮 QDBusInterface 构造里 QStringList_contains SEGV（锁屏被动认证可触发）。
+ *
+ * 改法：本守卫先构造、最后析构，保证顺序为 interface → conn → disconnectFromBus。
+ */
+class NamedSystemBusGuard
+{
+public:
+    explicit NamedSystemBusGuard(const QString &name)
+        : m_name(name)
+    {
+    }
+
+    ~NamedSystemBusGuard()
+    {
+        closeSystemBus(m_name);
+    }
+
+    NamedSystemBusGuard(const NamedSystemBusGuard &) = delete;
+    NamedSystemBusGuard &operator=(const NamedSystemBusGuard &) = delete;
+
+private:
+    QString m_name;
+};
+
 QString jsonStringValue(const std::string &json, const char *key)
 {
     const QJsonObject obj = QJsonDocument::fromJson(QByteArray::fromStdString(json)).object();
@@ -246,6 +275,7 @@ int FprintdFingerprintDriver::openEx(const std::string &vid, const std::string &
 
     bool ok = false;
     const QString connName = uniqueConnectionName("fprintd-open");
+    NamedSystemBusGuard busGuard(connName);
     QDBusConnection conn = openSystemBus(connName, ok);
     if (!ok)
     {
@@ -258,7 +288,6 @@ int FprintdFingerprintDriver::openEx(const std::string &vid, const std::string &
                            conn);
     if (!manager.isValid())
     {
-        closeSystemBus(connName);
         return FINGERPRINT_ERROR_SERVICE_UNAVAILABLE;
     }
 
@@ -276,7 +305,6 @@ int FprintdFingerprintDriver::openEx(const std::string &vid, const std::string &
         {
             const int err = mapDBusError(devices.error().name().toStdString(),
                                          devices.error().message().toStdString());
-            closeSystemBus(connName);
             return (err == FINGERPRINT_ERROR_ENROLL_FAIL) ? FINGERPRINT_ERROR_SERVICE_UNAVAILABLE : err;
         }
         if (!devices.value().isEmpty())
@@ -285,7 +313,6 @@ int FprintdFingerprintDriver::openEx(const std::string &vid, const std::string &
         }
     }
 
-    closeSystemBus(connName);
     if (path.isEmpty() || path == QLatin1String("/"))
     {
         return FINGERPRINT_ERROR_NO_DEVICE;
@@ -313,6 +340,7 @@ void FprintdFingerprintDriver::cancel(void *handle)
 
     bool ok = false;
     const QString connName = uniqueConnectionName("fprintd-cancel");
+    NamedSystemBusGuard busGuard(connName);
     QDBusConnection conn = openSystemBus(connName, ok);
     if (!ok)
     {
@@ -325,7 +353,6 @@ void FprintdFingerprintDriver::cancel(void *handle)
                           conn);
     device.call(QLatin1String("EnrollStop"));
     device.call(QLatin1String("VerifyStop"));
-    closeSystemBus(connName);
 }
 
 int FprintdFingerprintDriver::deleteEnrolledPrint(const std::string &featureData)
@@ -339,6 +366,7 @@ int FprintdFingerprintDriver::deleteEnrolledPrint(const std::string &featureData
 
     bool ok = false;
     const QString connName = uniqueConnectionName("fprintd-delete");
+    NamedSystemBusGuard busGuard(connName);
     QDBusConnection conn = openSystemBus(connName, ok);
     if (!ok)
     {
@@ -352,10 +380,8 @@ int FprintdFingerprintDriver::deleteEnrolledPrint(const std::string &featureData
     QDBusReply<QDBusObjectPath> devicePath = manager.call(QLatin1String("GetDefaultDevice"));
     if (!devicePath.isValid())
     {
-        const int err = mapDBusError(devicePath.error().name().toStdString(),
-                                     devicePath.error().message().toStdString());
-        closeSystemBus(connName);
-        return err;
+        return mapDBusError(devicePath.error().name().toStdString(),
+                            devicePath.error().message().toStdString());
     }
 
     QDBusInterface device(QLatin1String(kFprintService),
@@ -366,16 +392,13 @@ int FprintdFingerprintDriver::deleteEnrolledPrint(const std::string &featureData
     QDBusReply<void> claim = device.call(QLatin1String("Claim"), QString::fromStdString(user));
     if (!claim.isValid())
     {
-        const int err = mapDBusError(claim.error().name().toStdString(),
-                                     claim.error().message().toStdString());
-        closeSystemBus(connName);
-        return err;
+        return mapDBusError(claim.error().name().toStdString(),
+                            claim.error().message().toStdString());
     }
 
     QDBusReply<void> del = device.call(QLatin1String("DeleteEnrolledFinger"),
                                        QString::fromStdString(finger));
     device.call(QLatin1String("Release"));
-    closeSystemBus(connName);
 
     if (!del.isValid())
     {
@@ -407,6 +430,7 @@ int FprintdFingerprintDriver::enroll(void *handle,
 
     bool ok = false;
     const QString connName = uniqueConnectionName("fprintd-enroll");
+    NamedSystemBusGuard busGuard(connName);
     QDBusConnection conn = openSystemBus(connName, ok);
     if (!ok)
     {
@@ -419,28 +443,24 @@ int FprintdFingerprintDriver::enroll(void *handle,
                           conn);
     if (!device.isValid())
     {
-        closeSystemBus(connName);
         return FINGERPRINT_ERROR_SERVICE_UNAVAILABLE;
     }
 
-    auto releaseAndClose = [&]()
+    auto releaseDevice = [&]()
     {
         device.call(QLatin1String("Release"));
-        closeSystemBus(connName);
     };
 
     QDBusReply<void> claim = device.call(QLatin1String("Claim"), userName);
     if (!claim.isValid())
     {
-        const int err = mapDBusError(claim.error().name().toStdString(),
-                                     claim.error().message().toStdString());
-        closeSystemBus(connName);
-        return err;
+        return mapDBusError(claim.error().name().toStdString(),
+                            claim.error().message().toStdString());
     }
 
     if (h->cancelRequested.load())
     {
-        releaseAndClose();
+        releaseDevice();
         return FINGERPRINT_ERROR_CANCELED;
     }
 
@@ -462,7 +482,7 @@ int FprintdFingerprintDriver::enroll(void *handle,
     }
     if (fingerName.isEmpty())
     {
-        releaseAndClose();
+        releaseDevice();
         return FINGERPRINT_ERROR_ENROLL_FAIL;
     }
 
@@ -542,7 +562,7 @@ int FprintdFingerprintDriver::enroll(void *handle,
     {
         const int err = mapDBusError(start.error().name().toStdString(),
                                      start.error().message().toStdString());
-        releaseAndClose();
+        releaseDevice();
         return err;
     }
 
@@ -572,13 +592,13 @@ int FprintdFingerprintDriver::enroll(void *handle,
 
     if (h->cancelRequested.load() || failReason == QLatin1String("canceled"))
     {
-        releaseAndClose();
+        releaseDevice();
         return FINGERPRINT_ERROR_CANCELED;
     }
 
     if (!finished || !success)
     {
-        releaseAndClose();
+        releaseDevice();
         if (failReason == QLatin1String("enroll-duplicate"))
         {
             return FINGERPRINT_ENROLL_REPEATED;
@@ -587,7 +607,7 @@ int FprintdFingerprintDriver::enroll(void *handle,
     }
 
     featureData = makeFeatureToken(userName.toStdString(), fingerName.toStdString());
-    releaseAndClose();
+    releaseDevice();
     return 0;
 }
 
@@ -642,6 +662,7 @@ int FprintdFingerprintDriver::identify(void *handle,
 
     bool ok = false;
     const QString connName = uniqueConnectionName("fprintd-identify");
+    NamedSystemBusGuard busGuard(connName);
     QDBusConnection conn = openSystemBus(connName, ok);
     if (!ok)
     {
@@ -654,7 +675,6 @@ int FprintdFingerprintDriver::identify(void *handle,
                           conn);
     if (!device.isValid())
     {
-        closeSystemBus(connName);
         return FINGERPRINT_ERROR_SERVICE_UNAVAILABLE;
     }
 
@@ -675,7 +695,6 @@ int FprintdFingerprintDriver::identify(void *handle,
     {
         if (h->cancelRequested.load())
         {
-            closeSystemBus(connName);
             return FINGERPRINT_ERROR_CANCELED;
         }
 
@@ -794,21 +813,18 @@ int FprintdFingerprintDriver::identify(void *handle,
 
         if (h->cancelRequested.load())
         {
-            closeSystemBus(connName);
             return FINGERPRINT_ERROR_CANCELED;
         }
 
         if (finished && matched)
         {
             matchIndex = entry.firstIndex;
-            closeSystemBus(connName);
             return 0;
         }
 
         // 不匹配则继续尝试下一用户（可切换场景）；不可切换时列表通常只有一个用户
     }
 
-    closeSystemBus(connName);
     matchIndex = -1;
     if (!verifyAttempted)
     {
@@ -833,6 +849,7 @@ int FprintdFingerprintDriver::listEnrolledFingers(void *handle,
 
     bool ok = false;
     const QString connName = uniqueConnectionName("fprintd-list");
+    NamedSystemBusGuard busGuard(connName);
     QDBusConnection conn = openSystemBus(connName, ok);
     if (!ok)
     {
@@ -845,7 +862,6 @@ int FprintdFingerprintDriver::listEnrolledFingers(void *handle,
                           conn);
     QDBusReply<QStringList> reply = device.call(QLatin1String("ListEnrolledFingers"),
                                                 QString::fromStdString(userName));
-    closeSystemBus(connName);
     if (!reply.isValid())
     {
         return mapDBusError(reply.error().name().toStdString(),
